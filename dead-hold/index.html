@@ -52,10 +52,10 @@
   /* Red dot sight is now a 3D scope tube attached to the weapon (see scopeGroup).
      No 2D ring / housing / brackets are drawn on the screen; everything outside
      the tube stays fully transparent. */
-  /* With red dot: hide the crosshair lines (the 3D dot replaces them) */
+  /* With red dot: keep the crosshair visible (the 3D dot sits at the center, crosshair frames it) */
   #hud.rd-active #crosshair::before,
   #hud.rd-active #crosshair::after,
-  #hud.rd-active #crosshair i{display:none}
+  #hud.rd-active #crosshair i{display:block}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -1625,7 +1625,7 @@ const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotM
 scopeDot.position.set(0,0,0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.11, -0.10); // centered over the barrel (x=0), sitting on top of the receiver, just ahead of the iron sights
+scopeGroup.position.set(0, 0.11, 0); // centered at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center during ADS
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2276,7 +2276,7 @@ function isSprinting(){
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
-const adsPos = new THREE.Vector3(0,-0.07,-0.42);
+const adsPos = new THREE.Vector3(0,-0.07,-0.10); // moved forward so the scope (at gun z=0) aligns with the crosshair center
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -2969,10 +2969,9 @@ function loop(){
   }
   gun.add(model);
   // Re-attach the 3D red-dot scope on TOP of the new weapon model, centered
-  // over the barrel (x=0) so it reads as mounted on the receiver, just ahead
-  // of the iron sights and never covering the center reticle.
+  // at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center.
   if(!scopeGroup.parent) gun.add(scopeGroup);
-  scopeGroup.position.set(0, 0.11, -0.10);
+  scopeGroup.position.set(0, 0.11, 0);
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3420,6 +3419,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
