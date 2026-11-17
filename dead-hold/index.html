@@ -1074,25 +1074,27 @@ scene.add(camera);
    is fully transparent (no 2D vignette/overlay). */
 const scopeGroup = new THREE.Group();
 const scopeTubeMat = new THREE.MeshLambertMaterial({color:0x14161a, side:THREE.DoubleSide});
-const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.16,24,1,true), scopeTubeMat);
+const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.24,24,1,true), scopeTubeMat);
 scopeTube.rotation.x = Math.PI/2; // axis along Z (forward)
 scopeGroup.add(scopeTube);
-// Front ring (opening rim)
+// Front ring (opening rim) — thick so the hollow opening reads clearly
 const scopeRimMat = new THREE.MeshLambertMaterial({color:0x2a2e34});
-const scopeRim = new THREE.Mesh(new THREE.TorusGeometry(0.055,0.008,10,24), scopeRimMat);
-scopeRim.position.z = -0.08;
+const scopeRim = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
+scopeRim.position.z = -0.12;
 scopeGroup.add(scopeRim);
 // Rear ring
-const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.055,0.008,10,24), scopeRimMat);
-scopeRim2.position.z = 0.08;
+const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
+scopeRim2.position.z = 0.12;
 scopeGroup.add(scopeRim2);
-// Red dot (glowing sprite seen through the front opening)
-const scopeDotMat = new THREE.SpriteMaterial({map:flashTex, color:0xff2a1e, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
-const scopeDot = new THREE.Sprite(scopeDotMat);
-scopeDot.position.set(0,0,-0.08);
-scopeDot.scale.set(0.03,0.03,1);
+// Red dot: bright billboard quad centered in the front opening.
+// depthTest:false + renderOrder keeps it visible through the tube; it is a
+// small dot so everything OUTSIDE the scope stays fully transparent.
+const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, side:THREE.DoubleSide});
+const scopeDot = new THREE.Mesh(new THREE.PlaneGeometry(0.03,0.03), scopeDotMat);
+scopeDot.position.set(0,0,-0.12);
+scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0,0.06,-0.30); // just above the weapon, in front of the eye
+scopeGroup.position.set(0,-0.02,-0.45); // lower-center of the view, in front of the eye
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -1733,6 +1735,7 @@ function lerpAds(dt){
   // Show the 3D scope tube only when this weapon has a red dot AND we are aiming
   const wantScope = wbGet(activeWeapon).redDot && adsBlend > 0.5;
   if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
+  if(scopeGroup.visible) scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
 }
 function resetAds(){
   adsActive = false;
@@ -2621,6 +2624,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
