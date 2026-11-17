@@ -39,6 +39,14 @@
   #hp-fill.low{background:linear-gradient(90deg,#7a1414,var(--red));box-shadow:0 0 12px rgba(255,59,59,.7)}
   #hp-num{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:9px;letter-spacing:.1em;color:#04120b;font-weight:700}
   .hpbar.low #hp-num{color:#1a0404}
+  #hud-bl{left:18px;bottom:18px}
+  .stbar{width:190px;height:9px;margin-top:6px;border:1px solid var(--green-dim);
+         background:rgba(0,0,0,.4);position:relative;overflow:hidden}
+  #st-fill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,#1f5f6e,#57d8ff);
+           box-shadow:0 0 10px rgba(87,216,255,.55);transition:width .1s linear}
+  #st-fill.low{background:linear-gradient(90deg,#7a3a14,var(--amber));box-shadow:0 0 10px rgba(255,180,84,.6)}
+  #st-num{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:8px;letter-spacing:.1em;color:#04120b;font-weight:700}
+  .stbar.low #st-num{color:#1a0f04}
   #hud-bc{left:50%;bottom:14px;transform:translateX(-50%);text-align:center}
   .ammo{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:.04em;color:var(--green);
         text-shadow:0 0 12px rgba(87,255,158,.4)}
@@ -113,7 +121,7 @@
   @media (max-width:560px){
     .controls{grid-template-columns:1fr;gap:8px}
     .panel{padding:26px 22px}
-    .hpbar{width:150px}
+    .hpbar,.stbar{width:150px}
     #hud-tl .hud-big,#hud-tr .hud-big{font-size:24px}
   }
 </style>
@@ -134,6 +142,10 @@
       <div class="hud-score" id="score-num">0</div>
       <span class="hud-sub" id="kill-num">KILLS 0</span>
     </div>
+    <div class="hud-corner" id="hud-bl">
+      <span class="hud-label">STAMINA</span>
+      <div class="stbar" id="stbar"><div id="st-fill"></div><span id="st-num">100</span></div>
+    </div>
     <div class="hud-corner" id="hud-bc">
       <div class="ammo" id="ammo"><span id="ammo-mag">30</span> <span class="res">/ ∞</span></div>
       <div class="ammo-reload" id="ammo-reload"></div>
@@ -152,6 +164,7 @@
         <li><span class="key">MOUSE</span> Aim</li>
         <li><span class="key">CLICK</span> Fire</li>
         <li><span class="key">R</span> Reload</li>
+        <li><span class="key">SHIFT</span> Sprint</li>
       </ul>
       <button class="btn" id="start-btn">▶ CLICK TO START</button>
       <div class="foot">AUDIO ON · POINTER LOCK ENGAGES ON START</div>
@@ -340,6 +353,7 @@ const sfx={
 /* ===================== STATE ===================== */
 const S={
   state:'start', hp:100, maxhp:100,
+  stamina:100, maxst:100, sprinting:false,
   mag:30, magsize:30, reloading:false, reloadT:0, reloadTime:0.9,
   wave:0, kills:0, score:0,
   zombies:[], particles:[],
@@ -384,7 +398,7 @@ function waveCount(n){ return 5+(n-1)*3; }
 
 /* ===================== INPUT ===================== */
 function startGame(){
-  S.state='playing'; S.hp=100; S.mag=30; S.reloading=false; S.reloadT=0;
+  S.state='playing'; S.hp=100; S.stamina=100; S.sprinting=false; S.mag=30; S.reloading=false; S.reloadT=0;
   S.wave=0; S.kills=0; S.score=0; S.yaw=0; S.pitch=0;
   S.muzzle=0; S.recoil=0; S.hitFlash=0; S.shake=0; S.waveDelay=1.4;
   camera.position.set(0,1.7,0);
@@ -434,7 +448,10 @@ function shoot(){
   S.mag--; S.shootCd=0.15; S.muzzle=0.06; S.recoil=1; S.shake=Math.min(S.shake+3,9);
   sfx.shoot();
   flashLight.intensity=6; if(window.__flash){ window.__flash.visible=true; }
-  raycaster.setFromCamera(center,camera);
+  // sprint tames the aim: slightly reduced spread
+  const spread=S.sprinting?0.0035:0.006;
+  const ox=(Math.random()-0.5)*2*spread, oy=(Math.random()-0.5)*2*spread;
+  raycaster.setFromCamera(new THREE.Vector2(ox,oy),camera);
   const targets=[];
   for(const z of S.zombies){ if(z.dead) continue;
     targets.push(z.m.body,z.m.head,z.m.armL,z.m.armR,z.m.legL,z.m.legR); }
@@ -462,9 +479,20 @@ function update(dt){
   let mx=0,mz=0;
   if(S.keys.w)mz-=1; if(S.keys.s)mz+=1; if(S.keys.a)mx-=1; if(S.keys.d)mx+=1;
   S.moving=(mx||mz);
+  // sprint: hold SHIFT while moving, if stamina allows
+  const wantSprint=S.keys.shift && S.moving;
+  if(wantSprint && S.stamina>0) S.sprinting=true; else S.sprinting=false;
+  // stamina drain / regen
+  if(S.sprinting){
+    S.stamina=Math.max(0,S.stamina-22*dt);
+    if(S.stamina<=0) S.sprinting=false;
+  } else {
+    S.stamina=Math.min(S.maxst,S.stamina+16*dt);
+  }
   if(S.moving){
     const l=Math.hypot(mx,mz); mx/=l; mz/=l;
-    const sp=5.2*dt;
+    const speedMul=S.sprinting?1.6:1;
+    const sp=5.2*speedMul*dt;
     const fx=-Math.sin(S.yaw), fz=-Math.cos(S.yaw);
     const rx=Math.cos(S.yaw), rz=-Math.sin(S.yaw);
     let nx=camera.position.x+(fx*mz+rx*mx)*sp;
@@ -474,9 +502,10 @@ function update(dt){
     camera.position.x=Math.max(-ARENA+0.5,Math.min(ARENA-0.5,camera.position.x));
     camera.position.z=Math.max(-ARENA+0.5,Math.min(ARENA-0.5,camera.position.z));
   }
-  // head bob
+  // head bob (stronger while sprinting)
   const t=performance.now()*0.006;
-  camera.position.y=1.7+(S.moving?Math.sin(t*2)*0.05:0);
+  const bobAmp=S.sprinting?0.09:(S.moving?0.05:0);
+  camera.position.y=1.7+(S.moving?Math.sin(t*2.4)*bobAmp:0);
   // recoil
   S.recoil=Math.max(0,S.recoil-dt*7);
   gun.position.z=-0.5+S.recoil*0.12;
@@ -557,6 +586,11 @@ function hud(){
   $('hp-num').textContent=S.hp;
   $('hpbar').classList.toggle('low',S.hp<35);
   $('hp-fill').classList.toggle('low',S.hp<35);
+  // stamina
+  $('st-fill').style.width=(S.stamina/S.maxst*100)+'%';
+  $('st-num').textContent=Math.round(S.stamina);
+  $('stbar').classList.toggle('low',S.stamina<30);
+  $('st-fill').classList.toggle('low',S.stamina<30);
   $('wave-num').textContent=S.wave||1;
   $('score-num').textContent=S.score;
   $('kill-num').textContent='KILLS '+S.kills;
