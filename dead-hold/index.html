@@ -370,6 +370,7 @@ const debrisDefs = [
 debrisDefs.forEach(d=>{
   const m = box(d[2],d[3],d[4],debrisMat,d[0],d[3]/2,d[1]);
   m.rotation.y = Math.random()*Math.PI;
+  // Low collision footprint so the player can jump over the debris
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15);
 });
 // Broken barrels (cylinders)
@@ -383,7 +384,6 @@ const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
   scene.add(m);
   addCollider(p[0],p[1],0.45,0.45);
 });
-
 // Doorway markers (subtle glow strips)
 const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12, emissiveIntensity:1.5});
 [[0,-15,0.6,0.6],[0,15,0.6,0.6],[-15,0,0.6,0.6],[15,0,0.6,0.6]].forEach(d=>{
@@ -862,7 +862,7 @@ const player = {
   bob:0,
   grounded:true
 };
-const JUMP_V = 5.2;   // initial upward velocity (m/s)
+const JUMP_V = 6.6;   // initial upward velocity (m/s)
 const GRAVITY = 14;   // downward acceleration (m/s^2)
 const EYE = 1.7;      // standing eye height
 
@@ -1946,6 +1946,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
