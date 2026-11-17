@@ -187,7 +187,6 @@
   <div class="tbtn" id="btnFire">FIRE</div>
   <div class="tbtn" id="btnJump">JUMP</div>
   <div class="tbtn" id="btnReload">RELOAD</div>
-  <div class="tbtn" id="btnInspect">INSPECT</div>
   <div class="tbtn" id="btnWorkbench">WORKBENCH</div>
   <div class="tbtn" id="btnCycle">CYCLE</div>
   <div id="tSlots"></div>
@@ -259,7 +258,6 @@
       <li><span class="key">SPACE</span> Jump</li>
       <li><span class="key">ESC</span> Pause</li>
       <li><span class="key">Q / WHEEL</span> Cycle Gun</li>
-      <li><span class="key">F</span> Inspect Weapon</li>
     </ul>
     <button class="btn" id="startBtn">Start</button>
   </div>
@@ -1447,13 +1445,6 @@ function initTouch(){
   // Reload
   bindTouch(btnReload, e=>{ e.preventDefault(); ensureAudio(); startReload(); btnReload.classList.add('pressed'); },
     e=>{ e.preventDefault(); btnReload.classList.remove('pressed'); });
-  // Inspect
-  bindTouch(btnInspect, e=>{
-    e.preventDefault(); ensureAudio();
-    if(inspecting){ inspecting = false; inspectT = 0; }
-    else if(state.running && !state.reloading){ inspecting = true; inspectT = 0; }
-    btnInspect.classList.add('pressed');
-  }, e=>{ e.preventDefault(); btnInspect.classList.remove('pressed'); });
   // Workbench
   bindTouch(btnWorkbench, e=>{
     e.preventDefault(); ensureAudio();
@@ -1522,19 +1513,8 @@ document.addEventListener('keydown', e=>{
   if(k==='r'){ startReload(); }
   if(k==='q'){ cycleWeapon(); }
   if(k===' '){ tryJump(); }
-  if(k==='f'){
-    if(inspecting){
-      // Cancel inspection early
-      inspecting = false;
-      inspectT = 0;
-    } else if(state.running && !state.reloading){
-      // Start inspection
-      inspecting = true;
-      inspectT = 0;
-    }
-  }
   keys[k]=true;
-  if(['w','a','s','d','shift',' ','f'].includes(k)) e.preventDefault();
+  if(['w','a','s','d','shift',' '].includes(k)) e.preventDefault();
 });
 document.getElementById('wbCloseBtn').addEventListener('click', wbCloseMenu);
 function tryJump(){
@@ -1692,10 +1672,6 @@ function updateWeaponSlots(){
 }
 let activeWeapon = 'pistol';
 let lastShotTime = 0;
-let inspecting = false;
-let inspectT = 0;
-const INSPECT_DUR = 1.6; // seconds for full inspection cycle
-let inspRotY = 0, inspRotX = 0, inspPosZ = 0;
 function updateRedDot(){
   const el = document.getElementById('crosshair');
   const hud = document.getElementById('hud');
@@ -1752,7 +1728,6 @@ function resetAds(){
 
 function shoot(){
   if(state.reloading) return;
-  if(inspecting) return; // Cannot shoot while inspecting
   const nowMs = performance.now();
   const interval = isAuto() ? 1000/fireRate() : 300;
   if(nowMs - lastShotTime < interval) return;
@@ -2321,53 +2296,6 @@ function loop(){
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
   if(scopeGroup.visible !== _wantScope) scopeGroup.visible = _wantScope;
-  // Apply inspection rotation to the weapon model
-  if(inspecting){
-    model.rotation.y = inspRotY;
-    model.rotation.x = inspRotX;
-    model.position.z = inspPosZ;
-  } else {
-    model.rotation.y = 0;
-    model.rotation.x = 0;
-    model.position.z = 0;
-  }
-
-  /* ---- inspection animation ---- */
-  if(inspecting){
-    inspectT += dt;
-    const p = Math.min(1, inspectT / INSPECT_DUR);
-    // Smooth ease-in-out: weapon rotates to show side profile, tilts, then returns
-    // Phase 1 (0-0.4): rotate out to side profile
-    // Phase 2 (0.4-0.6): hold and tilt slightly
-    // Phase 3 (0.6-1.0): return to firing position
-    let rotY, rotX, posZ;
-    if(p < 0.4){
-      const t = p / 0.4;
-      const ease = t * t * (3 - 2 * t); // smoothstep
-      rotY = ease * 1.2;          // rotate ~69 degrees to show side
-      rotX = ease * 0.15;         // slight tilt
-      posZ = ease * 0.08;         // pull back slightly
-    } else if(p < 0.6){
-      const t = (p - 0.4) / 0.2;
-      rotY = 1.2 + Math.sin(t * Math.PI) * 0.1;  // slight wobble
-      rotX = 0.15 + Math.sin(t * Math.PI) * 0.1;
-      posZ = 0.08;
-    } else {
-      const t = (p - 0.6) / 0.4;
-      const ease = t * t * (3 - 2 * t);
-      rotY = 1.2 * (1 - ease);
-      rotX = 0.15 * (1 - ease);
-      posZ = 0.08 * (1 - ease);
-    }
-    inspRotY = rotY;
-    inspRotX = rotX;
-    inspPosZ = posZ;
-    if(p >= 1){
-      inspecting = false;
-      inspectT = 0;
-      inspRotY = 0; inspRotX = 0; inspPosZ = 0;
-    }
-  }
 
   state.seconds += dt;
 
@@ -2394,7 +2322,7 @@ function loop(){
   }
 
   /* ---- auto fire (SMG / Rifle) ---- */
-  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && !inspecting && mags[activeWeapon]>0){
+  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && mags[activeWeapon]>0){
     shoot();
   }
 
@@ -2468,15 +2396,15 @@ function loop(){
   swayX = Math.sin(state.seconds * 12.566) * 0.01;
   swayY = Math.sin(state.seconds * 12.566 + Math.PI/2) * 0.01;
 
-  // Sprint animation: faster, larger bob + forward lean (smoothly interpolated)
+  // Sprint animation: smooth, deliberate weapon lean (tilt forward + pull back),
+  // ease-in/ease-out. No rapid bobbing — a controlled, cinematic lean.
   {
     const sprintTarget = (wantSprint && moving && player.grounded) ? 1 : 0;
     const sprintBlend = 1 - Math.pow(0.001, dt); // smooth lerp factor
     if(sprintTarget === 1){
-      const sprintFreq = state.seconds * 18; // ~2.9Hz
-      sprintBobX += (Math.sin(sprintFreq) * 0.025 - sprintBobX) * sprintBlend;
-      sprintBobY += (Math.abs(Math.sin(sprintFreq)) * 0.035 - sprintBobY) * sprintBlend;
-      sprintLean += (0.08 - sprintLean) * sprintBlend;
+      sprintLean += (0.12 - sprintLean) * sprintBlend;   // tilt forward (lean into run)
+      sprintBobY += (-0.02 - sprintBobY) * sprintBlend;  // pull back slightly
+      sprintBobX *= (1 - sprintBlend);                    // no lateral sway
     } else {
       sprintBobX *= (1 - sprintBlend);
       sprintBobY *= (1 - sprintBlend);
@@ -2653,6 +2581,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
