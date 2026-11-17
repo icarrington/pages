@@ -2971,7 +2971,7 @@ function loop(){
   //  - PISTOL: no yaw — instead it tilts UP (barrel faces the sky).
   const _sprintIsPistol = (activeWeapon === 'pistol' || activeWeapon === 'deagle');
   sprintLean = 0;   // no Z roll
-  sprintTilt = _sprintIsPistol ? sprintBlend * 1.15 : 0; // pistol: pitch up; others: none
+  sprintTilt = _sprintIsPistol ? -sprintBlend * 1.15 : 0; // pistol: pitch up (barrel toward sky); others: none
   sprintYaw = _sprintIsPistol ? 0 : sprintBlend * 1.15;  // others: yaw sideways; pistol: none
   sprintBobX = 0; sprintBobY = 0;
 
@@ -3140,6 +3140,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
