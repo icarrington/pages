@@ -2433,6 +2433,7 @@ function killZombie(z, isHead){
   state.kills++;
   state.points += 60;
   if(isHead){ state.headshots++; state.points += 100; }
+  state.lastKillTime = state.seconds; // reset the 2-minute no-kill beacon timer
   if(z.boss){
     state.points += 500 + 25*(state.wave/5);
     spawnParticleBurst(z.group.position, true);
@@ -2675,7 +2676,7 @@ function resetGame(){
   state.health=100; state.stamina=100;
   state.wave=1; state.points=0; state.kills=0; state.headshots=0;
   state.shotsFired=0; state.shotsHit=0;
-  state.seconds=0; state.lastHitTime=-99;
+  state.seconds=0; state.lastHitTime=-99; state.lastKillTime=0;
   state.reloading=false; state.reloadT=0; state.reloadDur=1;
   state.recoil=0; state.muzzleT=0;
   state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
@@ -3102,11 +3103,13 @@ function loop(){
   /* ---- boss ---- */
   updateBoss(dt);
 
-  /* ---- zombie beacon: show tall glowing beam above each zombie when fewer than 3 remain ---- */
+  /* ---- zombie beacon: show tall glowing beam above each zombie when fewer than 3 remain,
+     OR when no zombie has been killed for 120 seconds (2 minutes) ---- */
   {
     const _aliveList = zombies.filter(z => z.alive);
     const _aliveCount = _aliveList.length + (state.boss && state.boss.alive ? 1 : 0);
-    const _showBeacons = _aliveCount > 0 && _aliveCount < 3;
+    const _noKillBeacon = state.seconds - state.lastKillTime >= 120;
+    const _showBeacons = (_aliveCount > 0 && _aliveCount < 3) || _noKillBeacon;
     // Ensure beacon pool exists (created once)
     if(!_beaconPool) {
       _beaconPool = [];
@@ -3177,6 +3180,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
