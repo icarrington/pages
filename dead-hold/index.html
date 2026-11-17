@@ -419,20 +419,22 @@ debrisDefs.forEach(d=>{
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15,d[3]);
 });
 /* ============================ WORKBENCH ============================ */
-const WB = { x: 10.5, z: -10.5 };
 const wbGroup = new THREE.Group();
 const wbWoodMat = new THREE.MeshLambertMaterial({color:0x6b4a2a});
 const wbWoodDark = new THREE.MeshLambertMaterial({color:0x4a3320});
+// Workbench position: center of arena, in front of player spawn (0,0,0)
+// Placed at (0, 0, 5) so it's immediately visible when the game starts
+const WB = {x:0, z:5};
 const wbMetalMat = new THREE.MeshLambertMaterial({color:0x555c66});
 const wbMetalDark = new THREE.MeshLambertMaterial({color:0x33383f});
 const wbToolMat = new THREE.MeshLambertMaterial({color:0x8890a0});
 const wbLampMat = new THREE.MeshLambertMaterial({color:0x222a30});
 const wbLampGlow = new THREE.MeshLambertMaterial({color:0xfff2c0, emissive:0xffd98a, emissiveIntensity:2.5});
 const wbSignMat = new THREE.MeshLambertMaterial({color:0x1a2a12, emissive:0x2a4a1a, emissiveIntensity:0.6});
-// Table top
-const wbTop = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,1.2), wbWoodMat); wbTop.position.set(0,0.9,0); wbGroup.add(wbTop);
-// Table legs (4)
-[[-1.05,-0.45],[1.05,-0.45],[-1.05,0.45],[1.05,0.45]].forEach(l=>{
+// Table top — 3 units wide, 1.5 deep, 1 unit tall (top at y=1.0)
+const wbTop = new THREE.Mesh(new THREE.BoxGeometry(3.0,0.12,1.5), wbWoodMat); wbTop.position.set(0,0.94,0); wbGroup.add(wbTop);
+// Table legs (4) — positioned at corners of the 3x1.5 table
+[[-1.35,-0.6],[1.35,-0.6],[-1.35,0.6],[1.35,0.6]].forEach(l=>{
   const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.9,0.12), wbWoodDark);
   leg.position.set(l[0],0.45,l[1]); wbGroup.add(leg);
 });
@@ -447,10 +449,13 @@ const wbViseScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.3,8), 
 const wbLampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.4,8), wbMetalDark); wbLampPole.position.set(-0.8,1.6,-0.3); wbGroup.add(wbLampPole);
 const wbLampArm = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,0.06), wbMetalDark); wbLampArm.position.set(-0.55,2.25,-0.15); wbLampArm.rotation.z = 0.3; wbGroup.add(wbLampArm);
 const wbLampShade = new THREE.Mesh(new THREE.ConeGeometry(0.18,0.2,12,1,true), wbLampMat); wbLampShade.position.set(-0.35,2.15,0); wbLampShade.rotation.z = 0.4; wbGroup.add(wbLampShade);
-const wbLampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.08,10,10), wbLampGlow); wbLampBulb.position.set(-0.35,2.05,0); wbGroup.add(wbLampBulb);
+const wbLampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10), wbLampGlow); wbLampBulb.position.set(-0.35,2.05,0); wbGroup.add(wbLampBulb);
 // Scattered tools: wrench (L-shape)
 const wbWrench1 = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.04,0.06), wbToolMat); wbWrench1.position.set(-0.2,0.98,0.1); wbWrench1.rotation.y = 0.4; wbGroup.add(wbWrench1);
 const wbWrench2 = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.2), wbToolMat); wbWrench2.position.set(-0.35,0.98,0.15); wbGroup.add(wbWrench2);
+// Hammer (head + handle)
+const wbHammerHead = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.06,0.08), wbMetalMat); wbHammerHead.position.set(0.4,1.02,0.3); wbGroup.add(wbHammerHead);
+const wbHammerHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.2,8), wbWoodMat); wbHammerHandle.rotation.z = Math.PI/2; wbHammerHandle.position.set(0.52,1.0,0.3); wbGroup.add(wbHammerHandle);
 // Screwdriver
 const wbScrew1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.25,8), wbToolMat); wbScrew1.rotation.z = Math.PI/2; wbScrew1.position.set(0.1,0.98,-0.15); wbGroup.add(wbScrew1);
 const wbScrew2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.08,8), wbMetalDark); wbScrew2.rotation.z = Math.PI/2; wbScrew2.position.set(0.22,0.98,-0.15); wbGroup.add(wbScrew2);
@@ -464,13 +469,16 @@ const wbSignTex = new THREE.CanvasTexture((function(){
   return c;
 })());
 const wbSignMat2 = new THREE.MeshLambertMaterial({map:wbSignTex, emissive:0x334422, emissiveIntensity:0.8});
-const wbSign = new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3), wbSignMat2); wbSign.position.set(0,1.5,0.62); wbGroup.add(wbSign);
+const wbSign = new THREE.Mesh(new THREE.PlaneGeometry(1.8,0.45), wbSignMat2); wbSign.position.set(0,1.6,0.78); wbGroup.add(wbSign);
 // Warm point light for the workbench
-const wbLight = new THREE.PointLight(0xffd98a, 8.0, 12, 2);
+const wbLight = new THREE.PointLight(0xffd98a, 12.0, 15, 2);
 wbLight.castShadow = false;
 wbLight.position.set(0, 2.2, 0);
 wbGroup.add(wbLight);
 wbGroup.position.set(WB.x, 0, WB.z);
+// Workbench collider — placed at (0,0,5), in front of player spawn (0,1.7,0)
+// The table is 3 units wide, 1.5 deep, 1 unit tall
+addCollider(0, 5, 1.5, 0.75, 1.0);
 scene.add(wbGroup);
 // Workbench attachment state: { weaponName: { redDot, extMag, suppressor, vGrip } }
 const wbAttachments = {};
@@ -2144,6 +2152,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
