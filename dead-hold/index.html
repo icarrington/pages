@@ -47,8 +47,7 @@
   #crosshair.rd #redDot{display:block;width:5px;height:5px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 3px rgba(255,42,30,1),0 0 8px rgba(255,42,30,.9),0 0 14px rgba(255,42,30,.55);left:50%;top:50%;transform:translate(-50%,-50%)}
   #crosshair.rd::before,#crosshair.rd::after{display:none}
   #crosshair.rd i{display:none}
-  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:1.5px;height:1.5px;border:1px solid #000;border-radius:50%;transform:translate(-50%,-50%);background:transparent;box-shadow:0 0 2px rgba(0,0,0,1),inset 0 0 2px rgba(0,0,0,1)}
-  #sightHousing{display:none;position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 4.75%,rgba(0,0,0,.9) 6%,rgba(0,0,0,.99) 7.25%,rgba(0,0,0,1) 12.5%,rgba(0,0,0,1) 100%)}
+  #sightHousing{display:none;position:absolute;top:50%;left:50%;width:18vh;height:18vh;transform:translate(-50%,-50%);pointer-events:none;border:1.2vh solid #0a0a0a;border-radius:50%;background:transparent}
   #hud.rd-active.ads-active #sightHousing{display:block}
   #rdBracketL,#rdBracketR{display:none;position:absolute;top:50%;width:14px;height:10px;background:#1a1a1a;border:1px solid #2a2a2a;transform:translateY(-50%)}
   #rdBracketL{left:calc(50% - 34px);border-radius:2px 0 0 2px}
@@ -59,6 +58,10 @@
   #hud.rd-active:not(.ads-active) #sightHousing{display:none}
   #hud.rd-active:not(.ads-active) #rdBracketL,
   #hud.rd-active:not(.ads-active) #rdBracketR{display:none}
+  /* During ADS with red dot: hide the crosshair lines, show only the ring + dot */
+  #hud.rd-active.ads-active #crosshair::before,
+  #hud.rd-active.ads-active #crosshair::after,
+  #hud.rd-active.ads-active #crosshair i{display:none}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -2598,6 +2601,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
