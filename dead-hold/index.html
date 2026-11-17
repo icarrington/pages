@@ -1312,11 +1312,7 @@ function buildAWP(){
   // Muzzle brake (large)
   const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,0.06,12), gunDark);
   muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.02,-0.65); g.add(muzzle);
-  // Muzzle rings
-  for(let i=0;i<3;i++){
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.029,0.005,8,16), gunMetal);
-    ring.position.set(0,0.02,-0.62-i*0.015); ring.rotation.x = Math.PI/2; g.add(ring);
-  }
+
   // Magazine (box)
   const mag = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.14,0.08), gunDark);
   mag.position.set(0,-0.11,0.08); g.add(mag);
@@ -1332,12 +1328,7 @@ function buildAWP(){
   const scopeBodyMat = new THREE.MeshLambertMaterial({color:0x1a1e22, side:THREE.DoubleSide, transparent:true, opacity:0.55});
   const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.22,16,1,true), scopeBodyMat);
   scopeBody.rotation.x = Math.PI/2; scopeBody.position.set(0,0.10,0.05); g.add(scopeBody);
-  // Scope front rim (ring)
-  const scopeLens = new THREE.Mesh(new THREE.TorusGeometry(0.038,0.008,8,20), gunMetal);
-  scopeLens.rotation.x = Math.PI/2; scopeLens.position.set(0,0.10,-0.06); g.add(scopeLens);
-  // Scope rear rim (ring)
-  const scopeRear = new THREE.Mesh(new THREE.TorusGeometry(0.038,0.008,8,20), gunMetal);
-  scopeRear.rotation.x = Math.PI/2; scopeRear.position.set(0,0.10,0.16); g.add(scopeRear);
+
 
   // Crosshair inside the scope (visible through the hollow tube)
   const crossMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
@@ -3330,6 +3321,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
