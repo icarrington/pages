@@ -1292,15 +1292,32 @@ function buildM4A1(){
   const handleTop = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.012,0.06), gunDark);
   handleTop.position.set(0,0.11,0.12); g.add(handleTop);
   
-  // === FRONT IRON SIGHT (small vertical post at front of handguard) ===
-  const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.028,0.014), gunLight);
-  frontSight.position.set(0,0.075,-0.34); g.add(frontSight);
-  
-  // === REAR IRON SIGHT (aperture sight: box with dark square hole) ===
-  const rearSightBase = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.022,0.025), gunLight);
-  rearSightBase.position.set(0,0.075,0.16); g.add(rearSightBase);
-  const rearSightHole = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.018,0.018), gunBlack);
-  rearSightHole.position.set(0,0.075,0.16); g.add(rearSightHole);
+  // === FRONT IRON SIGHT (M4-style: slim vertical post on a small protective base) ===
+  // Protective base: a low, slightly wider cradle that the post rises out of
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.022,0.012,0.024), gunLight);
+  fsBase.position.set(0,0.068,-0.34); g.add(fsBase);
+  // Slim vertical post (tall, narrow) sitting on top of the base
+  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.007,0.032,0.007), gunLight);
+  fsPost.position.set(0,0.090,-0.34); g.add(fsPost);
+  // Tiny cap on the post tip (slightly wider, reads as a sight bead)
+  const fsCap = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.006,0.010), gunLight);
+  fsCap.position.set(0,0.108,-0.34); g.add(fsCap);
+
+  // === REAR IRON SIGHT (M4-style notched aperture: U-shaped notch with a visible gap) ===
+  // Rear sight body: a low, wide plate near the receiver
+  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.040,0.020,0.026), gunLight);
+  rsBody.position.set(0,0.072,0.16); g.add(rsBody);
+  // Notch: a dark recessed slot cut across the top (the U-shaped aperture)
+  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.020), gunBlack);
+  rsNotch.position.set(0,0.080,0.16); g.add(rsNotch);
+  // Two thin metallic ears flanking the notch (the U-shape walls)
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.020,0.020), gunLight);
+  rsEarL.position.set(-0.013,0.078,0.16); g.add(rsEarL);
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.020,0.020), gunLight);
+  rsEarR.position.set(0.013,0.078,0.16); g.add(rsEarR);
+  // Thin top bridge over the notch (closes the U at the top)
+  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.032,0.005,0.018), gunLight);
+  rsBridge.position.set(0,0.088,0.16); g.add(rsBridge);
   
   // === SIDE PANELS (textured, on receiver) ===
   const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.09,0.32), gunDark);
@@ -3340,6 +3357,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
