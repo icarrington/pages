@@ -50,10 +50,10 @@
   /* Red dot sight is now a 3D scope tube attached to the weapon (see scopeGroup).
      No 2D ring / housing / brackets are drawn on the screen; everything outside
      the tube stays fully transparent. */
-  /* During ADS with red dot: hide the crosshair lines (the 3D dot replaces them) */
-  #hud.rd-active.ads-active #crosshair::before,
-  #hud.rd-active.ads-active #crosshair::after,
-  #hud.rd-active.ads-active #crosshair i{display:none}
+  /* With red dot: hide the crosshair lines (the 3D dot replaces them) */
+  #hud.rd-active #crosshair::before,
+  #hud.rd-active #crosshair::after,
+  #hud.rd-active #crosshair i{display:none}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -1732,8 +1732,10 @@ function lerpAds(dt){
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
   else if(adsBlend <= 0.5 && hud.classList.contains('ads-active')) hud.classList.remove('ads-active');
-  // Show the 3D scope tube only when this weapon has a red dot AND we are aiming
-  const wantScope = wbGet(activeWeapon).redDot && adsBlend > 0.5;
+  // Show the 3D scope tube whenever this weapon has a red dot (visible while
+  // held, and stays visible while aiming). Everything outside the tube is
+  // fully transparent — no dark overlay or vignette on the rest of the screen.
+  const wantScope = wbGet(activeWeapon).redDot;
   if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
   if(scopeGroup.visible) scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
 }
@@ -2624,6 +2626,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
