@@ -2051,9 +2051,6 @@ function loop(){
   /* ---- workbench proximity prompt ---- */
   if(state.running && !wbMenuOpen) wbUpdateNear();
 
-  /* ---- workbench proximity prompt ---- */
-  if(state.running && !wbMenuOpen) wbUpdateNear();
-
   /* ---- chalk pickup prompt ---- */
   const prompt = document.getElementById('weaponPrompt');
   if(chalkPickup.active && state.running){
@@ -2170,6 +2167,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
