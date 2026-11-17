@@ -47,13 +47,19 @@
   #crosshair.rd #redDot{display:block;width:5px;height:5px;background:#ff1a0e;box-shadow:0 0 4px rgba(255,26,14,.95),0 0 10px rgba(255,26,14,.6);left:50%;top:50%;transform:translate(-50%,-50%)}
   #crosshair.rd::before,#crosshair.rd::after{display:none}
   #crosshair.rd i{display:none}
-  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;border:3px solid #1a1a1a;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(40,70,40,.25) 0%,rgba(30,55,30,.18) 60%,transparent 70%);box-shadow:0 0 6px rgba(0,0,0,.5),inset 0 0 8px rgba(0,0,0,.4)}
+  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;border:3px solid #1a1a1a;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(20,20,20,.3) 0%,rgba(15,15,15,.25) 60%,transparent 70%);box-shadow:0 0 8px rgba(0,0,0,.6),inset 0 0 12px rgba(0,0,0,.5),0 0 2px rgba(0,0,0,.8)}
   #sightHousing{display:none;position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 38%,rgba(0,0,0,.18) 48%,rgba(0,0,0,.55) 58%,rgba(0,0,0,.72) 100%)}
   #crosshair.rd ~ #sightHousing, #hud.rd-active #sightHousing{display:block}
   #rdBracketL,#rdBracketR{display:none;position:absolute;top:50%;width:14px;height:10px;background:#1a1a1a;border:1px solid #2a2a2a;transform:translateY(-50%)}
   #rdBracketL{left:calc(50% - 34px);border-radius:2px 0 0 2px}
   #rdBracketR{right:calc(50% - 34px);border-radius:0 2px 2px 0}
   #hud.rd-active #rdBracketL,#hud.rd-active #rdBracketR{display:block}
+  /* Red dot sight only visible during ADS */
+  #hud.rd-active:not(.ads-active) #redDot{display:none}
+  #hud.rd-active:not(.ads-active)::after{display:none}
+  #hud.rd-active:not(.ads-active) ~ #sightHousing{display:none}
+  #hud.rd-active:not(.ads-active) #rdBracketL,
+  #hud.rd-active:not(.ads-active) #rdBracketR{display:none}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -1701,12 +1707,18 @@ function lerpAds(dt){
   gun.position.set(_tmpV.x + swayX, _tmpV.y + swayY + kickY + dipY, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
   gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot, 0, 0);
+  // Toggle ADS class for red dot visibility
+  const hud = document.getElementById('hud');
+  if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
+  else if(adsBlend <= 0.5 && hud.classList.contains('ads-active')) hud.classList.remove('ads-active');
 }
 function resetAds(){
   adsActive = false;
   adsBlend = 0;
   camera.fov = 74;
   camera.updateProjectionMatrix();
+  const hud = document.getElementById('hud');
+  hud.classList.remove('ads-active');
 }
 
 function shoot(){
@@ -2587,6 +2599,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
