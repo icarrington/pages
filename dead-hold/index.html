@@ -2086,7 +2086,7 @@ function resolveCollision(pos){
 }
 function zombieBlocked(x,z){
   const r=0.4;
-  if(x<-HALF+r||x>HALF-r||z<-HALF+r||z>HALF-r) return true;
+  if(x<-60+r||x>60-r||z<-60+r||z>60-r) return true;
   for(const c of colliders){
     if(x>c.minX-r && x<c.maxX+r && z>c.minZ-r && z<c.maxZ+r) return true;
   }
@@ -3330,6 +3330,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
