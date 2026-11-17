@@ -2432,7 +2432,13 @@ function loop(){
   // Rifle, SMG, Shotgun: barrel points horizontally across the screen (Z rotation).
   // Pistol: barrel tilts UP over the shoulder (X tilt).
   // Both ease in/out with the sprintBlend value so they return smoothly.
-  if(activeWeapon === 'rifle' || activeWeapon === 'smg' || activeWeapon === 'shotgun'){
+  if(activeWeapon === 'rifle'){
+    // Rifle sprint: old "inspect" pose — rotate the barrel to face horizontally
+    // across the screen (carried across the body). Same Z-lean the inspect
+    // animation used before it was removed.
+    sprintLean = sprintBlend * 1.15;
+    sprintTilt = 0;
+  } else if(activeWeapon === 'smg' || activeWeapon === 'shotgun'){
     sprintLean = sprintBlend * 1.15;   // point the weapon horizontally across the screen
     sprintTilt = 0;
   } else if(activeWeapon === 'pistol'){
@@ -2613,6 +2619,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
