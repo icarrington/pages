@@ -3125,7 +3125,7 @@ function loop(){
       // Unit direction toward player
       const ux = dx/dist, uz = dz/dist;
       
-      // Anti-stuck tracking: measure actual movement over 0.5s window
+      // Anti-stuck tracking: measure actual movement over 1s window
       if(!z._moveTrack) z._moveTrack = {t: state.seconds, x: z.group.position.x, z: z.group.position.z, dist: 0};
       if(!z._detourTimer) z._detourTimer = 0;
       if(!z._detourDir) z._detourDir = 1;
@@ -3198,9 +3198,9 @@ function loop(){
       z._moveTrack.x = z.group.position.x;
       z._moveTrack.z = z.group.position.z;
       
-      // Anti-stuck: if speed dropped below 5% of target over 0.5s, trigger detour
+      // Anti-stuck: if speed dropped below 5% of target over 1s, trigger detour
       const elapsed = state.seconds - z._moveTrack.t;
-      if(elapsed >= 0.5){
+      if(elapsed >= 1.0){
         const actualSpeed = z._moveTrack.dist / elapsed;
         const targetSpeed = speed;
         if(actualSpeed < targetSpeed * 0.05){
@@ -3334,6 +3334,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
