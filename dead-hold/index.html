@@ -39,7 +39,7 @@
   .ammo .res{font-size:18px;color:var(--dim);font-weight:600}
   .ammo.low #mag{color:var(--danger)}
   .ammo.empty #mag,.ammo.empty .res{color:var(--danger);opacity:.6}
-  #crosshair{position:absolute;top:50%;left:50%;width:26px;height:26px;transform:translate(-50%,-50%);opacity:.85;z-index:8}
+  #crosshair{position:absolute;top:50%;left:50%;width:26px;height:26px;transform:translate(-50%,-50%);opacity:.85;z-index:50}
   #crosshair{opacity:1}
   #crosshair::before,#crosshair::after{content:"";position:absolute;background:var(--accent);box-shadow:0 0 4px rgba(200,255,77,.6),0 0 2px rgba(0,0,0,.9)}
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
@@ -1608,16 +1608,21 @@ const scopeRimMat = new THREE.MeshLambertMaterial({color:0x2a2e34});
 const scopeRim = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
 scopeRim.position.z = -0.12;
 scopeGroup.add(scopeRim);
-// Rear ring
+// Faint front aperture (thin dark ring) — reads as the front lens of a red-dot sight
+const scopeFrontApertureMat = new THREE.MeshBasicMaterial({color:0x0a0a0a, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false});
+const scopeFrontAperture = new THREE.Mesh(new THREE.RingGeometry(0.055,0.085,28), scopeFrontApertureMat);
+scopeFrontAperture.position.z = -0.119;
+scopeGroup.add(scopeFrontAperture);
+// Rear ring (the aperture the eye looks through)
 const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
 scopeRim2.position.z = 0.12;
 scopeGroup.add(scopeRim2);
-// Red dot: bright emissive sphere centered on the FRONT face of the tube.
-// depthTest:false + renderOrder keeps it visible through the open front of the
-// tube; it is a small dot so everything OUTSIDE the scope stays fully transparent.
+// Red dot: bright emissive sphere at the REAR aperture (z=+0.12) — this is where
+// the eye looks through a real red-dot sight, so the dot sits at the sight plane
+// and, during ADS, lands exactly on the screen-center crosshair.
 const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
 const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotMat);
-scopeDot.position.set(0,0,-0.12);
+scopeDot.position.set(0,0,0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
 scopeGroup.position.set(0, 0.11, -0.10); // centered over the barrel (x=0), sitting on top of the receiver, just ahead of the iron sights
@@ -2271,7 +2276,7 @@ function isSprinting(){
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
-const adsPos = new THREE.Vector3(0,-0.16,-0.42);
+const adsPos = new THREE.Vector3(0,-0.07,-0.42);
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -2301,7 +2306,13 @@ function lerpAds(dt){
   // fully transparent — no dark overlay or vignette on the rest of the screen.
   const wantScope = wbGet(activeWeapon).redDot;
   if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
-  if(scopeGroup.visible) scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
+  if(scopeGroup.visible){
+    scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
+    // During ADS, pull the scope forward so the rear-aperture dot (z=+0.12)
+    // lands exactly on the screen-center crosshair. At b=1 the dot is at
+    // z=-0.10+0.12=+0.02 (just behind the eye), i.e. dead-center on the reticle.
+    scopeGroup.position.z = -0.10 + b*0.12;
+  }
 }
 function resetAds(){
   adsActive = false;
@@ -3409,6 +3420,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
