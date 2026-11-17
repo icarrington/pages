@@ -739,6 +739,7 @@ function playReload(){
 /* ============================ INPUT ============================ */
 const keys = {};
 let pointerLocked = false;
+let mouseDown = false;
 
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
@@ -760,6 +761,8 @@ function switchWeapon(w){
   state.reloading = false;
   updateHUD();
 }
+function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle'; }
+function fireRate(){ return activeWeapon==='smg' ? 12 : 8; }
 function cycleWeapon(){
   const list = ['pistol','smg','shotgun','rifle'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
@@ -768,15 +771,19 @@ function cycleWeapon(){
 }
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
-canvas.addEventListener('click', e=>{
+canvas.addEventListener('mousedown', e=>{
+  if(e.button!==0) return;
   ensureAudio();
   if(!state.running) return;
   if(!pointerLocked){
     canvas.requestPointerLock && canvas.requestPointerLock();
     return;
   }
-  shoot();
+  mouseDown = true;
+  if(!isAuto()) shoot();
 });
+window.addEventListener('mouseup', e=>{ if(e.button===0) mouseDown=false; });
+window.addEventListener('blur', ()=>{ mouseDown=false; });
 document.addEventListener('pointerlockchange', ()=>{
   pointerLocked = (document.pointerLockElement === canvas);
   updateHint();
@@ -891,6 +898,11 @@ function shoot(){
     startReload();
     updateHUD();
     return;
+  }
+  if(isAuto()){
+    const nowMs2 = performance.now();
+    if(nowMs2 - lastShotTime < 1000/fireRate()) return;
+    lastShotTime = nowMs2;
   }
 
   if(state.hasDoubleShotgun && activeWeapon === 'doubleShotgun'){
@@ -1193,6 +1205,11 @@ function loop(){
     }
   }
 
+  /* ---- auto fire (SMG / Rifle) ---- */
+  if(mouseDown && isAuto() && !state.reloading && mags[activeWeapon]>0){
+    shoot();
+  }
+
   /* ---- spawn queue ---- */
   if(spawnQueue.length>0 && zombies.length<15){
     const data = spawnQueue.shift();
@@ -1399,6 +1416,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
