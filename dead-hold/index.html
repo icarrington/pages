@@ -811,94 +811,127 @@ const chalkPickup = {
 
 function buildPistol(){
   const g = new THREE.Group();
-  // Slide (top)
+  // Main slide (top, dark metal)
   const slide = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.07,0.34), gunMetal); slide.position.set(0,0.04,0); g.add(slide);
-  // Frame (bottom)
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.05,0.30), gunDark); frame.position.set(0,-0.01,0.01); g.add(frame);
-  // Barrel (lighter gray)
+  // Slide serrations (rear)
+  for(let i=0;i<6;i++){
+    const serr = new THREE.Mesh(new THREE.BoxGeometry(0.092,0.005,0.006), gunDark);
+    serr.position.set(0,0.04,0.12+i*0.018); g.add(serr);
+  }
+  // Frame (bottom, lighter)
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.05,0.30), gunLight); frame.position.set(0,-0.01,0.01); g.add(frame);
+  // Barrel (exposed, lighter gray)
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.16,10), gunLight);
   barrel.rotation.x = Math.PI/2; barrel.position.set(0,0.04,-0.20); g.add(barrel);
-  // Muzzle
+  // Muzzle brake
   const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.02,10), gunDark);
   muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.04,-0.28); g.add(muzzle);
-  // Grip (angled ~15 deg)
+  // Grip (angled ~15 deg, dark)
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.065,0.17,0.09), gunDark);
   grip.position.set(0,-0.13,0.10); grip.rotation.x = 0.26; g.add(grip);
-  // Magazine (cylinder out bottom of grip)
-  const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.06,12), gunLight);
-  mag.position.set(0,-0.21,0.13); g.add(mag);
+  // Grip texture (horizontal lines)
+  for(let i=0;i<4;i++){
+    const gripLine = new THREE.Mesh(new THREE.BoxGeometry(0.067,0.003,0.085), gunMetal);
+    gripLine.position.set(0,-0.13,0.10); gripLine.rotation.x = 0.26;
+    gripLine.position.y += (i-1.5)*0.03; g.add(gripLine);
+  }
+  // Magazine base (cylinder)
+  const magBase = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.06,12), gunLight);
+  magBase.position.set(0,-0.21,0.13); g.add(magBase);
   // Trigger guard (torus)
   const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.03,0.007,8,14), gunDark);
   triggerGuard.position.set(0,-0.065,0.02); triggerGuard.rotation.x = Math.PI/2; g.add(triggerGuard);
-  // Trigger
+  // Trigger (lighter)
   const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.03,0.012), gunLight);
   trigger.position.set(0,-0.055,0.02); g.add(trigger);
-  // Hammer
+  // Hammer (rear)
   const hammer = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.035,0.02), gunMetal);
   hammer.position.set(0,0.015,0.16); g.add(hammer);
-  // Front sight
+  // Front sight (post)
   const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.02,0.012), gunLight);
   frontSight.position.set(0,0.085,-0.16); g.add(frontSight);
-  // Rear sight
+  // Rear sight (notch)
   const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.015), gunLight);
   rearSight.position.set(0,0.085,0.12); g.add(rearSight);
-  // Slide serrations
-  for(let i=0;i<4;i++){
-    const serr = new THREE.Mesh(new THREE.BoxGeometry(0.092,0.005,0.008), gunDark);
-    serr.position.set(0,0.04,0.06+i*0.02); g.add(serr);
-  }
+  // Beavertail (grip extension)
+  const beavertail = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.02,0.03), gunDark);
+  beavertail.position.set(0,-0.05,0.14); g.add(beavertail);
   return g;
 }
 
 function buildSMG(){
   const g = new THREE.Group();
-  // Main body
+  // Main body (compact, black)
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.11,0.11,0.48), gunBlack); body.position.set(0,0,0); g.add(body);
-  // Top rail
+  // Top rail (longer, with notches)
   const rail = new THREE.Mesh(new THREE.BoxGeometry(0.04,0.015,0.35), gunDark);
   rail.position.set(0,0.065,0); g.add(rail);
-  // Barrel
+  // Rail notches
+  for(let i=0;i<8;i++){
+    const notch = new THREE.Mesh(new THREE.BoxGeometry(0.042,0.016,0.008), gunMetal);
+    notch.position.set(0,0.065,-0.15+i*0.04); g.add(notch);
+  }
+  // Barrel (short, exposed)
   const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.18,8), gunMetal);
   barrel.rotation.x = Math.PI/2; barrel.position.set(0,0.02,-0.30); g.add(barrel);
-  // Suppressor
+  // Suppressor (cylinder)
   const suppressor = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,0.12,10), gunDark);
   suppressor.rotation.x = Math.PI/2; suppressor.position.set(0,0.02,-0.42); g.add(suppressor);
-  // Suppressor rings
+  // Suppressor rings (3)
   for(let i=0;i<3;i++){
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.029,0.004,8,16), gunMetal);
     ring.position.set(0,0.02,-0.38-i*0.03); ring.rotation.x = Math.PI/2; g.add(ring);
   }
-  // Curved magazine (two segments)
+  // Curved magazine (two segments, dark)
   const magTop = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.12,0.07), gunDark);
   magTop.position.set(0,-0.11,0.06); g.add(magTop);
   const magBot = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.12,0.07), gunDark);
   magBot.position.set(0,-0.21,0.09); magBot.rotation.x = 0.25; g.add(magBot);
-  // Magazine base
+  // Magazine base (lighter)
   const magBase = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.02,0.075), gunMetal);
   magBase.position.set(0,-0.27,0.11); magBase.rotation.x = 0.25; g.add(magBase);
-  // Stock
+  // Stock (folding style, black)
   const stock = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.10,0.18), gunBlack);
   stock.position.set(0,-0.02,0.30); g.add(stock);
-  // Stock pad
+  // Stock pad (rubber, darker)
   const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.11,0.03), gunDark);
   stockPad.position.set(0,-0.02,0.39); g.add(stockPad);
-  // Grip
+  // Stock hinge (metal)
+  const stockHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.08,8), gunMetal);
+  stockHinge.rotation.z = Math.PI/2; stockHinge.position.set(0,-0.02,0.21); g.add(stockHinge);
+  // Grip (angled, dark)
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.14,0.08), gunDark);
   grip.position.set(0,-0.12,0.14); grip.rotation.x = 0.3; g.add(grip);
-  // Trigger guard
+  // Grip texture
+  for(let i=0;i<3;i++){
+    const gripLine = new THREE.Mesh(new THREE.BoxGeometry(0.057,0.003,0.075), gunMetal);
+    gripLine.position.set(0,-0.12,0.14); gripLine.rotation.x = 0.3;
+    gripLine.position.y += (i-1)*0.03; g.add(gripLine);
+  }
+  // Trigger guard (torus)
   const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.025,0.006,8,12), gunDark);
   triggerGuard.position.set(0,-0.07,0.04); triggerGuard.rotation.x = Math.PI/2; g.add(triggerGuard);
-  // Front sight
+  // Trigger (lighter)
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.01,0.025,0.01), gunLight);
+  trigger.position.set(0,-0.06,0.04); g.add(trigger);
+  // Front sight (post)
   const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.015,0.02,0.015), gunMetal);
   frontSight.position.set(0,0.08,-0.22); g.add(frontSight);
-  // Rear sight
+  // Rear sight (notch)
   const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.02), gunMetal);
   rearSight.position.set(0,0.08,0.15); g.add(rearSight);
-  // Side panels
+  // Side panels (textured)
   const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.08,0.30), gunDark);
   sideL.position.set(-0.058,0,0); g.add(sideL);
   const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.08,0.30), gunDark);
   sideR.position.set(0.058,0,0); g.add(sideR);
+  // Side panel vents
+  for(let i=0;i<4;i++){
+    const ventL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.01,0.02), gunMetal);
+    ventL.position.set(-0.059,0.02,-0.1+i*0.06); g.add(ventL);
+    const ventR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.01,0.02), gunMetal);
+    ventR.position.set(0.059,0.02,-0.1+i*0.06); g.add(ventR);
+  }
   return g;
 }
 
@@ -2901,6 +2934,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
