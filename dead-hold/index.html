@@ -47,18 +47,10 @@
   #crosshair.rd #redDot{display:block;width:5px;height:5px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 3px rgba(255,42,30,1),0 0 8px rgba(255,42,30,.9),0 0 14px rgba(255,42,30,.55);left:50%;top:50%;transform:translate(-50%,-50%)}
   #crosshair.rd::before,#crosshair.rd::after{display:none}
   #crosshair.rd i{display:none}
-  #sightHousing{display:none;position:absolute;top:50%;left:50%;width:18vh;height:18vh;transform:translate(-50%,-50%);pointer-events:none;border:1.2vh solid #0a0a0a;border-radius:50%;background:transparent}
-  #hud.rd-active.ads-active #sightHousing{display:block}
-  #rdBracketL,#rdBracketR{display:none;position:absolute;top:50%;width:14px;height:10px;background:#1a1a1a;border:1px solid #2a2a2a;transform:translateY(-50%)}
-  #rdBracketL{left:calc(50% - 34px);border-radius:2px 0 0 2px}
-  #rdBracketR{right:calc(50% - 34px);border-radius:0 2px 2px 0}
-  #hud.rd-active.ads-active #rdBracketL,#hud.rd-active.ads-active #rdBracketR{display:block}
-  /* Red dot sight (dot, housing, brackets) only visible during ADS */
-  #hud.rd-active:not(.ads-active) #redDot{display:none}
-  #hud.rd-active:not(.ads-active) #sightHousing{display:none}
-  #hud.rd-active:not(.ads-active) #rdBracketL,
-  #hud.rd-active:not(.ads-active) #rdBracketR{display:none}
-  /* During ADS with red dot: hide the crosshair lines, show only the ring + dot */
+  /* Red dot sight is now a 3D scope tube attached to the weapon (see scopeGroup).
+     No 2D ring / housing / brackets are drawn on the screen; everything outside
+     the tube stays fully transparent. */
+  /* During ADS with red dot: hide the crosshair lines (the 3D dot replaces them) */
   #hud.rd-active.ads-active #crosshair::before,
   #hud.rd-active.ads-active #crosshair::after,
   #hud.rd-active.ads-active #crosshair i{display:none}
@@ -223,10 +215,7 @@
     <div class="label">Weapons</div>
     <div class="slots" id="slots"></div>
   </div>
-  <div id="crosshair"><i></i><span id="redDot"></span></div>
-  <div id="sightHousing"></div>
-  <div id="rdBracketL"></div>
-  <div id="rdBracketR"></div>
+  <div id="crosshair"><i></i></div>
   <div id="hitmarker"></div>
   <div id="vignette"></div>
   <div id="bossBar" class="hidden"><div class="bossLabel">BOSS</div><div class="bossTrack"><div class="bossFill" id="bossFill"></div><span class="bossNum" id="bossNum">0</span></div></div>
@@ -1079,6 +1068,34 @@ camera.add(flashlight);
 camera.add(flashlight.target);
 scene.add(camera);
 
+/* ---- 3D red dot sight scope (tube) attached to the weapon viewmodel ----
+   Built ONCE and reused; toggled visible only when the active weapon has a
+   red dot AND the player is aiming down sights. Everything outside the tube
+   is fully transparent (no 2D vignette/overlay). */
+const scopeGroup = new THREE.Group();
+const scopeTubeMat = new THREE.MeshLambertMaterial({color:0x14161a, side:THREE.DoubleSide});
+const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.16,24,1,true), scopeTubeMat);
+scopeTube.rotation.x = Math.PI/2; // axis along Z (forward)
+scopeGroup.add(scopeTube);
+// Front ring (opening rim)
+const scopeRimMat = new THREE.MeshLambertMaterial({color:0x2a2e34});
+const scopeRim = new THREE.Mesh(new THREE.TorusGeometry(0.055,0.008,10,24), scopeRimMat);
+scopeRim.position.z = -0.08;
+scopeGroup.add(scopeRim);
+// Rear ring
+const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.055,0.008,10,24), scopeRimMat);
+scopeRim2.position.z = 0.08;
+scopeGroup.add(scopeRim2);
+// Red dot (glowing sprite seen through the front opening)
+const scopeDotMat = new THREE.SpriteMaterial({map:flashTex, color:0xff2a1e, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+const scopeDot = new THREE.Sprite(scopeDotMat);
+scopeDot.position.set(0,0,-0.08);
+scopeDot.scale.set(0.03,0.03,1);
+scopeGroup.add(scopeDot);
+scopeGroup.position.set(0,0.06,-0.30); // just above the weapon, in front of the eye
+scopeGroup.visible = false;
+gun.add(scopeGroup);
+
 // Attach gun to camera as viewmodel
 camera.add(gun);
 gun.position.set(0.35, -0.3, -0.6);
@@ -1713,6 +1730,9 @@ function lerpAds(dt){
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
   else if(adsBlend <= 0.5 && hud.classList.contains('ads-active')) hud.classList.remove('ads-active');
+  // Show the 3D scope tube only when this weapon has a red dot AND we are aiming
+  const wantScope = wbGet(activeWeapon).redDot && adsBlend > 0.5;
+  if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
 }
 function resetAds(){
   adsActive = false;
@@ -2601,6 +2621,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
