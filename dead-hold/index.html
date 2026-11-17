@@ -210,10 +210,104 @@ const HALF = 15;
 const colliders = []; // {minX,maxX,minZ,maxZ}
 function addCollider(x,z,hw,hd){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd}); }
 
-const concrete = new THREE.MeshLambertMaterial({color:0x9a9aaa});
-const concreteDark = new THREE.MeshLambertMaterial({color:0x7a7a8a});
-const wood = new THREE.MeshLambertMaterial({color:0xb89050});
-const metal = new THREE.MeshLambertMaterial({color:0x8a9098});
+/* ---- Canvas texture generators (256x256) ---- */
+function makeTex(draw, rx, ry){
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  draw(g, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(rx||1, ry||1);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function texWall(){
+  return makeTex(function(g,s){
+    g.fillStyle='#8a8a9a'; g.fillRect(0,0,s,s);
+    for(let i=0;i<40;i++){
+      g.fillStyle='rgba(106,106,122,'+(0.15+Math.random()*0.3)+')';
+      const r=8+Math.random()*30;
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill();
+    }
+    g.strokeStyle='rgba(90,90,106,0.5)'; g.lineWidth=1;
+    for(let i=0;i<14;i++){
+      g.beginPath();
+      let x=Math.random()*s, y=Math.random()*s; g.moveTo(x,y);
+      for(let j=0;j<6;j++){ x+=(Math.random()-0.5)*40; y+=(Math.random()-0.5)*40; g.lineTo(x,y); }
+      g.stroke();
+    }
+    g.strokeStyle='rgba(70,70,86,0.45)'; g.lineWidth=2;
+    for(let i=1;i<4;i++){ g.beginPath(); g.moveTo(i*64,0); g.lineTo(i*64,s); g.stroke(); g.beginPath(); g.moveTo(0,i*64); g.lineTo(s,i*64); g.stroke(); }
+  },2,2);
+}
+function texFloor(){
+  return makeTex(function(g,s){
+    g.fillStyle='#7a7a8a'; g.fillRect(0,0,s,s);
+    for(let i=0;i<50;i++){
+      g.fillStyle='rgba(90,90,106,'+(0.15+Math.random()*0.35)+')';
+      const r=4+Math.random()*22;
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill();
+    }
+    g.strokeStyle='rgba(106,106,122,0.5)'; g.lineWidth=1;
+    for(let i=0;i<24;i++){
+      const x=Math.random()*s, y=Math.random()*s, a=Math.random()*Math.PI;
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(a)*30, y+Math.sin(a)*30); g.stroke();
+    }
+    g.strokeStyle='rgba(60,60,74,0.4)'; g.lineWidth=1;
+    for(let i=0;i<=4;i++){ g.beginPath(); g.moveTo(i*64,0); g.lineTo(i*64,s); g.stroke(); g.beginPath(); g.moveTo(0,i*64); g.lineTo(s,i*64); g.stroke(); }
+  },2,2);
+}
+function texCrate(){
+  return makeTex(function(g,s){
+    g.fillStyle='#8a6a3a'; g.fillRect(0,0,s,s);
+    for(let i=0;i<6;i++){
+      const y=i*42;
+      g.fillStyle='rgba(106,74,42,0.9)'; g.fillRect(0,y,s,3);
+      g.fillStyle='rgba(138,106,58,'+(0.2+Math.random()*0.3)+')'; g.fillRect(0,y+3,s,39);
+    }
+    g.fillStyle='rgba(74,58,26,0.9)';
+    for(let i=0;i<40;i++){ g.beginPath(); g.arc(Math.random()*s,Math.random()*s,1.5,0,7); g.fill(); }
+    g.save(); g.translate(s/2,s/2); g.rotate(-0.05);
+    g.fillStyle='rgba(60,44,20,0.85)'; g.font='bold 34px monospace'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText('SUPPLIES',0,0);
+    g.restore();
+  },1,1);
+}
+function texBarrel(){
+  return makeTex(function(g,s){
+    g.fillStyle='#6a5a4a'; g.fillRect(0,0,s,s);
+    for(let i=0;i<26;i++){
+      g.fillStyle='rgba(138,74,42,'+(0.25+Math.random()*0.4)+')';
+      const r=6+Math.random()*20;
+      g.beginPath(); g.arc(Math.random()*s,Math.random()*s,r,0,7); g.fill();
+    }
+    g.fillStyle='#aaaa2a'; g.fillRect(0,s*0.42,s,s*0.16);
+    g.fillStyle='rgba(40,40,40,0.5)';
+    for(let i=0;i<10;i++){ g.fillRect(0,s*0.42+i*2,s,1); }
+    g.fillStyle='rgba(74,74,74,0.9)';
+    for(let i=0;i<30;i++){ g.beginPath(); g.arc(Math.random()*s,Math.random()*s,1.5,0,7); g.fill(); }
+  },1,1);
+}
+function texCeiling(){
+  return makeTex(function(g,s){
+    g.fillStyle='#4a4d51'; g.fillRect(0,0,s,s);
+    g.strokeStyle='rgba(58,61,65,0.9)'; g.lineWidth=2;
+    for(let i=0;i<=4;i++){ g.beginPath(); g.moveTo(i*64,0); g.lineTo(i*64,s); g.stroke(); g.beginPath(); g.moveTo(0,i*64); g.lineTo(s,i*64); g.stroke(); }
+    g.fillStyle='rgba(40,43,47,0.9)';
+    for(let i=0;i<12;i++){
+      const x=Math.random()*s, y=Math.random()*s;
+      g.fillRect(x,y,18,10);
+      g.strokeStyle='rgba(58,61,65,0.9)'; g.lineWidth=1;
+      for(let j=1;j<4;j++){ g.beginPath(); g.moveTo(x,y+j*2.5); g.lineTo(x+18,y+j*2.5); g.stroke(); }
+    }
+  },2,2);
+}
+
+const concrete = new THREE.MeshLambertMaterial({map:texWall()});
+const concreteDark = new THREE.MeshLambertMaterial({map:texFloor()});
+const wood = new THREE.MeshLambertMaterial({map:texCrate()});
+const metal = new THREE.MeshLambertMaterial({map:texBarrel()});
+const ceilMat = new THREE.MeshLambertMaterial({map:texCeiling()});
 
 function box(w,h,d,mat,x,y,z){
   const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
@@ -224,7 +318,7 @@ function box(w,h,d,mat,x,y,z){
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), concreteDark);
 floor.rotation.x = -Math.PI/2; scene.add(floor);
 // Ceiling
-const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), new THREE.MeshLambertMaterial({color:0x5a6068}));
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), ceilMat);
 ceil.rotation.x = Math.PI/2; ceil.position.y = 4.2; scene.add(ceil);
 
 // Walls (with door gaps)
@@ -279,7 +373,7 @@ debrisDefs.forEach(d=>{
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15);
 });
 // Broken barrels (cylinders)
-const barrelMat = new THREE.MeshLambertMaterial({color:0x7a6a4a});
+const barrelMat = new THREE.MeshLambertMaterial({map:texBarrel()});
 const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
 [[-7,-3],[3,-6.5],[7,5.5]].forEach(p=>{
   const m = new THREE.Mesh(barrelGeo, barrelMat);
@@ -333,11 +427,12 @@ makeLight(6,4,0xffd27a,7.0);
 
 /* ============================ WEAPON ============================ */
 const gun = new THREE.Group();
-const gunMetal = new THREE.MeshLambertMaterial({color:0x3a3f45});
-const gunDark = new THREE.MeshLambertMaterial({color:0x1a1d20});
-const gunWood = new THREE.MeshLambertMaterial({color:0x5a3a1a});
-const gunOlive = new THREE.MeshLambertMaterial({color:0x3a4530});
-const gunBlack = new THREE.MeshLambertMaterial({color:0x15181b});
+const gunMetal = new THREE.MeshLambertMaterial({color:0x3a3a3a});
+const gunDark = new THREE.MeshLambertMaterial({color:0x2a2a2a});
+const gunWood = new THREE.MeshLambertMaterial({color:0x6a4a2a});
+const gunOlive = new THREE.MeshLambertMaterial({color:0x5a3a1a});
+const gunBlack = new THREE.MeshLambertMaterial({color:0x2a2a2a});
+const gunLight = new THREE.MeshLambertMaterial({color:0x4a4a4a});
 const chalkMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false});
 
 /* ---- Chalk outline pickup ---- */
@@ -386,34 +481,34 @@ function buildPistol(){
   const slide = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.07,0.34), gunMetal); slide.position.set(0,0.04,0); g.add(slide);
   // Frame (bottom)
   const frame = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.05,0.30), gunDark); frame.position.set(0,-0.01,0.01); g.add(frame);
-  // Barrel
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.14,8), gunMetal);
+  // Barrel (lighter gray)
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.16,10), gunLight);
   barrel.rotation.x = Math.PI/2; barrel.position.set(0,0.04,-0.20); g.add(barrel);
   // Muzzle
-  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.02,8), gunDark);
-  muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.04,-0.27); g.add(muzzle);
-  // Grip
-  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.065,0.16,0.09), gunDark);
-  grip.position.set(0,-0.13,0.10); grip.rotation.x = 0.35; g.add(grip);
-  // Cylinder magazine (visible at base of grip)
-  const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.032,0.05,12), gunMetal);
-  mag.position.set(0,-0.20,0.12); g.add(mag);
-  // Trigger guard
-  const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.028,0.007,8,12), gunDark);
+  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.02,10), gunDark);
+  muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.04,-0.28); g.add(muzzle);
+  // Grip (angled ~15 deg)
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.065,0.17,0.09), gunDark);
+  grip.position.set(0,-0.13,0.10); grip.rotation.x = 0.26; g.add(grip);
+  // Magazine (cylinder out bottom of grip)
+  const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.06,12), gunLight);
+  mag.position.set(0,-0.21,0.13); g.add(mag);
+  // Trigger guard (torus)
+  const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.03,0.007,8,14), gunDark);
   triggerGuard.position.set(0,-0.065,0.02); triggerGuard.rotation.x = Math.PI/2; g.add(triggerGuard);
   // Trigger
-  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.03,0.012), gunMetal);
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.03,0.012), gunLight);
   trigger.position.set(0,-0.055,0.02); g.add(trigger);
   // Hammer
   const hammer = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.035,0.02), gunMetal);
   hammer.position.set(0,0.015,0.16); g.add(hammer);
   // Front sight
-  const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.018,0.012), gunMetal);
+  const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.02,0.012), gunLight);
   frontSight.position.set(0,0.085,-0.16); g.add(frontSight);
   // Rear sight
-  const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.015), gunMetal);
+  const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.015,0.015), gunLight);
   rearSight.position.set(0,0.085,0.12); g.add(rearSight);
-  // Slide serrations (decorative lines)
+  // Slide serrations
   for(let i=0;i<4;i++){
     const serr = new THREE.Mesh(new THREE.BoxGeometry(0.092,0.005,0.008), gunDark);
     serr.position.set(0,0.04,0.06+i*0.02); g.add(serr);
@@ -1817,6 +1912,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
