@@ -373,7 +373,7 @@ function texFloor(){
     }
     g.strokeStyle='rgba(60,60,74,0.4)'; g.lineWidth=1;
     for(let i=0;i<=4;i++){ g.beginPath(); g.moveTo(i*64,0); g.lineTo(i*64,s); g.stroke(); g.beginPath(); g.moveTo(0,i*64); g.lineTo(s,i*64); g.stroke(); }
-  },2,2);
+  },16,16);
 }
 function texCrate(){
   // sand bunker texture (light tan/yellow)
@@ -454,9 +454,14 @@ function box(w,h,d,mat,x,y,z){
   m.position.set(x,y,z); scene.add(m); return m;
 }
 
-// Floor
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), concreteDark);
+// Floor — sized to extend well beyond the outer walls (±60) so the grass
+// covers the ENTIRE playable area and beyond with no gaps or bare ground.
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(320,320), concreteDark);
 floor.rotation.x = -Math.PI/2; scene.add(floor);
+// Grass ring around the perimeter: a slightly lower, larger ground plane so the
+// floor edge is never visible even when the camera looks down along the walls.
+const grassRing = new THREE.Mesh(new THREE.PlaneGeometry(420,420), concreteDark);
+grassRing.rotation.x = -Math.PI/2; grassRing.position.y = -0.02; scene.add(grassRing);
 // Sky (inverted plane above)
 const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), ceilMat);
 ceil.rotation.x = -Math.PI/2; ceil.position.y = 25; scene.add(ceil);
@@ -2582,6 +2587,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
