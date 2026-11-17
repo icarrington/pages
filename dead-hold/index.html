@@ -1697,7 +1697,7 @@ function isSprinting(){
 }
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
-let sprintBobX = 0, sprintBobY = 0, sprintLean = 0;
+let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
 const adsPos = new THREE.Vector3(0,-0.16,-0.42);
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
@@ -1714,7 +1714,8 @@ function lerpAds(dt){
   _tmpV.copy(hipPos).lerp(adsPos, b);
   gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
-  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintLean, 0, 0);
+  // Sprint pose is weapon-specific: rifle points sideways (Z lean), pistol tilts up (X tilt)
+  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintTilt, 0, sprintLean);
   // Toggle ADS class for red dot visibility
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
@@ -2376,9 +2377,10 @@ function loop(){
   moving = move.lengthSq()>0;
   if(moving) move.normalize();
 
-  // No sprint: constant walk speed. Stamina stays full (no drain).
+  // Base walk speed; sprint (Shift) boosts it. Stamina stays full (no drain).
   let speed = 4.2;
   if(adsActive) speed *= ADS_SPEED;
+  if(isSprinting()) speed *= SPRINT_MULT;
 
   const targetVel = move.multiplyScalar(speed);
   player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
@@ -2416,9 +2418,21 @@ function loop(){
     const swayBlend = 1 - Math.pow(0.001, dt); // smooth lerp factor
     swayX = Math.sin(state.seconds * 10) * 0.05 * swayTarget; // left-right rock
     swayY = 0; // no vertical bob
-    // keep sprint vars at rest (sprint removed)
-    sprintBobX = 0; sprintBobY = 0; sprintLean = 0;
   }
+
+  // Sprint pose: weapon-specific. Rifle rotates sideways (Z), pistol tilts up (X).
+  // Both ease in/out with the sprintBlend value so they return smoothly.
+  if(activeWeapon === 'rifle'){
+    sprintLean = sprintBlend * 1.15;   // point the rifle to the side
+    sprintTilt = 0;
+  } else if(activeWeapon === 'pistol'){
+    sprintLean = 0;
+    sprintTilt = sprintBlend * 0.85;   // tilt the pistol up over the shoulder
+  } else {
+    sprintLean = sprintBlend * 0.5;    // other weapons: mild sideways lean
+    sprintTilt = 0;
+  }
+  sprintBobX = 0; sprintBobY = 0;
 
   // Recoil: kick back (z +0.05) and up (y +0.03)
   kickZ = state.recoil * 0.05;
@@ -2589,6 +2603,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
