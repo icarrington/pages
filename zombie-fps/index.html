@@ -160,7 +160,9 @@
       <h1 class="title">ZOMBIE <span class="r">ARENA</span><span class="blip"></span></h1>
       <div class="sub">HOLD THE COURTYARD · SURVIVE THE WAVES</div>
       <ul class="controls">
-        <li><span class="key">W A S D</span> Move</li>
+        <li><span class="key">S / ↓</span> Move Forward</li>
+        <li><span class="key">W / ↑</span> Move Backward</li>
+        <li><span class="key">A / D</span> Strafe</li>
         <li><span class="key">MOUSE</span> Aim</li>
         <li><span class="key">CLICK</span> Fire</li>
         <li><span class="key">R</span> Reload</li>
@@ -475,9 +477,12 @@ function update(dt){
   // camera orientation
   camera.rotation.order='YXZ';
   camera.rotation.y=S.yaw; camera.rotation.x=S.pitch;
-  // movement
+  // movement (W/Up = backward, S/Down = forward)
   let mx=0,mz=0;
-  if(S.keys.w)mz-=1; if(S.keys.s)mz+=1; if(S.keys.a)mx-=1; if(S.keys.d)mx+=1;
+  if(S.keys.w||S.keys.arrowup)mz+=1;
+  if(S.keys.s||S.keys.arrowdown)mz-=1;
+  if(S.keys.a||S.keys.arrowleft)mx-=1;
+  if(S.keys.d||S.keys.arrowright)mx+=1;
   S.moving=(mx||mz);
   // sprint: hold SHIFT while moving, if stamina allows
   const wantSprint=S.keys.shift && S.moving;
