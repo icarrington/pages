@@ -1605,7 +1605,7 @@ let fireHeld = false;
 let touchWeaponList = ['pistol','smg','shotgun','rifle'];
 
 function buildTouchSlots(){
-  const list = touchWeaponList.slice();
+  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
   tSlots.innerHTML = list.map((w,i)=>'<div class="tslot'+(w===activeWeapon?' active':'')+'" data-w="'+w+'">'+(i+1)+'</div>').join('');
   tSlots.querySelectorAll('.tslot').forEach(el=>{
@@ -1788,14 +1788,29 @@ function switchWeapon(w){
   updateRedDot();
   updateHUD();
 }
-function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle'; }
-function fireRate(){ return activeWeapon==='smg' ? 12 : 8; }
+function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || activeWeapon==='uzi' || activeWeapon==='m4a1' || activeWeapon==='minigun'; }
+function fireRate(){
+  if(activeWeapon==='smg') return 12;
+  if(activeWeapon==='rifle') return 8;
+  if(activeWeapon==='uzi') return 18;
+  if(activeWeapon==='m4a1') return 10;
+  if(activeWeapon==='minigun') return 25;
+  return 8;
+}
 function cycleWeapon(){
-  const list = ['pistol','smg','shotgun','rifle'];
+  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
   let i = list.indexOf(activeWeapon);
   switchWeapon(list[(i+1)%list.length]);
 }
+document.addEventListener('keydown', e=>{
+  const k = e.key;
+  if(k>='1'&&k<='9'){
+    const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+    const idx = parseInt(k)-1;
+    if(idx < list.length) switchWeapon(list[idx]);
+  }
+});
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
 canvas.addEventListener('mousedown', e=>{
@@ -1832,7 +1847,7 @@ document.addEventListener('mousemove', e=>{
 });
 document.addEventListener('wheel', e=>{
   if(!state.running) return;
-  const list = ['pistol','smg','shotgun','rifle'];
+  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
   let i = list.indexOf(activeWeapon);
   i = (i + (e.deltaY>0?1:-1) + list.length) % list.length;
@@ -1919,9 +1934,14 @@ function updateWeaponSlots(){
     {key:'1', name:'Pistol', active:activeWeapon==='pistol'},
     {key:'2', name:'SMG', active:activeWeapon==='smg'},
     {key:'3', name:'Shotgun', active:activeWeapon==='shotgun'},
-    {key:'4', name:'Rifle', active:activeWeapon==='rifle'}
+    {key:'4', name:'Rifle', active:activeWeapon==='rifle'},
+    {key:'5', name:'Uzi', active:activeWeapon==='uzi'},
+    {key:'6', name:'M4A1', active:activeWeapon==='m4a1'},
+    {key:'7', name:'AWP', active:activeWeapon==='awp'},
+    {key:'8', name:'Deagle', active:activeWeapon==='deagle'},
+    {key:'9', name:'Minigun', active:activeWeapon==='minigun'}
   ];
-  if(state.hasDoubleShotgun) weapons.push({key:'5', name:'DB Shotgun', active:activeWeapon==='doubleShotgun'});
+  if(state.hasDoubleShotgun) weapons.push({key:'0', name:'DB Shotgun', active:activeWeapon==='doubleShotgun'});
   slotsEl.innerHTML = weapons.map(w=>'<div class="slot'+(w.active?' active':'')+'"><span class="num">'+w.key+'</span>'+w.name+'</div>').join('');
   if(isTouch) buildTouchSlots();
 }
@@ -2072,14 +2092,27 @@ function shoot(){
   for(const z of zombies) if(z.alive){ targets.push(z.group); }
   if(state.boss && state.boss.alive) targets.push(state.boss.group);
   const hits = ray.intersectObjects(targets, true);
+  // Weapon-specific damage
+  const dmgTable = {
+    pistol: {body:15, head:30},
+    smg: {body:12, head:24},
+    shotgun: {body:20, head:40},
+    rifle: {body:25, head:50},
+    uzi: {body:8, head:16},
+    m4a1: {body:20, head:40},
+    awp: {body:100, head:200},
+    deagle: {body:40, head:80},
+    minigun: {body:6, head:12}
+  };
+  const dmgSpec = dmgTable[activeWeapon] || {body:15, head:30};
   for(const hit of hits){
     const z = findZombie(hit.object);
     if(z && z.alive){
       state.shotsHit++;
       const isHead = (hit.object === z.head);
       showHitmarker(isHead);
-      let dmg = isHead ? 30 : 15;
-      if(z.boss) dmg = isHead ? 30 : 15;
+      let dmg = isHead ? dmgSpec.head : dmgSpec.body;
+      if(z.boss) dmg = Math.ceil(dmg * 0.5);
       z.hp -= dmg;
       z.flash = 0.08;
       state.points += 10;
@@ -2693,7 +2726,7 @@ function loop(){
   // Sprint pose per weapon:
   //  - RIFLE / SMG / SHOTGUN: yaw around Y (barrel sweeps sideways across the body).
   //  - PISTOL: no yaw — instead it tilts UP (barrel faces the sky).
-  const _sprintIsPistol = (activeWeapon === 'pistol');
+  const _sprintIsPistol = (activeWeapon === 'pistol' || activeWeapon === 'deagle');
   sprintLean = 0;   // no Z roll
   sprintTilt = _sprintIsPistol ? sprintBlend * 1.15 : 0; // pistol: pitch up; others: none
   sprintYaw = _sprintIsPistol ? 0 : sprintBlend * 1.15;  // others: yaw sideways; pistol: none
@@ -2868,6 +2901,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
