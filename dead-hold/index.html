@@ -892,7 +892,8 @@ let lastShotTime = 0;
 function shoot(){
   if(state.reloading) return;
   const nowMs = performance.now();
-  if(nowMs - lastShotTime < 300) return;
+  const interval = isAuto() ? 1000/fireRate() : 300;
+  if(nowMs - lastShotTime < interval) return;
   lastShotTime = nowMs;
 
   if(mags[activeWeapon] <= 0){
@@ -900,11 +901,6 @@ function shoot(){
     startReload();
     updateHUD();
     return;
-  }
-  if(isAuto()){
-    const nowMs2 = performance.now();
-    if(nowMs2 - lastShotTime < 1000/fireRate()) return;
-    lastShotTime = nowMs2;
   }
 
   if(state.hasDoubleShotgun && activeWeapon === 'doubleShotgun'){
@@ -1470,6 +1466,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
