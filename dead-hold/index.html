@@ -198,8 +198,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a0f);
-scene.fog = new THREE.Fog(0x0a0a0f, 15, 60);
+scene.background = new THREE.Color(0x1a1a2a);
+scene.fog = new THREE.Fog(0x1a1a2a, 15, 35);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 120);
 camera.rotation.order = 'YXZ';
@@ -210,9 +210,9 @@ const HALF = 15;
 const colliders = []; // {minX,maxX,minZ,maxZ}
 function addCollider(x,z,hw,hd){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd}); }
 
-const concrete = new THREE.MeshLambertMaterial({color:0x3a3a3a});
-const concreteDark = new THREE.MeshLambertMaterial({color:0x2a2a2a});
-const wood = new THREE.MeshLambertMaterial({color:0x6b4a2a});
+const concrete = new THREE.MeshLambertMaterial({color:0x5a5a5a});
+const concreteDark = new THREE.MeshLambertMaterial({color:0x4a4a4a});
+const wood = new THREE.MeshLambertMaterial({color:0x8a6a3a});
 const metal = new THREE.MeshLambertMaterial({color:0x4a5058});
 
 function box(w,h,d,mat,x,y,z){
@@ -298,12 +298,12 @@ const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12
 });
 
 /* ============================ LIGHTS ============================ */
-scene.add(new THREE.AmbientLight(0x3a4550, 0.8));
-const hemi = new THREE.HemisphereLight(0x2a333c, 0x0a0c0e, 0.6); scene.add(hemi);
+scene.add(new THREE.AmbientLight(0x3a4550, 1.2));
+const hemi = new THREE.HemisphereLight(0x2a333c, 0x0a0c0e, 0.8); scene.add(hemi);
 
 const flickerLights = [];
 function makeLight(x,z,color,intensity){
-  const l = new THREE.PointLight(color, intensity, 22, 2);
+  const l = new THREE.PointLight(color, intensity, 30, 2);
   l.castShadow = false;
   l.position.set(x,3.6,z); scene.add(l);
   // small bulb with emissive glow
@@ -312,8 +312,8 @@ function makeLight(x,z,color,intensity){
   flickerLights.push({light:l, base:intensity, phase:Math.random()*10, next:0});
   return l;
 }
-makeLight(-6,-6,0xffb36b,2.2);
-makeLight(6,4,0xffd27a,2.0);
+makeLight(-6,-6,0xffb36b,3.5);
+makeLight(6,4,0xffd27a,3.5);
 
 /* ============================ WEAPON ============================ */
 const gun = new THREE.Group();
@@ -1801,6 +1801,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
