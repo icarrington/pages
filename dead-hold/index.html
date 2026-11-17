@@ -58,6 +58,13 @@
   #waveBanner{position:absolute;top:26%;left:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:clamp(28px,7vw,64px);font-weight:800;letter-spacing:.18em;color:var(--accent);text-shadow:0 0 24px rgba(200,255,77,.5);opacity:0;pointer-events:none}
   #waveBanner.show{animation:banner 2.2s ease forwards}
   @keyframes banner{0%{opacity:0;transform:translate(-50%,-40%) scale(.9)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1.05)}}
+  #waveBanner.boss{color:var(--danger);text-shadow:0 0 30px rgba(255,77,77,.7)}
+  #bossBar{position:absolute;top:16px;left:50%;transform:translateX(-50%);width:min(560px,80vw);text-align:center;pointer-events:none;z-index:6}
+  #bossBar.hidden{display:none}
+  .bossLabel{font-family:var(--mono);font-size:12px;letter-spacing:.35em;color:var(--danger);text-shadow:0 0 12px rgba(255,77,77,.6);margin-bottom:5px}
+  .bossTrack{position:relative;height:16px;background:rgba(0,0,0,.6);border:1px solid #5a1a1a;overflow:hidden}
+  .bossTrack .bossFill{position:absolute;inset:0;transform-origin:left;background:linear-gradient(90deg,#7a1010,#ff3b2f);transition:transform .08s linear}
+  .bossTrack .bossNum{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:#fff;mix-blend-mode:difference}
   #weaponName{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dim);margin-top:6px;text-transform:uppercase}
   #weaponPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap}
   #weaponPrompt.show{opacity:1}
@@ -126,6 +133,7 @@
   <div id="crosshair"><i></i></div>
   <div id="hitmarker"></div>
   <div id="vignette"></div>
+  <div id="bossBar" class="hidden"><div class="bossLabel">BOSS</div><div class="bossTrack"><div class="bossFill" id="bossFill"></div><span class="bossNum" id="bossNum">0</span></div></div>
   <div id="hint">CLICK TO RESUME</div>
   <div id="weaponPrompt"></div>
   <div id="waveBanner"></div>
@@ -613,6 +621,42 @@ function makeZombie(){
   return {group:g, body, head, aL, aR, lL, lR, bodyMat, headMat, armMat, eyeMat};
 }
 
+/* ============================ BOSS ============================ */
+const bGeoBody = new THREE.BoxGeometry(1.1,1.5,1.0);
+const bGeoHead = new THREE.BoxGeometry(0.5,0.5,0.5);
+const bGeoArm  = new THREE.BoxGeometry(0.28,1.2,0.28);
+const bGeoLeg  = new THREE.BoxGeometry(0.34,1.1,0.34);
+const bGeoEye  = new THREE.BoxGeometry(0.11,0.11,0.11);
+const bGeoJag  = new THREE.BoxGeometry(0.2,0.2,0.2);
+
+const bBodyMat = new THREE.MeshStandardMaterial({color:0x2a2c2e, roughness:0.95, metalness:0.05});
+const bHeadMat = new THREE.MeshStandardMaterial({color:0x33363a, roughness:0.9, metalness:0.05});
+const bArmMat  = new THREE.MeshStandardMaterial({color:0x24262a, roughness:0.95, metalness:0.05});
+const bEyeMat  = new THREE.MeshBasicMaterial({color:0xff2a1e});
+const bOutlineMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:0.15, side:THREE.BackSide, depthWrite:false});
+
+function makeBoss(){
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(bGeoBody, bBodyMat); body.position.y=0.75; body.castShadow=true; g.add(body);
+  const head = new THREE.Mesh(bGeoHead, bHeadMat); head.position.y=1.75; head.castShadow=true; g.add(head);
+  const e1 = new THREE.Mesh(bGeoEye, bEyeMat); e1.position.set(-0.13,1.8,0.26); g.add(e1);
+  const e2 = new THREE.Mesh(bGeoEye, bEyeMat); e2.position.set(0.13,1.8,0.26); g.add(e2);
+  // normal left arm
+  const aL = new THREE.Mesh(bGeoArm, bArmMat); aL.position.set(-0.7,1.0,0.15); aL.rotation.x=-0.4; g.add(aL);
+  // massive jagged right arm
+  const aR = new THREE.Mesh(bGeoArm, bArmMat); aR.position.set(0.7,1.0,0.15); aR.rotation.x=-0.4; g.add(aR);
+  for(let i=0;i<4;i++){
+    const jag = new THREE.Mesh(bGeoJag, bArmMat);
+    jag.position.set(0.7, 1.3 - i*0.28, 0.15 + i*0.05);
+    jag.rotation.set(0.3, 0, 0.4); g.add(jag);
+  }
+  const lL = new THREE.Mesh(bGeoLeg, bArmMat); lL.position.set(-0.3,0.55,0); g.add(lL);
+  const lR = new THREE.Mesh(bGeoLeg, bArmMat); lR.position.set(0.3,0.55,0); g.add(lR);
+  // translucent red pulsing outline shell
+  const outline = new THREE.Mesh(bGeoBody, bOutlineMat); outline.position.y=0.75; outline.scale.setScalar(1.12); g.add(outline);
+  return {group:g, body, head, aL, aR, lL, lR, bodyMat:bBodyMat, headMat:bHeadMat, armMat:bArmMat, eyeMat:bEyeMat, outline, outlineMat:bOutlineMat};
+}
+
 /* ============================ GAME STATE ============================ */
 const MAXZ = 22;
 const zombies = [];
@@ -638,7 +682,11 @@ const state = {
   recoil:0, muzzleT:0,
   groanTimer:0,
   damageFlash:0,
-  waveGap:0
+  waveGap:0,
+  boss:null,
+  bossWarnT:0,
+  bossSpawnT:0,
+  bossPending:false
 };
 
 /* finite magazine sizes; reserve is infinite for every weapon */
@@ -972,6 +1020,7 @@ function shoot(){
     const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
     const targets = [];
     for(const z of zombies) if(z.alive){ targets.push(z.group); }
+    if(state.boss && state.boss.alive) targets.push(state.boss.group);
     let anyHit = false;
     for(let p=0;p<20;p++){
       const spread = 0.04;
@@ -991,7 +1040,8 @@ function shoot(){
           anyHit = true;
           const isHead = (hit.object === z.head);
           showHitmarker(isHead);
-          const dmg = isHead ? 60 : 60;
+          let dmg = isHead ? 60 : 60;
+          if(z.boss) dmg = isHead ? 60 : 30;
           z.hp -= dmg;
           z.flash = 0.08;
           state.points += 10;
@@ -1024,7 +1074,8 @@ function shoot(){
       state.shotsHit++;
       const isHead = (hit.object === z.head);
       showHitmarker(isHead);
-      const dmg = isHead ? 30 : 15;
+      let dmg = isHead ? 30 : 15;
+      if(z.boss) dmg = isHead ? 30 : 15;
       z.hp -= dmg;
       z.flash = 0.08;
       state.points += 10;
@@ -1047,6 +1098,7 @@ function findZombie(obj){
   let o = obj;
   while(o){
     for(const z of zombies){ if(z.group === o) return z; }
+    if(state.boss && state.boss.group === o) return state.boss;
     o = o.parent;
   }
   return null;
@@ -1105,8 +1157,14 @@ function killZombie(z, isHead){
   state.kills++;
   state.points += 60;
   if(isHead){ state.headshots++; state.points += 100; }
-  spawnParticleBurst(z.group.position);
-  playHit();
+  if(z.boss){
+    state.points += 500 + 25*(state.wave/5);
+    spawnParticleBurst(z.group.position, true);
+    playThud();
+  } else {
+    spawnParticleBurst(z.group.position);
+    playHit();
+  }
   updateHUD();
 }
 
@@ -1129,11 +1187,18 @@ function startWave(n){
     });
   }
   showBanner('WAVE '+n);
+  if(n % 5 === 0){
+    state.bossPending = true;
+    state.bossWarnT = 2.0;
+    state.bossSpawnT = 1.0;
+    showBanner('⚠ BOSS INCOMING', true);
+  }
   updateHUD();
 }
-function showBanner(text){
+function showBanner(text, boss){
   const el = document.getElementById('waveBanner');
   el.textContent = text;
+  el.classList.toggle('boss', !!boss);
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
 }
 
@@ -1157,21 +1222,54 @@ function removeZombie(z){
   scene.remove(z.group);
 }
 
+/* ---- boss spawn / removal ---- */
+function spawnBoss(wave){
+  const b = makeBoss();
+  const hp = 150 + 100*(wave/5);
+  b.group.position.set(0, 0, -13);
+  b.hp = hp; b.maxHp = hp;
+  b.alive = true; b.dying = false; b.deathT = 0;
+  b.flash = 0; b.attackCd = 0; b.windup = 0; b.bobPhase = 0;
+  b.speed = 0.7;
+  scene.add(b.group);
+  state.boss = b;
+  updateBossBar(true);
+}
+function removeBoss(){
+  const b = state.boss;
+  if(!b) return;
+  scene.remove(b.group);
+  state.boss = null;
+  updateBossBar(false);
+}
+function updateBossBar(show){
+  const bar = document.getElementById('bossBar');
+  if(!show){ bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  const b = state.boss;
+  if(!b) return;
+  const p = Math.max(0, b.hp / b.maxHp);
+  document.getElementById('bossFill').style.transform = 'scaleX(' + p + ')';
+  setNum('bossNum', Math.max(0, Math.round(b.hp)));
+}
+
 /* ---- death particle burst (pooled) ---- */
 const P_MAX = 40;
 const pGeo = new THREE.BoxGeometry(0.08,0.08,0.08);
 const pMat = new THREE.MeshBasicMaterial({color:0x6b8a4a});
+const pMatRed = new THREE.MeshBasicMaterial({color:0xff3b2f});
 const particles = [];
 for(let i=0;i<P_MAX;i++){
   const m = new THREE.Mesh(pGeo, pMat);
   m.visible = false; scene.add(m);
   particles.push({m, vel:new THREE.Vector3(), life:0});
 }
-function spawnParticleBurst(pos){
+function spawnParticleBurst(pos, red){
   let n = 0;
   for(const p of particles){
     if(p.life>0) continue;
     p.m.visible = true;
+    p.m.material = red ? pMatRed : pMat;
     p.m.position.copy(pos); p.m.position.y += 0.8;
     p.vel.set((Math.random()-0.5)*4, Math.random()*4+1, (Math.random()-0.5)*4);
     p.life = 0.5 + Math.random()*0.3;
@@ -1189,6 +1287,87 @@ function updateParticles(dt){
   }
 }
 
+/* ---- boss update ---- */
+function updateBoss(dt){
+  const b = state.boss;
+  if(!b) return;
+  if(b.dying){
+    b.deathT += dt;
+    const p = Math.min(1, b.deathT/0.9);
+    b.group.rotation.x = p*Math.PI/2;
+    b.group.position.y = -p*0.8;
+    b.group.scale.setScalar(1 - p*0.15);
+    if(p>=1) removeBoss();
+    return;
+  }
+  if(!b.alive) return;
+  // pulsing outline
+  b.outlineMat.opacity = 0.12 + 0.10*Math.sin(state.seconds*4);
+  // flash
+  if(b.flash>0){
+    b.flash -= dt;
+    const f = Math.max(0, b.flash/0.08);
+    b.bodyMat.emissive.setRGB(f, f*0.15, f*0.1);
+    b.headMat.emissive.setRGB(f, f*0.15, f*0.1);
+  } else {
+    b.bodyMat.emissive.setRGB(0,0,0);
+    b.headMat.emissive.setRGB(0,0,0);
+  }
+  const dx = player.pos.x - b.group.position.x;
+  const dz = player.pos.z - b.group.position.z;
+  const dist = Math.hypot(dx,dz);
+  b.group.rotation.y = Math.atan2(dx,dz);
+  if(b.windup>0){
+    // wind-up: raise arm, then strike
+    b.windup -= dt;
+    const wp = 1 - Math.max(0,b.windup)/0.6;
+    b.aR.rotation.x = -0.4 - wp*1.6;
+    if(b.windup<=0){
+      if(dist < 3.2){ damagePlayer(30); }
+      b.attackCd = 1.2;
+    }
+  } else {
+    b.aR.rotation.x = -0.4 + Math.sin(b.bobPhase)*0.15;
+    b.aL.rotation.x = -0.4 - Math.sin(b.bobPhase)*0.15;
+    if(dist > 2.5){
+      const step = b.speed*dt;
+      let nx = b.group.position.x + (dx/dist)*step;
+      let nz = b.group.position.z + (dz/dist)*step;
+      if(!zombieBlocked(nx,nz)){ b.group.position.x=nx; b.group.position.z=nz; }
+      else {
+        if(!zombieBlocked(nx, b.group.position.z)) b.group.position.x=nx;
+        else if(!zombieBlocked(b.group.position.x, nz)) b.group.position.z=nz;
+      }
+      b.bobPhase += dt*3;
+      b.group.position.y = Math.abs(Math.sin(b.bobPhase))*0.08;
+    } else {
+      b.attackCd -= dt;
+      if(b.attackCd<=0){
+        b.windup = 0.6;
+        b.attackCd = 1.2;
+      }
+    }
+  }
+  updateBossBar(true);
+}
+
+function playThud(){
+  if(!audioCtx) return;
+  const t=now();
+  const o=audioCtx.createOscillator(); o.type='sine';
+  o.frequency.setValueAtTime(90,t); o.frequency.exponentialRampToValueAtTime(28,t+0.5);
+  const g=audioCtx.createGain(); g.gain.setValueAtTime(0.6,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.6);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.65);
+  const dur=0.4;
+  const buf=audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate*dur), audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2); }
+  const src=audioCtx.createBufferSource(); src.buffer=buf;
+  const filt=audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=500;
+  const g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.4,t); g2.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  src.connect(filt).connect(g2).connect(audioCtx.destination); src.start(t); src.stop(t+dur);
+}
+
 /* ============================ DAMAGE / REGEN ============================ */
 function damagePlayer(amount){
   state.health -= amount;
@@ -1204,6 +1383,7 @@ function resetGame(){
   // clear zombies
   for(const z of zombies) scene.remove(z.group);
   zombies.length = 0;
+  if(state.boss) scene.remove(state.boss.group);
   spawnQueue.length = 0;
   state.health=100; state.stamina=100;
   state.wave=1; state.points=0; state.kills=0; state.headshots=0;
@@ -1213,6 +1393,7 @@ function resetGame(){
   state.recoil=0; state.muzzleT=0;
   state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
   state.hasDoubleShotgun=false;
+  state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
   camera.position.set(0,1.7,0);
@@ -1239,6 +1420,7 @@ function startGame(){
 function endGame(){
   state.running=false; state.over=true;
   resetAds();
+  if(state.boss){ scene.remove(state.boss.group); state.boss=null; }
   if(document.pointerLockElement===canvas) document.exitPointerLock();
   const secs = Math.floor(state.seconds);
   const acc = state.shotsFired>0 ? Math.round(state.shotsHit/state.shotsFired*100) : 0;
@@ -1248,6 +1430,7 @@ function endGame(){
   document.getElementById('oHead').textContent = state.headshots;
   document.getElementById('oTime').textContent = secs+'s';
   document.getElementById('oAcc').textContent = acc+'%';
+  document.getElementById('bossBar').classList.add('hidden');
   document.getElementById('overScreen').classList.remove('hidden');
   // call botScore once
   if(window.botScore){
@@ -1334,6 +1517,18 @@ function loop(){
   gun.add(model);
 
   state.seconds += dt;
+
+  /* ---- boss warning / spawn ---- */
+  if(state.bossPending){
+    state.bossWarnT -= dt;
+    if(state.bossWarnT <= 0){
+      state.bossSpawnT -= dt;
+      if(state.bossSpawnT <= 0){
+        state.bossPending = false;
+        spawnBoss(state.wave);
+      }
+    }
+  }
 
   /* ---- reload ---- */
   if(state.reloading){
@@ -1520,8 +1715,11 @@ function loop(){
     }
   }
 
+  /* ---- boss ---- */
+  updateBoss(dt);
+
   /* ---- wave complete ---- */
-  if(zombies.length===0 && spawnQueue.length===0){
+  if(zombies.length===0 && spawnQueue.length===0 && !state.boss){
     if(state.waveGap<=0){
       state.waveGap = 4;
     } else {
@@ -1549,6 +1747,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
