@@ -14,7 +14,7 @@
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
-  #game{position:fixed;inset:0;display:block;touch-action:none}
+  #game{position:fixed;inset:0;display:block;touch-action:none;filter:saturate(0.9) contrast(1.05)}
 
   /* ---------- HUD ---------- */
   #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
@@ -189,16 +189,18 @@ if(!window.botScore){
 
 /* ============================ SETUP ============================ */
 const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:false, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,1));
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.BasicShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0d10);
-scene.fog = new THREE.Fog(0x0a0d10, 8, 30);
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.Fog(0x0a0a0f, 15, 60);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 120);
 camera.rotation.order = 'YXZ';
@@ -209,8 +211,8 @@ const HALF = 15;
 const colliders = []; // {minX,maxX,minZ,maxZ}
 function addCollider(x,z,hw,hd){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd}); }
 
-const concrete = new THREE.MeshStandardMaterial({color:0x565b60, roughness:0.95, metalness:0.05});
-const concreteDark = new THREE.MeshStandardMaterial({color:0x3c4045, roughness:0.98, metalness:0.05});
+const concrete = new THREE.MeshStandardMaterial({color:0x3a3a3a, roughness:0.7, metalness:0.05});
+const concreteDark = new THREE.MeshStandardMaterial({color:0x2a2a2a, roughness:0.9, metalness:0.05});
 const wood = new THREE.MeshStandardMaterial({color:0x6b4a2a, roughness:0.9, metalness:0.0});
 const metal = new THREE.MeshStandardMaterial({color:0x4a5058, roughness:0.6, metalness:0.55});
 
@@ -263,6 +265,31 @@ pillarDefs.forEach(p=>{
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,4.2,16), concrete);
   m.position.set(p[0],2.1,p[1]); m.castShadow=true; m.receiveShadow=true; scene.add(m);
   addCollider(p[0],p[1],0.9,0.9);
+});
+
+// Scattered debris boxes
+const debrisMat = new THREE.MeshStandardMaterial({color:0x33363a, roughness:0.9, metalness:0.1});
+const debrisDefs = [
+  [-2.5,-3,0.5,0.4,0.6],[-3,3.5,0.4,0.3,0.5],[3.5,-5,0.6,0.5,0.7],
+  [4,2,0.4,0.35,0.5],[-5,1,0.5,0.4,0.5],[1,6.5,0.45,0.3,0.55],
+  [-1,-7,0.5,0.4,0.6],[6.5,3,0.4,0.3,0.5]
+];
+debrisDefs.forEach(d=>{
+  const m = box(d[2],d[3],d[4],debrisMat,d[0],d[3]/2,d[1]);
+  m.rotation.y = Math.random()*Math.PI;
+  addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15);
+});
+// Broken barrels (cylinders)
+const barrelMat = new THREE.MeshStandardMaterial({color:0x4a3a2a, roughness:0.7, metalness:0.4});
+const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
+[[-7,-3],[3,-6.5],[7,5.5]].forEach(p=>{
+  const m = new THREE.Mesh(barrelGeo, barrelMat);
+  m.position.set(p[0],0.45,p[1]);
+  m.rotation.z = 0.15 + Math.random()*0.2;
+  m.rotation.y = Math.random()*Math.PI;
+  m.castShadow = true; m.receiveShadow = true;
+  scene.add(m);
+  addCollider(p[0],p[1],0.45,0.45);
 });
 
 // Doorway markers (subtle glow strips)
@@ -573,7 +600,24 @@ Object.values(weaponModels).forEach(model => {
 const flashMat = new THREE.MeshBasicMaterial({color:0xffd27a, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false});
 const flash = new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8), flashMat);
 flash.position.set(0,0.035,-0.30); flash.visible=false; gun.add(flash);
-const flashLight = new THREE.PointLight(0xffd27a, 0, 6, 2);
+// Bright muzzle flash sprite
+const flashTex = new THREE.CanvasTexture((function(){
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(32,32,0,32,32,32);
+  grd.addColorStop(0,'rgba(255,240,200,1)');
+  grd.addColorStop(0.3,'rgba(255,200,120,0.8)');
+  grd.addColorStop(1,'rgba(255,150,50,0)');
+  g.fillStyle = grd; g.fillRect(0,0,64,64);
+  return c;
+})());
+const flashSpriteMat = new THREE.SpriteMaterial({map:flashTex, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+const flashSprite = new THREE.Sprite(flashSpriteMat);
+flashSprite.position.set(0,0.035,-0.32);
+flashSprite.scale.set(0.25,0.25,1);
+flashSprite.visible = false;
+gun.add(flashSprite);
+const flashLight = new THREE.PointLight(0xffd27a, 0, 8, 2);
 flashLight.position.set(0,0.035,-0.30); gun.add(flashLight);
 
 // Player flashlight
@@ -598,10 +642,10 @@ const geoArm  = new THREE.BoxGeometry(0.14,0.7,0.14);
 const geoLeg  = new THREE.BoxGeometry(0.18,0.7,0.18);
 const geoEye  = new THREE.BoxGeometry(0.06,0.06,0.06);
 
-const zBodyMat = new THREE.MeshStandardMaterial({color:0x4a6b3a, roughness:0.9, metalness:0.0});
-const zHeadMat = new THREE.MeshStandardMaterial({color:0x5f7d45, roughness:0.85, metalness:0.0});
-const zArmMat  = new THREE.MeshStandardMaterial({color:0x416033, roughness:0.9, metalness:0.0});
-const zEyeMat  = new THREE.MeshBasicMaterial({color:0xff3b2f});
+const zBodyMat = new THREE.MeshStandardMaterial({color:0x4a5a3a, roughness:0.8, metalness:0.0});
+const zHeadMat = new THREE.MeshStandardMaterial({color:0x5a6a48, roughness:0.75, metalness:0.0});
+const zArmMat  = new THREE.MeshStandardMaterial({color:0x42523a, roughness:0.8, metalness:0.0});
+const zEyeMat  = new THREE.MeshStandardMaterial({color:0x330000, emissive:0xff2a1e, emissiveIntensity:2.2, roughness:0.4});
 
 function makeZombie(){
   const g = new THREE.Group();
@@ -629,10 +673,10 @@ const bGeoLeg  = new THREE.BoxGeometry(0.34,1.1,0.34);
 const bGeoEye  = new THREE.BoxGeometry(0.11,0.11,0.11);
 const bGeoJag  = new THREE.BoxGeometry(0.2,0.2,0.2);
 
-const bBodyMat = new THREE.MeshStandardMaterial({color:0x2a2c2e, roughness:0.95, metalness:0.05});
-const bHeadMat = new THREE.MeshStandardMaterial({color:0x33363a, roughness:0.9, metalness:0.05});
-const bArmMat  = new THREE.MeshStandardMaterial({color:0x24262a, roughness:0.95, metalness:0.05});
-const bEyeMat  = new THREE.MeshBasicMaterial({color:0xff2a1e});
+const bBodyMat = new THREE.MeshStandardMaterial({color:0x2a1a1a, roughness:0.6, metalness:0.1});
+const bHeadMat = new THREE.MeshStandardMaterial({color:0x332020, roughness:0.55, metalness:0.1});
+const bArmMat  = new THREE.MeshStandardMaterial({color:0x241a1a, roughness:0.6, metalness:0.1});
+const bEyeMat  = new THREE.MeshStandardMaterial({color:0x220000, emissive:0xff2a1e, emissiveIntensity:3.0, roughness:0.3});
 const bOutlineMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:0.15, side:THREE.BackSide, depthWrite:false});
 
 function makeBoss(){
@@ -1473,11 +1517,15 @@ let fpsFrames = 0, fpsAccum = 0, fpsLow = 0;
 function adaptQuality(fps){
   if(fps < 30 && fpsLow < 1){
     fpsLow = 1;
-    renderer.setPixelRatio(0.75);
-  } else if(fps < 20 && fpsLow < 2){
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.2));
+  } else if(fps < 25 && fpsLow < 2){
     fpsLow = 2;
+    if(keyLight.shadow.mapSize.x > 512){
+      keyLight.shadow.mapSize.set(512,512);
+      if(keyLight.shadow.map){ keyLight.shadow.map.dispose(); keyLight.shadow.map = null; }
+    }
     flashlight.castShadow = false;
-    renderer.shadowMap.enabled = false;
+    for(const f of flickerLights){ f.light.intensity = 0; }
   }
 }
 function loop(){
@@ -1611,12 +1659,17 @@ function loop(){
   // Muzzle flash
   if(state.muzzleT>0){
     state.muzzleT -= dt;
+    const f = Math.max(0, state.muzzleT/0.05);
     flash.visible = true;
-    flashMat.opacity = Math.max(0, state.muzzleT/0.05);
-    flashLight.intensity = 8*(state.muzzleT/0.05);
+    flashMat.opacity = f;
+    flashLight.intensity = 12*f;
     flash.scale.setScalar(0.8+Math.random()*0.6);
+    flashSprite.visible = true;
+    flashSpriteMat.opacity = f;
+    flashSprite.scale.setScalar(0.25 + Math.random()*0.15);
   } else {
     flash.visible=false; flashMat.opacity=0; flashLight.intensity=0;
+    flashSprite.visible=false; flashSpriteMat.opacity=0;
   }
 
   /* ---- health regen ---- */
@@ -1750,6 +1803,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
