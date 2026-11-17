@@ -1060,7 +1060,7 @@ function resolveCollision(pos){
   for(let pass=0; pass<2; pass++){
     for(const c of colliders){
       // Skip collider if player's feet are above it (with 0.3 margin)
-      if(playerFeetY > c.height + 0.3) continue;
+      if(playerFeetY > c.height) continue;
       if(pos.x > c.minX-r && pos.x < c.maxX+r && pos.z > c.minZ-r && pos.z < c.maxZ+r){
         const dxl = (pos.x) - (c.minX-r);
         const dxr = (c.maxX+r) - (pos.x);
@@ -1949,6 +1949,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
