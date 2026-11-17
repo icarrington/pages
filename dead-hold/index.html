@@ -756,6 +756,9 @@ const gunSilver = new THREE.MeshLambertMaterial({color:0x8a8a8a});
 const gunGold = new THREE.MeshLambertMaterial({color:0x8a7a4a});
 const gunTan = new THREE.MeshLambertMaterial({color:0x7a6a4a});
 const gunDarkOlive = new THREE.MeshLambertMaterial({color:0x3a4a2a});
+/* Polished steel for M4 iron sights: a subtle metallic sheen so the posts read
+   clearly against the dark receiver (slight emissive lift + lighter base). */
+const sightSteel = new THREE.MeshLambertMaterial({color:0x9aa1ab, emissive:0x1c2026, emissiveIntensity:0.55});
 const gunSteel = new THREE.MeshLambertMaterial({color:0x5a6a7a});
 
 
@@ -1282,41 +1285,54 @@ function buildM4A1(){
   const buttPad = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.12,0.04), gunBlack);
   buttPad.position.set(0,-0.01,0.44); g.add(buttPad);
   
-  // === CARRY HANDLE (thin rectangular bar arcing over rear sight) ===
-  // 2 vertical supports
-  const handleSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.05,0.008), gunDark);
-  handleSupportL.position.set(-0.025,0.085,0.12); g.add(handleSupportL);
-  const handleSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.05,0.008), gunDark);
-  handleSupportR.position.set(0.025,0.085,0.12); g.add(handleSupportR);
-  // Horizontal top bar
-  const handleTop = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.012,0.06), gunDark);
+  // === CARRY HANDLE (slim M4-style carry handle arcing over the rear sight) ===
+  // Two slim vertical supports (steel sheen so it reads as machined metal)
+  const handleSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.05,0.006), sightSteel);
+  handleSupportL.position.set(-0.022,0.085,0.12); g.add(handleSupportL);
+  const handleSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.05,0.006), sightSteel);
+  handleSupportR.position.set(0.022,0.085,0.12); g.add(handleSupportR);
+  // Horizontal top bar (slim, polished)
+  const handleTop = new THREE.Mesh(new THREE.BoxGeometry(0.056,0.010,0.052), sightSteel);
   handleTop.position.set(0,0.11,0.12); g.add(handleTop);
+  // Subtle rim/edge highlight along the top bar (reads as a beveled edge)
+  const handleRim = new THREE.Mesh(new THREE.BoxGeometry(0.058,0.003,0.054), gunLight);
+  handleRim.position.set(0,0.1155,0.12); g.add(handleRim);
   
-  // === FRONT IRON SIGHT (M4-style: slim vertical post on a small protective base) ===
-  // Protective base: a low, slightly wider cradle that the post rises out of
-  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.022,0.012,0.024), gunLight);
+  // === FRONT IRON SIGHT (M4-style: slim post + protective hood, on barrel centerline x=0) ===
+  // Low cradle base the post rises out of (steel sheen)
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.020,0.010,0.022), sightSteel);
   fsBase.position.set(0,0.068,-0.34); g.add(fsBase);
-  // Slim vertical post (tall, narrow) sitting on top of the base
-  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.007,0.032,0.007), gunLight);
-  fsPost.position.set(0,0.090,-0.34); g.add(fsPost);
-  // Tiny cap on the post tip (slightly wider, reads as a sight bead)
-  const fsCap = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.006,0.010), gunLight);
-  fsCap.position.set(0,0.108,-0.34); g.add(fsCap);
+  // Slim vertical post (precise, narrow)
+  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.034,0.005), sightSteel);
+  fsPost.position.set(0,0.092,-0.34); g.add(fsPost);
+  // Tiny bead cap on the post tip
+  const fsCap = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.005,0.008), gunLight);
+  fsCap.position.set(0,0.112,-0.34); g.add(fsCap);
+  // Protective hood: two curved prongs that arch over the post (front + back)
+  const hoodArc = new THREE.Mesh(new THREE.TorusGeometry(0.014,0.0035,8,14,Math.PI), sightSteel);
+  hoodArc.rotation.y = Math.PI/2; // arc now spans the X (left-right) axis
+  hoodArc.position.set(0,0.090,-0.34); g.add(hoodArc);
+  const hoodArc2 = new THREE.Mesh(new THREE.TorusGeometry(0.014,0.0035,8,14,Math.PI), sightSteel);
+  hoodArc2.rotation.y = Math.PI/2;
+  hoodArc2.position.set(0,0.090,-0.34); hoodArc2.rotation.z = Math.PI; g.add(hoodArc2);
 
-  // === REAR IRON SIGHT (M4-style notched aperture: U-shaped notch with a visible gap) ===
-  // Rear sight body: a low, wide plate near the receiver
-  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.040,0.020,0.026), gunLight);
+  // === REAR IRON SIGHT (M4-style: crisp narrow aperture notch, beveled edges, on centerline x=0) ===
+  // Rear sight body: a low, wide plate near the receiver (steel sheen)
+  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.038,0.018,0.024), sightSteel);
   rsBody.position.set(0,0.072,0.16); g.add(rsBody);
-  // Notch: a dark recessed slot cut across the top (the U-shaped aperture)
-  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.020), gunBlack);
+  // Beveled top edge (thin lighter rim reads as a machined bevel)
+  const rsBevel = new THREE.Mesh(new THREE.BoxGeometry(0.040,0.003,0.026), gunLight);
+  rsBevel.position.set(0,0.0815,0.16); g.add(rsBevel);
+  // Crisp narrow aperture notch: a dark recessed slot cut across the top
+  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.014,0.018), gunBlack);
   rsNotch.position.set(0,0.080,0.16); g.add(rsNotch);
   // Two thin metallic ears flanking the notch (the U-shape walls)
-  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.020,0.020), gunLight);
-  rsEarL.position.set(-0.013,0.078,0.16); g.add(rsEarL);
-  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.020,0.020), gunLight);
-  rsEarR.position.set(0.013,0.078,0.16); g.add(rsEarR);
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), sightSteel);
+  rsEarL.position.set(-0.0085,0.078,0.16); g.add(rsEarL);
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), sightSteel);
+  rsEarR.position.set(0.0085,0.078,0.16); g.add(rsEarR);
   // Thin top bridge over the notch (closes the U at the top)
-  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.032,0.005,0.018), gunLight);
+  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.004,0.016), sightSteel);
   rsBridge.position.set(0,0.088,0.16); g.add(rsBridge);
   
   // === SIDE PANELS (textured, on receiver) ===
@@ -3357,6 +3373,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
