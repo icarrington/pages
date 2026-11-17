@@ -45,10 +45,12 @@
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
   #redDot{display:none;position:absolute;width:6px;height:6px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 8px rgba(255,42,30,.9);left:50%;top:50%;transform:translate(-50%,-50%)}
-  #crosshair.rd #redDot{display:block;width:4px;height:4px;background:#ff2a1e;box-shadow:0 0 6px rgba(255,42,30,.9),0 0 12px rgba(255,42,30,.5);left:50%;top:50%;transform:translate(-50%,-50%)}
+  #crosshair.rd #redDot{display:block;width:3px;height:3px;background:#ff1a0e;box-shadow:0 0 4px rgba(255,26,14,.95),0 0 10px rgba(255,26,14,.6);left:50%;top:50%;transform:translate(-50%,-50%)}
   #crosshair.rd::before,#crosshair.rd::after{display:none}
   #crosshair.rd i{display:none}
-  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;border:1.5px solid rgba(255,42,30,.75);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(255,42,30,.35),inset 0 0 4px rgba(255,42,30,.25)}
+  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:36px;height:36px;border:1.5px solid rgba(255,26,14,.8);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 5px rgba(255,26,14,.4),inset 0 0 5px rgba(255,26,14,.25)}
+  #sightHousing{display:none;position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 38%,rgba(0,0,0,.18) 48%,rgba(0,0,0,.55) 58%,rgba(0,0,0,.72) 100%)}
+  #crosshair.rd ~ #sightHousing, #hud.rd-active #sightHousing{display:block}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -161,6 +163,7 @@
     <div class="slots" id="slots"></div>
   </div>
   <div id="crosshair"><i></i><span id="redDot"></span></div>
+  <div id="sightHousing"></div>
   <div id="hitmarker"></div>
   <div id="vignette"></div>
   <div id="bossBar" class="hidden"><div class="bossLabel">BOSS</div><div class="bossTrack"><div class="bossFill" id="bossFill"></div><span class="bossNum" id="bossNum">0</span></div></div>
@@ -1348,8 +1351,9 @@ const INSPECT_DUR = 1.6; // seconds for full inspection cycle
 let inspRotY = 0, inspRotX = 0, inspPosZ = 0;
 function updateRedDot(){
   const el = document.getElementById('crosshair');
-  if(wbGet(activeWeapon).redDot) el.classList.add('rd');
-  else el.classList.remove('rd');
+  const hud = document.getElementById('hud');
+  if(wbGet(activeWeapon).redDot){ el.classList.add('rd'); hud.classList.add('rd-active'); }
+  else { el.classList.remove('rd'); hud.classList.remove('rd-active'); }
 }
 
 /* ---- ADS (Aim Down Sights) state ---- */
@@ -2219,6 +2223,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
