@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyber Pandemic Defense Checklist</title>
+<style>
+  :root{
+    --navy:#16213e;
+    --ink:#16213e;
+    --muted:#5b6478;
+    --bg:#ffffff;
+    --card:#ffffff;
+    --line:#d9dfe9;
+    --line-soft:#eef1f6;
+    --red:#c62828;
+    --orange:#e8710a;
+    --yellow:#b8860b;
+    --yellow-bg:#fff7db;
+    --yellow-line:#f0d875;
+    --shadow:0 1px 2px rgba(22,33,62,.05), 0 4px 14px rgba(22,33,62,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#eef2fb;
+      --muted:#9aa6c0;
+      --bg:#0d1424;
+      --card:#131c31;
+      --line:#2b3753;
+      --line-soft:#1c2740;
+      --red:#ff6b6b;
+      --orange:#ff9f45;
+      --yellow:#ffd84d;
+      --yellow-bg:#2a2410;
+      --yellow-line:#5c511f;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:12px;
+    line-height:1.45;
+    color:var(--ink);
+    background:var(--bg);
+  }
+
+  .page{
+    max-width:920px;
+    margin:0 auto;
+    padding:22px 18px 40px;
+  }
+
+  /* ---------- header ---------- */
+  .masthead{
+    border-bottom:3px solid var(--navy);
+    padding-bottom:14px;
+    margin-bottom:18px;
+  }
+  .masthead h1{
+    font-size:26px;
+    line-height:1.1;
+    margin:0 0 6px;
+    letter-spacing:-.01em;
+    font-weight:800;
+    color:var(--ink);
+  }
+  .masthead .sub{
+    margin:0;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .masthead .sub b{color:var(--ink);font-weight:600;}
+
+  /* ---------- legend ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 14px;
+    margin:0 0 16px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .legend .lbl{font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:10px;}
+
+  /* ---------- grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width:680px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  /* ---------- card ---------- */
+  .card{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    break-inside:avoid;
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:var(--navy);
+    color:#fff;
+    padding:9px 12px;
+  }
+  .card-head h2{
+    margin:0;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* ---------- badges ---------- */
+  .badge{
+    flex:none;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid transparent;
+    line-height:1;
+  }
+  .badge.critical{background:var(--red);color:#fff;}
+  .badge.high{background:var(--orange);color:#fff;}
+  .badge.medium{background:var(--yellow);color:#3a2f00;}
+
+  /* ---------- list ---------- */
+  .card ul{
+    list-style:none;
+    margin:0;
+    padding:6px 4px;
+    flex:1;
+  }
+  .card li{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    padding:6px 8px;
+    border-bottom:1px solid var(--line-soft);
+    font-size:12px;
+  }
+  .card li:last-child{border-bottom:none;}
+
+  .box{
+    flex:none;
+    width:16px;
+    height:16px;
+    margin-top:1px;
+    border:1.5px solid var(--navy);
+    border-radius:3px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    line-height:1;
+    color:var(--navy);
+    background:transparent;
+    transition:background .12s ease, border-color .12s ease;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  li.done .box{
+    background:var(--navy);
+    border-color:var(--navy);
+    color:#fff;
+  }
+  li.done .txt{
+    color:var(--muted);
+    text-decoration:line-through;
+    text-decoration-color:var(--muted);
+  }
+  .txt{flex:1;}
+
+  /* ---------- footer note ---------- */
+  .note{
+    margin:0;
+    padding:8px 12px;
+    font-size:11px;
+    font-style:italic;
+    color:var(--muted);
+    background:var(--yellow-bg);
+    border-top:1px solid var(--yellow-line);
+  }
+  .note::before{content:"\2139\00a0\00a0";font-style:normal;color:var(--yellow);}
+
+  /* ---------- page footer ---------- */
+  .pagefoot{
+    margin-top:22px;
+    border-top:2px solid var(--navy);
+    padding-top:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 20px;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .pagefoot .key{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .pagefoot .key span{color:var(--red);}
+  .pagefoot .gen{
+    font-size:11px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+
+  /* ---------- print ---------- */
+  @page{size:A4;margin:12mm;}
+  @media print{
+    :root{
+      --ink:#16213e;
+      --muted:#4a5266;
+      --bg:#ffffff;
+      --card:#ffffff;
+      --line:#c7cdd8;
+      --line-soft:#e6e9ef;
+      --red:#c62828;
+      --orange:#e8710a;
+      --yellow:#b8860b;
+      --yellow-bg:#fff7db;
+      --yellow-line:#f0d875;
+      --shadow:none;
+    }
+    body{background:#fff;font-size:11px;}
+    .page{max-width:none;padding:0;}
+    .masthead h1{font-size:22px;}
+    .card{box-shadow:none;break-inside:avoid;}
+    .card-head{background:#16213e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .note{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .box{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    li.done .box{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .grid{gap:10px;}
+    .card li{padding:4px 6px;}
+    .pagefoot{border-top-color:#16213e;}
+  }
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <h1>Cyber Pandemic Defense Checklist</h1>
+      <p class="sub">One-page quick-reference — <b>work top to bottom, check off each item</b></p>
+    </header>
+
+    <div class="legend" aria-hidden="true">
+      <span class="lbl">Priority</span>
+      <span class="badge critical">Critical</span>
+      <span class="badge high">High</span>
+      <span class="badge medium">Medium</span>
+    </div>
+
+    <div class="grid">
+
+      <!-- 1. BACKUPS -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Backups</h2>
+          <span class="badge critical">Critical</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">3 copies of important data</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">On 2 different storage types</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">1 copy offsite</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Keep one offline / air-gapped drive (unplugged)</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Backup is automated</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Restore tested at least once in last 6 months</span></li>
+        </ul>
+        <p class="note">The offline drive is your ransomware insurance.</p>
+      </section>
+
+      <!-- 2. ACCOUNT SECURITY -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Account Security</h2>
+          <span class="badge critical">Critical</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Use a password manager</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Unique password for every account</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA on email</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA on cloud storage</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA uses authenticator app or hardware key (NOT SMS)</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA backup codes saved offline</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA on banking</span></li>
+        </ul>
+        <p class="note">SMS MFA is SIM-swappable — use apps or keys instead.</p>
+      </section>
+
+      <!-- 3. UPDATES & PATCHING -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Updates &amp; Patching</h2>
+          <span class="badge high">High</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">OS auto-update ON</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Browser auto-update ON</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Router firmware up to date</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Router default admin password changed</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Server / IoT on separate network or VLAN</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Antivirus / Defender active</span></li>
+        </ul>
+      </section>
+
+      <!-- 4. NETWORK ISOLATION -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Network Isolation</h2>
+          <span class="badge high">High</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Guest Wi-Fi for IoT devices</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">IoT NOT on main network</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Dedicated profile / machine for risky browsing</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Not running as admin on daily machine</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Firewall enabled</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">USB auto-run disabled</span></li>
+        </ul>
+      </section>
+
+      <!-- 5. INCIDENT RESPONSE -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Incident Response</h2>
+          <span class="badge critical">Critical</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Written list of where recovery drives are stored</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">MFA backup codes location noted offline</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Email provider recovery contacts saved</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Cloud storage recovery contacts saved</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">ISP support number saved</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Know how to kill the network (unplug / Wi-Fi off)</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Know which device is the router and how to reboot it</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Have a clean USB recovery stick</span></li>
+        </ul>
+        <p class="note">When compromised: unplug → don't panic-sell → isolate → assess.</p>
+      </section>
+
+      <!-- 6. THREAT AWARENESS -->
+      <section class="card">
+        <div class="card-head">
+          <h2>Threat Awareness</h2>
+          <span class="badge medium">Medium</span>
+        </div>
+        <ul>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Bookmark CISA.gov / national CERT</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Subscribe to reputable security newsletter</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Know scam #1: "Your account is compromised, click here"</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Know scam #2: "Free virus removal / tech support"</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Rule: never click — go to site directly</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Verify unexpected urgent emails by calling</span></li>
+          <li><span class="box" aria-hidden="true"></span><span class="txt">Don't reuse passwords across unrelated services</span></li>
+        </ul>
+      </section>
+
+    </div>
+
+    <footer class="pagefoot">
+      <p class="key">The 4 things that stop <span>80%</span> of the pain: Offline backup + Authenticator-app MFA + Password manager + Auto-updates</p>
+      <p class="gen">Generated: November 17, 2026</p>
+    </footer>
+  </main>
+
+  <script>
+    (function(){
+      var items = Array.prototype.slice.call(document.querySelectorAll('.card li'));
+
+      function render(li){
+        var box = li.querySelector('.box');
+        if(!box) return;
+        if(li.classList.contains('done')){
+          box.textContent = '\u2713';
+          box.setAttribute('aria-checked','true');
+        }else{
+          box.textContent = '\u2610';
+          box.setAttribute('aria-checked','false');
+        }
+      }
+
+      function toggle(li){
+        li.classList.toggle('done');
+        render(li);
+      }
+
+      items.forEach(function(li){
+        var box = li.querySelector('.box');
+        if(!box) return;
+        box.setAttribute('role','checkbox');
+        box.setAttribute('aria-checked','false');
+        box.setAttribute('tabindex','0');
+        render(li);
+
+        box.addEventListener('click', function(){ toggle(li); });
+        box.addEventListener('keydown', function(e){
+          if(e.key === ' ' || e.key === 'Enter' || e.key === 'Spacebar'){
+            e.preventDefault();
+            toggle(li);
+          }
+        });
+      });
+    })();
+  </script>
+
+<!-- bot-score-helper --><script>
+(function(){
+  function fnv(s){ var h=0x811c9dc5; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return h; }
+  function game(){ var p=location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}); return (p[p.length-1]||'game').toLowerCase().replace(/[^a-z0-9-]/g,''); }
+  window.botScore=function(st){
+    st=st||{}; var g=game(), v={}, parts=[], sum=[g];
+    ['wave','kills','points','headshots','time'].forEach(function(k){
+      var x=st[k]; if(k==='time') x=(st.time!=null?st.time:st.seconds);
+      x=Math.max(0,Math.floor(+x||0)); v[k]=x; sum.push(x);
+      if(st[k]!=null||(k==='time'&&st.seconds!=null)) parts.push(k==='time'?'time '+Math.floor(x/60)+':'+('0'+x%60).slice(-2):k+' '+x);
+    });
+    var line='SCORE '+g+' '+parts.join(' \u00b7 ')+' #'+fnv(sum.join('|')+'|isaiahgpt-scores-v1').toString(36);
+    try{ document.exitPointerLock&&document.exitPointerLock(); }catch(e){}
+    var old=document.getElementById('bot-score'); if(old) old.remove();
+    var d=document.createElement('div'); d.id='bot-score';
+    d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;max-width:92vw;background:rgba(10,14,12,.94);color:#dfe;border:1px solid #4a7;border-radius:10px;padding:10px 12px;font:13px/1.4 monospace;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.6)';
+    d.innerHTML='<div style="opacity:.8;margin-bottom:6px">Paste this in Discord to get on the leaderboard</div>';
+    var t=document.createElement('div'); t.textContent=line; t.style.cssText='user-select:all;word-break:break-all;margin-bottom:8px;color:#fff';
+    var b=document.createElement('button'); b.textContent='Copy';
+    b.style.cssText='font:inherit;padding:5px 14px;border-radius:6px;border:0;background:#3c9;color:#021;cursor:pointer';
+    b.onclick=function(e){ e.stopPropagation(); (navigator.clipboard?navigator.clipboard.writeText(line):Promise.reject()).then(function(){ b.textContent='Copied \u2713'; },function(){ b.textContent='Select the line and copy it'; }); };
+    var x=document.createElement('button'); x.textContent='\u2715'; x.title='Close';
+    x.style.cssText='font:inherit;margin-left:8px;padding:5px 9px;border-radius:6px;border:0;background:#333;color:#ccc;cursor:pointer';
+    x.onclick=function(e){ e.stopPropagation(); d.remove(); };
+    d.appendChild(t); d.appendChild(b); d.appendChild(x); document.body.appendChild(d);
+    return line;
+  };
+})();
+</script><!-- /bot-score-helper -->
+</body>
+</html>
