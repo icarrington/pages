@@ -3100,6 +3100,17 @@ function loop(){
   /* ---- boss ---- */
   updateBoss(dt);
 
+  /* ---- zombie beacon: show tall glowing beam when fewer than 3 zombies remain ---- */
+  const _aliveZ = zombies.filter(z=>z.alive).length + (state.boss && state.boss.alive ? 1 : 0);
+  const _showBeacon = _aliveZ > 0 && _aliveZ < 3;
+  if(typeof beaconMesh !== 'undefined' && beaconMesh){
+    if(beaconMesh.visible !== _showBeacon) beaconMesh.visible = _showBeacon;
+    if(_showBeacon){
+      beaconMesh.position.set(player.pos.x, 0, player.pos.z);
+      if(typeof beaconMat !== 'undefined' && beaconMat) beaconMat.emissiveIntensity = 1.5 + Math.sin(state.seconds*4)*0.5;
+    }
+  }
+
   /* ---- wave complete ---- */
   if(zombies.length===0 && spawnQueue.length===0 && !state.boss){
     if(state.waveGap<=0){
@@ -3129,6 +3140,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
