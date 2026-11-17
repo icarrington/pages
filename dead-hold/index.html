@@ -132,6 +132,7 @@
       <li><span class="key">MOUSE</span> Aim</li>
       <li><span class="key">SHIFT</span> Sprint</li>
       <li><span class="key">CLICK</span> Shoot</li>
+      <li><span class="key">RMB</span> Aim (ADS)</li>
       <li><span class="key">1-4</span> Switch Gun</li>
       <li><span class="key">R</span> Reload</li>
       <li><span class="key">E</span> Take Weapon</li>
@@ -772,6 +773,10 @@ function cycleWeapon(){
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
 
 canvas.addEventListener('mousedown', e=>{
+  if(e.button===2){
+    if(state.running) adsActive = true;
+    return;
+  }
   if(e.button!==0) return;
   ensureAudio();
   if(!state.running) return;
@@ -782,15 +787,19 @@ canvas.addEventListener('mousedown', e=>{
   mouseDown = true;
   if(!isAuto()) shoot();
 });
-window.addEventListener('mouseup', e=>{ if(e.button===0) mouseDown=false; });
-window.addEventListener('blur', ()=>{ mouseDown=false; });
+window.addEventListener('mouseup', e=>{
+  if(e.button===0) mouseDown=false;
+  if(e.button===2) adsActive=false;
+});
+window.addEventListener('blur', ()=>{ mouseDown=false; adsActive=false; });
+canvas.addEventListener('contextmenu', e=>{ e.preventDefault(); });
 document.addEventListener('pointerlockchange', ()=>{
   pointerLocked = (document.pointerLockElement === canvas);
   updateHint();
 });
 document.addEventListener('mousemove', e=>{
   if(!pointerLocked || !state.running) return;
-  const sens = 0.0022;
+  const sens = 0.0022 * (adsActive ? ADS_SENS : 1);
   player.yaw   -= e.movementX * sens;
   player.pitch -= e.movementY * sens;
   player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
@@ -888,6 +897,40 @@ function updateWeaponSlots(){
 }
 let activeWeapon = 'pistol';
 let lastShotTime = 0;
+
+/* ---- ADS (Aim Down Sights) state ---- */
+const ADS_FOV = 47;
+const ADS_SENS = 0.5;
+const ADS_SPEED = 0.6;
+let adsActive = false;
+let adsBlend = 0;
+const ADS_BLEND_SPEED = 1/0.12;
+const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
+let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
+const adsPos = new THREE.Vector3(0,-0.16,-0.42);
+const hipRot = new THREE.Euler(0.1,0,0);
+const adsRot = new THREE.Euler(0,0,0);
+const _tmpV = new THREE.Vector3();
+const _tmpE = new THREE.Euler();
+function lerpAds(dt){
+  const target = adsActive ? 1 : 0;
+  const step = ADS_BLEND_SPEED*dt;
+  if(adsBlend < target) adsBlend = Math.min(target, adsBlend+step);
+  else if(adsBlend > target) adsBlend = Math.max(target, adsBlend-step);
+  const b = adsBlend;
+  camera.fov = 74 + (ADS_FOV-74)*b;
+  camera.updateProjectionMatrix();
+  _tmpV.copy(hipPos).lerp(adsPos, b);
+  gun.position.set(_tmpV.x + swayX, _tmpV.y + swayY + kickY + dipY, _tmpV.z + kickZ);
+  _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
+  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot, 0, 0);
+}
+function resetAds(){
+  adsActive = false;
+  adsBlend = 0;
+  camera.fov = 74;
+  camera.updateProjectionMatrix();
+}
 
 function shoot(){
   if(state.reloading) return;
@@ -1147,6 +1190,7 @@ function resetGame(){
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
   camera.position.set(0,1.7,0);
+  resetAds();
   state.over=false; state.running=true;
   activeWeapon='pistol';
   Object.keys(MAGS).forEach(w=>{ mags[w]=MAGS[w]; });
@@ -1168,6 +1212,7 @@ function startGame(){
 }
 function endGame(){
   state.running=false; state.over=true;
+  resetAds();
   if(document.pointerLockElement===canvas) document.exitPointerLock();
   const secs = Math.floor(state.seconds);
   const acc = state.shotsFired>0 ? Math.round(state.shotsHit/state.shotsFired*100) : 0;
@@ -1282,6 +1327,7 @@ function loop(){
   let speed = 4.2;
   if(wantSprint){ speed = 7.2; state.stamina = Math.max(0, state.stamina - 22*dt); }
   else { state.stamina = Math.min(100, state.stamina + 16*dt); }
+  if(adsActive) speed *= ADS_SPEED;
 
   const targetVel = move.multiplyScalar(speed);
   player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
@@ -1300,20 +1346,15 @@ function loop(){
   if(state.recoil>0){ state.recoil = Math.max(0, state.recoil - dt*8); }
   
   // Idle sway animation (2Hz sine wave, ~0.01 amplitude)
-  const swayX = Math.sin(state.seconds * 12.566) * 0.01;
-  const swayY = Math.sin(state.seconds * 12.566 + Math.PI/2) * 0.01;
-  
+  swayX = Math.sin(state.seconds * 12.566) * 0.01;
+  swayY = Math.sin(state.seconds * 12.566 + Math.PI/2) * 0.01;
+
   // Recoil: kick back (z +0.05) and up (y +0.03)
-  const kickZ = state.recoil * 0.05;
-  const kickY = state.recoil * 0.03;
-  
-  // Base position
-  const baseX = 0.35;
-  const baseY = -0.3;
-  const baseZ = -0.6;
+  kickZ = state.recoil * 0.05;
+  kickY = state.recoil * 0.03;
 
   // Reload dip (weapon lowers and tilts down, then returns)
-  let dipY = 0, dipRot = 0;
+  dipY = 0; dipRot = 0;
   if(state.reloading){
     const p = Math.min(1, state.reloadT / state.reloadDur);
     const dip = Math.sin(p * Math.PI);
@@ -1321,9 +1362,9 @@ function loop(){
     dipRot = 0.55 * dip;
   }
 
-  // Apply sway and recoil
-  gun.position.set(baseX + swayX, baseY + swayY + kickY + dipY, baseZ + kickZ);
-  
+  // Apply sway, recoil and ADS transition (lerps FOV + viewmodel)
+  lerpAds(dt);
+
   // Muzzle flash
   if(state.muzzleT>0){
     state.muzzleT -= dt;
@@ -1334,9 +1375,6 @@ function loop(){
   } else {
     flash.visible=false; flashMat.opacity=0; flashLight.intensity=0;
   }
-
-  /* ---- weapon tilt (recoil + reload dip) ---- */
-  gun.rotation.x = 0.1 + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot;
 
   /* ---- health regen ---- */
   if(state.seconds - state.lastHitTime > 4 && state.health<100){
@@ -1466,6 +1504,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
