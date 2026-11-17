@@ -1327,20 +1327,33 @@ function buildAWP(){
   cheekRest.position.set(0,0.04,0.38); g.add(cheekRest);
   const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.11,0.03), gunDark);
   stockPad.position.set(0,-0.02,0.49); g.add(stockPad);
-  // Scope (large, mounted on top)
-  const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.22,12), gunDark);
+  // Scope (large, hollow/see-through, mounted on top)
+  // Outer tube: open-ended cylinder so the center is transparent
+  const scopeBodyMat = new THREE.MeshLambertMaterial({color:0x1a1e22, side:THREE.DoubleSide, transparent:true, opacity:0.55});
+  const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.22,16,1,true), scopeBodyMat);
   scopeBody.rotation.x = Math.PI/2; scopeBody.position.set(0,0.10,0.05); g.add(scopeBody);
-  // Scope front lens
-  const scopeLens = new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.02,12), gunMetal);
+  // Scope front rim (ring)
+  const scopeLens = new THREE.Mesh(new THREE.TorusGeometry(0.038,0.008,8,20), gunMetal);
   scopeLens.rotation.x = Math.PI/2; scopeLens.position.set(0,0.10,-0.06); g.add(scopeLens);
-  // Scope rear lens
-  const scopeRear = new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.02,12), gunMetal);
+  // Scope rear rim (ring)
+  const scopeRear = new THREE.Mesh(new THREE.TorusGeometry(0.038,0.008,8,20), gunMetal);
   scopeRear.rotation.x = Math.PI/2; scopeRear.position.set(0,0.10,0.16); g.add(scopeRear);
-  // Scope rings
-  const scopeRing1 = new THREE.Mesh(new THREE.TorusGeometry(0.036,0.006,8,16), gunDark);
+  // Scope rings (mounting)
+  const scopeRing1 = new THREE.Mesh(new THREE.TorusGeometry(0.039,0.006,8,16), gunDark);
   scopeRing1.position.set(0,0.10,-0.02); scopeRing1.rotation.x = Math.PI/2; g.add(scopeRing1);
-  const scopeRing2 = new THREE.Mesh(new THREE.TorusGeometry(0.036,0.006,8,16), gunDark);
+  const scopeRing2 = new THREE.Mesh(new THREE.TorusGeometry(0.039,0.006,8,16), gunDark);
   scopeRing2.position.set(0,0.10,0.12); scopeRing2.rotation.x = Math.PI/2; g.add(scopeRing2);
+  // Crosshair inside the scope (visible through the hollow tube)
+  const crossMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+  // Vertical crosshair line
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.002,0.06,0.001), crossMat);
+  crossV.position.set(0,0.10,0.05); g.add(crossV);
+  // Horizontal crosshair line
+  const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.002,0.001), crossMat);
+  crossH.position.set(0,0.10,0.05); g.add(crossH);
+  // Center dot
+  const crossDot = new THREE.Mesh(new THREE.SphereGeometry(0.003,8,8), crossMat);
+  crossDot.position.set(0,0.10,0.05); g.add(crossDot);
   // Grip
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.10,0.07), gunDark);
   grip.position.set(0,-0.09,0.18); grip.rotation.x = 0.25; g.add(grip);
@@ -3320,6 +3333,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
