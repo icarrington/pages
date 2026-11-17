@@ -44,6 +44,9 @@
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
+  #redDot{display:none;position:absolute;width:6px;height:6px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 8px rgba(255,42,30,.9);left:50%;top:50%;transform:translate(-50%,-50%)}
+  #crosshair.rd #redDot{display:block}
+  #crosshair.rd::before,#crosshair.rd::after{height:1px;width:100%;opacity:.5}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -103,6 +106,31 @@
     .bar{width:52vw}
     .ammo{font-size:28px}
   }
+
+  /* ---------- Workbench menu ---------- */
+  #wbMenu{position:fixed;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 30%,rgba(20,26,30,.7),rgba(6,8,10,.94));backdrop-filter:blur(3px)}
+  #wbMenu.hidden{display:none}
+  .wb-card{width:min(520px,100%);background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);padding:30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .wb-title{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.1em;color:var(--accent);margin:0 0 4px}
+  .wb-sub{font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--dim);margin:0 0 18px}
+  .wb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .wb-weapon{font-family:var(--mono);font-size:18px;font-weight:700;color:#eef2f3}
+  .wb-mag{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:4px}
+  .wb-pts{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)}
+  .wb-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .wb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#0e1317;border:1px solid var(--line);cursor:pointer;transition:border-color .12s,background .12s}
+  .wb-row:hover{border-color:var(--accent);background:rgba(200,255,77,.05)}
+  .wb-row.owned{border-color:#2f8f4d;cursor:default;background:rgba(47,143,77,.08)}
+  .wb-row.poor{opacity:.6;cursor:not-allowed}
+  .wb-name{font-family:var(--mono);font-size:14px;font-weight:700;color:#eef2f3}
+  .wb-desc{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
+  .wb-right{font-family:var(--mono);font-size:13px;font-weight:700;white-space:nowrap}
+  .wb-cost{color:var(--accent)}
+  .wb-check{color:var(--health)}
+  .wb-close{width:100%;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:12px;transition:color .12s,border-color .12s}
+  .wb-close:hover{color:var(--accent);border-color:var(--accent)}
+  #wbHint{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:6}
+  #wbHint.show{opacity:1}
 </style>
 </head>
 <body>
@@ -130,13 +158,30 @@
     <div class="label">Weapons</div>
     <div class="slots" id="slots"></div>
   </div>
-  <div id="crosshair"><i></i></div>
+  <div id="crosshair"><i></i><span id="redDot"></span></div>
   <div id="hitmarker"></div>
   <div id="vignette"></div>
   <div id="bossBar" class="hidden"><div class="bossLabel">BOSS</div><div class="bossTrack"><div class="bossFill" id="bossFill"></div><span class="bossNum" id="bossNum">0</span></div></div>
   <div id="hint">CLICK TO RESUME</div>
   <div id="weaponPrompt"></div>
   <div id="waveBanner"></div>
+  <div id="wbHint"></div>
+</div>
+
+<div id="wbMenu" class="hidden">
+  <div class="wb-card">
+    <div class="wb-title">WORKBENCH</div>
+    <div class="wb-sub">Weapon Upgrades</div>
+    <div class="wb-head">
+      <div>
+        <div class="wb-weapon"></div>
+        <div class="wb-mag"></div>
+      </div>
+      <div class="wb-pts"></div>
+    </div>
+    <div class="wb-rows"></div>
+    <button class="wb-close" id="wbCloseBtn">Close (E / ESC)</button>
+  </div>
 </div>
 
 <div class="screen" id="startScreen">
@@ -373,7 +418,137 @@ debrisDefs.forEach(d=>{
   // Low collision footprint so the player can jump over the debris
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15,d[3]);
 });
-// Broken barrels (cylinders)
+/* ============================ WORKBENCH ============================ */
+const WB = { x: 10.5, z: -10.5 };
+const wbGroup = new THREE.Group();
+const wbWoodMat = new THREE.MeshLambertMaterial({color:0x6b4a2a});
+const wbWoodDark = new THREE.MeshLambertMaterial({color:0x4a3320});
+const wbMetalMat = new THREE.MeshLambertMaterial({color:0x555c66});
+const wbMetalDark = new THREE.MeshLambertMaterial({color:0x33383f});
+const wbToolMat = new THREE.MeshLambertMaterial({color:0x8890a0});
+const wbLampMat = new THREE.MeshLambertMaterial({color:0x222a30});
+const wbLampGlow = new THREE.MeshLambertMaterial({color:0xfff2c0, emissive:0xffd98a, emissiveIntensity:2.5});
+const wbSignMat = new THREE.MeshLambertMaterial({color:0x1a2a12, emissive:0x2a4a1a, emissiveIntensity:0.6});
+// Table top
+const wbTop = new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,1.2), wbWoodMat); wbTop.position.set(0,0.9,0); wbGroup.add(wbTop);
+// Table legs (4)
+[[-1.05,-0.45],[1.05,-0.45],[-1.05,0.45],[1.05,0.45]].forEach(l=>{
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.9,0.12), wbWoodDark);
+  leg.position.set(l[0],0.45,l[1]); wbGroup.add(leg);
+});
+// Lower shelf
+const wbShelf = new THREE.Mesh(new THREE.BoxGeometry(2.2,0.06,1.0), wbWoodDark); wbShelf.position.set(0,0.35,0); wbGroup.add(wbShelf);
+// Metal vise (right side)
+const wbViseBase = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.18,0.3), wbMetalMat); wbViseBase.position.set(0.7,1.0,0.2); wbGroup.add(wbViseBase);
+const wbViseJaw1 = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.3,0.22), wbMetalDark); wbViseJaw1.position.set(0.7,1.2,0.12); wbGroup.add(wbViseJaw1);
+const wbViseJaw2 = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.3,0.22), wbMetalDark); wbViseJaw2.position.set(0.7,1.2,0.28); wbGroup.add(wbViseJaw2);
+const wbViseScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.3,8), wbToolMat); wbViseScrew.rotation.x = Math.PI/2; wbViseScrew.position.set(0.7,1.2,0.2); wbGroup.add(wbViseScrew);
+// Hanging work lamp (left side, on a stand)
+const wbLampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1.4,8), wbMetalDark); wbLampPole.position.set(-0.8,1.6,-0.3); wbGroup.add(wbLampPole);
+const wbLampArm = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,0.06), wbMetalDark); wbLampArm.position.set(-0.55,2.25,-0.15); wbLampArm.rotation.z = 0.3; wbGroup.add(wbLampArm);
+const wbLampShade = new THREE.Mesh(new THREE.ConeGeometry(0.18,0.2,12,1,true), wbLampMat); wbLampShade.position.set(-0.35,2.15,0); wbLampShade.rotation.z = 0.4; wbGroup.add(wbLampShade);
+const wbLampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.08,10,10), wbLampGlow); wbLampBulb.position.set(-0.35,2.05,0); wbGroup.add(wbLampBulb);
+// Scattered tools: wrench (L-shape)
+const wbWrench1 = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.04,0.06), wbToolMat); wbWrench1.position.set(-0.2,0.98,0.1); wbWrench1.rotation.y = 0.4; wbGroup.add(wbWrench1);
+const wbWrench2 = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.04,0.2), wbToolMat); wbWrench2.position.set(-0.35,0.98,0.15); wbGroup.add(wbWrench2);
+// Screwdriver
+const wbScrew1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.25,8), wbToolMat); wbScrew1.rotation.z = Math.PI/2; wbScrew1.position.set(0.1,0.98,-0.15); wbGroup.add(wbScrew1);
+const wbScrew2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.08,8), wbMetalDark); wbScrew2.rotation.z = Math.PI/2; wbScrew2.position.set(0.22,0.98,-0.15); wbGroup.add(wbScrew2);
+// Small "WORKBENCH" sign (emissive plane)
+const wbSignTex = new THREE.CanvasTexture((function(){
+  const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#1a2a12'; g.fillRect(0,0,256,64);
+  g.fillStyle = '#c8ff4d'; g.font = 'bold 30px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('WORKBENCH', 128, 32);
+  return c;
+})());
+const wbSignMat2 = new THREE.MeshLambertMaterial({map:wbSignTex, emissive:0x334422, emissiveIntensity:0.8});
+const wbSign = new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3), wbSignMat2); wbSign.position.set(0,1.5,0.62); wbGroup.add(wbSign);
+// Warm point light for the workbench
+const wbLight = new THREE.PointLight(0xffd98a, 8.0, 12, 2);
+wbLight.castShadow = false;
+wbLight.position.set(0, 2.2, 0);
+wbGroup.add(wbLight);
+wbGroup.position.set(WB.x, 0, WB.z);
+scene.add(wbGroup);
+// Workbench attachment state: { weaponName: { redDot, extMag, suppressor, vGrip } }
+const wbAttachments = {};
+function wbGet(w){ if(!wbAttachments[w]) wbAttachments[w] = {redDot:false, extMag:false, suppressor:false, vGrip:false}; return wbAttachments[w]; }
+let wbMenuOpen = false;
+let wbNear = false;
+const WB_ATTACH_DEFS = [
+  {key:'redDot', name:'Red Dot Sight', cost:50, desc:'Red dot crosshair + accuracy boost'},
+  {key:'extMag', name:'Extended Magazine', cost:75, desc:'+50% max ammo'},
+  {key:'suppressor', name:'Suppressor', cost:100, desc:'Smaller muzzle flash, quieter'},
+  {key:'vGrip', name:'Vertical Grip', cost:125, desc:'-30% recoil spread'}
+];
+function wbToggleMenu(){
+  if(!state.running) return;
+  if(wbMenuOpen){ wbCloseMenu(); }
+  else if(wbNear){ wbOpenMenu(); }
+}
+function wbOpenMenu(){
+  wbMenuOpen = true;
+  state.running = false;
+  if(document.pointerLockElement === canvas) document.exitPointerLock();
+  const w = activeWeapon;
+  const att = wbGet(w);
+  const cap = MAGS[w];
+  const rows = WB_ATTACH_DEFS.map(d=>{
+    const owned = att[d.key];
+    const canBuy = !owned && state.points >= d.cost;
+    const cls = owned ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
+    const right = owned ? '<span class="wb-check">✓ Equipped</span>' : '<span class="wb-cost">'+d.cost+' pts</span>';
+    return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
+  }).join('');
+  const menu = document.getElementById('wbMenu');
+  menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
+  menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
+  menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
+  menu.querySelector('.wb-rows').innerHTML = rows;
+  menu.querySelectorAll('.wb-row').forEach(r=>{
+    r.addEventListener('click', ()=>{
+      const key = r.dataset.key;
+      const def = WB_ATTACH_DEFS.find(d=>d.key===key);
+      if(!def) return;
+      const a = wbGet(w);
+      if(a[key]) return;
+      if(state.points < def.cost) return;
+      state.points -= def.cost;
+      a[key] = true;
+      if(key==='extMag'){ mags[w] = Math.floor(MAGS[w]*1.5); }
+      ensureAudio();
+      // small click sound
+      if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(400,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+      wbOpenMenu(); // refresh
+      updateHUD();
+    });
+  });
+  menu.classList.remove('hidden');
+}
+function wbCloseMenu(){
+  wbMenuOpen = false;
+  state.running = true;
+  document.getElementById('wbMenu').classList.add('hidden');
+  updateHUD();
+}
+function wbUpdateNear(){
+  const dx = player.pos.x - WB.x;
+  const dz = player.pos.z - WB.z;
+  const d = Math.hypot(dx,dz);
+  const near = d < 3.0;
+  if(near !== wbNear){
+    wbNear = near;
+    const hint = document.getElementById('wbHint');
+    if(near && state.running && !wbMenuOpen){
+      hint.textContent = 'Press E — Workbench';
+      hint.classList.add('show');
+    } else if(!near){
+      hint.classList.remove('show');
+    }
+  }
+}
 const barrelMat = new THREE.MeshLambertMaterial({map:texBarrel()});
 const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
 [[-7,-3],[3,-6.5],[7,5.5]].forEach(p=>{
@@ -844,7 +1019,7 @@ const state = {
 const MAGS = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2 };
 const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun:1.2 };
 const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2 };
-function refillMag(w){ mags[w] = MAGS[w]; }
+function refillMag(w){ mags[w] = wbGet(w).extMag ? Math.floor(MAGS[w]*1.5) : MAGS[w]; }
 function startReload(){
   const w = activeWeapon;
   if(mags[w] >= MAGS[w]) return;
@@ -971,7 +1146,12 @@ let mouseDown = false;
 
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
-  if(k==='e'){ tryTakeShotgun(); }
+  if(k==='e'){
+    if(wbMenuOpen){ wbCloseMenu(); }
+    else if(wbNear){ wbOpenMenu(); }
+    else { tryTakeShotgun(); }
+  }
+  if(k==='escape' && wbMenuOpen){ wbCloseMenu(); }
   if(k==='1'){ switchWeapon('pistol'); }
   if(k==='2'){ switchWeapon('smg'); }
   if(k==='3'){ switchWeapon('shotgun'); }
@@ -983,6 +1163,7 @@ document.addEventListener('keydown', e=>{
   keys[k]=true;
   if(['w','a','s','d','shift',' '].includes(k)) e.preventDefault();
 });
+document.getElementById('wbCloseBtn').addEventListener('click', wbCloseMenu);
 function tryJump(){
   if(!state.running) return;
   if(player.grounded){
@@ -996,6 +1177,7 @@ function switchWeapon(w){
   activeWeapon = w;
   refillMag(w);
   state.reloading = false;
+  updateRedDot();
   updateHUD();
 }
 function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle'; }
@@ -1136,6 +1318,11 @@ function updateWeaponSlots(){
 }
 let activeWeapon = 'pistol';
 let lastShotTime = 0;
+function updateRedDot(){
+  const el = document.getElementById('crosshair');
+  if(wbGet(activeWeapon).redDot) el.classList.add('rd');
+  else el.classList.remove('rd');
+}
 
 /* ---- ADS (Aim Down Sights) state ---- */
 const ADS_FOV = 47;
@@ -1197,8 +1384,9 @@ function shoot(){
     for(const z of zombies) if(z.alive){ targets.push(z.group); }
     if(state.boss && state.boss.alive) targets.push(state.boss.group);
     let anyHit = false;
+    const vGripDmg = wbGet('doubleShotgun').vGrip ? 0.7 : 1;
     for(let p=0;p<20;p++){
-      const spread = 0.04;
+      const spread = 0.04 * vGripDmg;
       const dx = (Math.random()-0.5)*spread;
       const dy = (Math.random()-0.5)*spread;
       const dz = (Math.random()-0.5)*spread;
@@ -1949,6 +2137,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
