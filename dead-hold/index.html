@@ -39,8 +39,9 @@
   .ammo .res{font-size:18px;color:var(--dim);font-weight:600}
   .ammo.low #mag{color:var(--danger)}
   .ammo.empty #mag,.ammo.empty .res{color:var(--danger);opacity:.6}
-  #crosshair{position:absolute;top:50%;left:50%;width:26px;height:26px;transform:translate(-50%,-50%);opacity:.85}
-  #crosshair::before,#crosshair::after{content:"";position:absolute;background:var(--accent);box-shadow:0 0 4px rgba(200,255,77,.6)}
+  #crosshair{position:absolute;top:50%;left:50%;width:26px;height:26px;transform:translate(-50%,-50%);opacity:.85;z-index:8}
+  #crosshair{opacity:1}
+  #crosshair::before,#crosshair::after{content:"";position:absolute;background:var(--accent);box-shadow:0 0 4px rgba(200,255,77,.6),0 0 2px rgba(0,0,0,.9)}
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
@@ -2959,7 +2960,9 @@ function loop(){
   // Re-attach the 3D red-dot scope on TOP of the new weapon model, near the
   // iron sights (top of the receiver, pointing forward along the barrel).
   if(!scopeGroup.parent) gun.add(scopeGroup);
-  scopeGroup.position.set(0, 0.14, -0.05);
+  // Offset the 3D red-dot scope tube to the side of the crosshair so it never
+  // covers the center reticle while aiming down sights.
+  scopeGroup.position.set(0.10, 0.14, -0.05);
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3407,6 +3410,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
