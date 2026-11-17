@@ -46,6 +46,11 @@
   #waveBanner{position:absolute;top:26%;left:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:clamp(28px,7vw,64px);font-weight:800;letter-spacing:.18em;color:var(--accent);text-shadow:0 0 24px rgba(200,255,77,.5);opacity:0;pointer-events:none}
   #waveBanner.show{animation:banner 2.2s ease forwards}
   @keyframes banner{0%{opacity:0;transform:translate(-50%,-40%) scale(.9)}15%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1.05)}}
+  #weaponName{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dim);margin-top:6px;text-transform:uppercase}
+  #weaponPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap}
+  #weaponPrompt.show{opacity:1}
+  #weaponPrompt .cost{color:var(--accent);font-weight:700}
+  #weaponPrompt .no{color:var(--danger)}
 
   /* ---------- Screens ---------- */
   .screen{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 30%,rgba(20,26,30,.7),rgba(6,8,10,.94));backdrop-filter:blur(3px)}
@@ -98,10 +103,18 @@
   <div class="corner bl">
     <div class="label">Ammo</div>
     <div class="ammo" id="ammo"><span id="mag">8</span> <span class="res">/ <span id="reserve">24</span></span></div>
+    <div id="weaponName">Pistol</div>
+  </div>
+  <div class="corner br">
+    <div class="label">Slot 1</div>
+    <div class="stat" style="font-size:15px" id="slot1">Pistol</div>
+    <div class="label" style="margin-top:8px">Slot 2</div>
+    <div class="stat" style="font-size:15px" id="slot2">—</div>
   </div>
   <div id="crosshair"><i></i></div>
   <div id="vignette"></div>
   <div id="hint">CLICK TO RESUME</div>
+  <div id="weaponPrompt"></div>
   <div id="waveBanner"></div>
 </div>
 
@@ -116,6 +129,9 @@
       <li><span class="key">SHIFT</span> Sprint</li>
       <li><span class="key">CLICK</span> Shoot</li>
       <li><span class="key">R</span> Reload</li>
+      <li><span class="key">1 / 2</span> Switch Gun</li>
+      <li><span class="key">E</span> Buy Weapon</li>
+      <li><span class="key">SPACE</span> Jump</li>
       <li><span class="key">ESC</span> Pause</li>
     </ul>
     <button class="btn" id="startBtn">Start</button>
@@ -889,6 +905,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
