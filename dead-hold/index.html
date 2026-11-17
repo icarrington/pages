@@ -44,6 +44,14 @@
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
+  #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
+  #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
+  #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
+  #hitmarker::after{transform:translate(-50%,-50%) rotate(-45deg)}
+  #hitmarker.headshot{width:26px;height:26px}
+  #hitmarker.headshot::before,#hitmarker.headshot::after{width:2px;height:26px;background:#ff4d4d;box-shadow:0 0 10px rgba(255,77,77,.8)}
+  #hitmarker.show{animation:hitmark .18s ease forwards}
+  @keyframes hitmark{0%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
   #vignette{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 42%,rgba(180,0,0,.55) 100%)}
   #hint{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--accent);background:var(--panel);border:1px solid var(--line);padding:8px 16px;opacity:0;transition:opacity .2s}
   #hint.show{opacity:1}
@@ -116,6 +124,7 @@
     <div class="slots" id="slots"></div>
   </div>
   <div id="crosshair"><i></i></div>
+  <div id="hitmarker"></div>
   <div id="vignette"></div>
   <div id="hint">CLICK TO RESUME</div>
   <div id="weaponPrompt"></div>
@@ -981,6 +990,7 @@ function shoot(){
           if(!anyHit) state.shotsHit++;
           anyHit = true;
           const isHead = (hit.object === z.head);
+          showHitmarker(isHead);
           const dmg = isHead ? 60 : 60;
           z.hp -= dmg;
           z.flash = 0.08;
@@ -1013,6 +1023,7 @@ function shoot(){
     if(z && z.alive){
       state.shotsHit++;
       const isHead = (hit.object === z.head);
+      showHitmarker(isHead);
       const dmg = isHead ? 30 : 15;
       z.hp -= dmg;
       z.flash = 0.08;
@@ -1022,6 +1033,14 @@ function shoot(){
     }
   }
   updateHUD();
+}
+
+function showHitmarker(isHead){
+  const el = document.getElementById('hitmarker');
+  el.classList.remove('show','headshot');
+  void el.offsetWidth;
+  if(isHead) el.classList.add('headshot');
+  el.classList.add('show');
 }
 
 function findZombie(obj){
@@ -1530,6 +1549,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
