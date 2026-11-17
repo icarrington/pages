@@ -3099,7 +3099,7 @@ function loop(){
     
     if(dist > 0.9){
       // --- CRITICAL FIX: Guarantee movement every frame ---
-      const speed = 4.0; // 4 units per second
+      const speed = 2.5; // 2.5 units per second (reduced by 37.5% for moderate pace)
       const step = speed * dt;
       
       // Unit direction toward player
@@ -3305,6 +3305,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
