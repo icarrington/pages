@@ -45,8 +45,10 @@
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
   #redDot{display:none;position:absolute;width:6px;height:6px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 8px rgba(255,42,30,.9);left:50%;top:50%;transform:translate(-50%,-50%)}
-  #crosshair.rd #redDot{display:block}
-  #crosshair.rd::before,#crosshair.rd::after{height:1px;width:100%;opacity:.5}
+  #crosshair.rd #redDot{display:block;width:4px;height:4px;background:#ff2a1e;box-shadow:0 0 6px rgba(255,42,30,.9),0 0 12px rgba(255,42,30,.5);left:50%;top:50%;transform:translate(-50%,-50%)}
+  #crosshair.rd::before,#crosshair.rd::after{display:none}
+  #crosshair.rd i{display:none}
+  #crosshair.rd::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;border:1.5px solid rgba(255,42,30,.75);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(255,42,30,.35),inset 0 0 4px rgba(255,42,30,.25)}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -1027,10 +1029,11 @@ const state = {
 const MAGS = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2 };
 const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun:1.2 };
 const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2 };
-function refillMag(w){ mags[w] = wbGet(w).extMag ? Math.floor(MAGS[w]*1.5) : MAGS[w]; }
+function refillMag(w){ mags[w] = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]; }
 function startReload(){
   const w = activeWeapon;
-  if(mags[w] >= MAGS[w]) return;
+  const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
+  if(mags[w] >= cap) return;
   state.reloading = true;
   state.reloadT = 0;
   state.reloadDur = RELOAD_TIME[w];
@@ -1830,7 +1833,7 @@ function updateHUD(){
   setNum('kills', state.kills);
   setNum('headshots', state.headshots);
   const mag = mags[activeWeapon];
-  const cap = MAGS[activeWeapon];
+  const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.5) : MAGS[activeWeapon];
   setNum('mag', mag);
   setNum('reserve', '∞');
   const ammoEl = document.getElementById('ammo');
@@ -2152,6 +2155,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
