@@ -444,6 +444,7 @@ const concreteDark = new THREE.MeshLambertMaterial({map:texFloor()}); // grass
 const wood = new THREE.MeshLambertMaterial({map:texCrate()}); // sand bunker
 const metal = new THREE.MeshLambertMaterial({map:texBarrel()}); // sand bunker
 const ceilMat = new THREE.MeshLambertMaterial({map:texCeiling(), side:THREE.FrontSide}); // sky
+const outerWallMat = new THREE.MeshLambertMaterial({map:texWall()}); // outer arena walls
 
 function box(w,h,d,mat,x,y,z){
   const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
@@ -481,19 +482,7 @@ wallSeg(-45, 24.75,40.5,0.5,0); addCollider(-45, 24.75,0.5,24.75,4.2);
 wallSeg(45,-24.75,40.5,0.5,0); addCollider(45,-24.75,0.5,24.75,4.2);
 wallSeg(45, 24.75,40.5,0.5,0); addCollider(45, 24.75,0.5,24.75,4.2);
 
-// ---- Extra outer walls to make the arena ~3x bigger (x,z in [-60,60]) ----
-// North (z=-60)
-wallSeg(-30,-60,0.5,60,0); addCollider(-30,-60,30,0.5,4.2);
-wallSeg( 30,-60,0.5,60,0); addCollider( 30,-60,30,0.5,4.2);
-// South (z=60)
-wallSeg(-30,60,0.5,60,0); addCollider(-30,60,30,0.5,4.2);
-wallSeg( 30,60,0.5,60,0); addCollider( 30,60,30,0.5,4.2);
-// West (x=-60)
-wallSeg(-60,-30,60,0.5,0); addCollider(-60,-30,0.5,30,4.2);
-wallSeg(-60, 30,60,0.5,0); addCollider(-60, 30,0.5,30,4.2);
-// East (x=60)
-wallSeg(60,-30,60,0.5,0); addCollider(60,-30,0.5,30,4.2);
-wallSeg(60, 30,60,0.5,0); addCollider(60, 30,0.5,30,4.2);
+
 
 // Sand bunkers (low mounds) — obstacles, spread over the larger arena
 const bunkerDefs = [
@@ -3321,6 +3310,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
