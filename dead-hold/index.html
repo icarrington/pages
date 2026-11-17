@@ -859,8 +859,12 @@ const player = {
   vel:new THREE.Vector3(0,0,0),
   yaw:0, pitch:0,
   radius:0.4,
-  bob:0
+  bob:0,
+  grounded:true
 };
+const JUMP_V = 5.2;   // initial upward velocity (m/s)
+const GRAVITY = 14;   // downward acceleration (m/s^2)
+const EYE = 1.7;      // standing eye height
 
 /* ============================ AUDIO ============================ */
 let audioCtx = null;
@@ -941,6 +945,14 @@ function playEmpty(){
   const g=audioCtx.createGain(); g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.06);
   o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.07);
 }
+function playJump(){
+  if(!audioCtx) return;
+  const t=now();
+  const o=audioCtx.createOscillator(); o.type='sine';
+  o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(320,t+0.12);
+  const g=audioCtx.createGain(); g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.18);
+}
 function playReload(){
   if(!audioCtx) return;
   const t=now();
@@ -967,9 +979,18 @@ document.addEventListener('keydown', e=>{
   if(k==='5' && state.hasDoubleShotgun){ switchWeapon('doubleShotgun'); }
   if(k==='r'){ startReload(); }
   if(k==='q'){ cycleWeapon(); }
+  if(k===' '){ tryJump(); }
   keys[k]=true;
   if(['w','a','s','d','shift',' '].includes(k)) e.preventDefault();
 });
+function tryJump(){
+  if(!state.running) return;
+  if(player.grounded){
+    player.vel.y = JUMP_V;
+    player.grounded = false;
+    playJump();
+  }
+}
 function switchWeapon(w){
   if(w===activeWeapon) return;
   activeWeapon = w;
@@ -1550,6 +1571,7 @@ function resetGame(){
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
+  player.grounded=true;
   camera.position.set(0,1.7,0);
   resetAds();
   state.over=false; state.running=true;
@@ -1734,11 +1756,23 @@ function loop(){
   const newPos = player.pos.clone().add(player.vel.clone().multiplyScalar(dt));
   resolveCollision(newPos);
   player.pos.copy(newPos);
-  player.pos.y = 1.7;
+
+  // jump: gravity pulls the player back down to the floor (eye height EYE)
+  if(!player.grounded){
+    player.vel.y -= GRAVITY*dt;
+    player.pos.y += player.vel.y*dt;
+    if(player.pos.y <= EYE){
+      player.pos.y = EYE;
+      player.vel.y = 0;
+      player.grounded = true;
+    }
+  } else {
+    player.pos.y = EYE;
+  }
 
   // head bob
-  if(moving){ player.bob += dt * (wantSprint?14:9); }
-  const bobY = Math.sin(player.bob)*0.03*(moving?1:0);
+  if(moving && player.grounded){ player.bob += dt * (wantSprint?14:9); }
+  const bobY = Math.sin(player.bob)*0.03*(moving && player.grounded ? 1 : 0);
   camera.position.set(player.pos.x, player.pos.y + bobY, player.pos.z);
   camera.rotation.set(player.pitch, player.yaw, 0);
 
@@ -1912,6 +1946,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
