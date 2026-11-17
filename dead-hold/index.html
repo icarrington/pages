@@ -1741,7 +1741,9 @@ function shoot(){
     const _vg2 = wbGet('doubleShotgun').vGrip ? 0.7 : 1;
     state.recoil = 1.5 * _vg2; state.muzzleT = 0.08;
     playShot();
-    // 10 pellets per barrel, 2 barrels = 20 pellets total
+    // 10 pellets per barrel, 2 barrels = 20 pellets total.
+    // Bullets PENETRATE everything: each pellet damages EVERY zombie in its path
+    // (no wall/obstacle blocking). Only the world edge / max range stops them.
     const origin = new THREE.Vector3(0,0,0).applyMatrix4(camera.matrixWorld);
     const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
     const targets = [];
@@ -1755,12 +1757,10 @@ function shoot(){
       const dy = (Math.random()-0.5)*spread;
       const dz = (Math.random()-0.5)*spread;
       const d = new THREE.Vector3(dir.x+dx, dir.y+dy, dir.z+dz).normalize();
-      // Check wall hit first
-      const wallDist = rayHitWalls(origin, d, 100);
-      const ray = new THREE.Raycaster(origin, d, 0.1, 100);
+      // Penetrates all objects — only max range stops pellets
+      const ray = new THREE.Raycaster(origin, d, 0.1, 9999);
       const hits = ray.intersectObjects(targets, true);
-      if(hits.length && hits[0].distance < wallDist){
-        const hit = hits[0];
+      for(const hit of hits){
         const z = findZombie(hit.object);
         if(z && z.alive){
           if(!anyHit) state.shotsHit++;
@@ -1787,18 +1787,18 @@ function shoot(){
   const _vg = wbGet(activeWeapon).vGrip ? 0.7 : 1;
   state.recoil = 1 * _vg; state.muzzleT = 0.06;
   playShot();
-  // hitscan
+  // hitscan — PENETRATES every object; damages EVERY zombie in the line.
+  // No wall/obstacle blocking; only the world edge / max range stops the bullet.
   const origin = new THREE.Vector3(0,0,0).applyMatrix4(camera.matrixWorld);
   const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
-  // Check wall hit first
-  const wallDist = rayHitWalls(origin, dir, 100);
-  const ray = new THREE.Raycaster(origin, dir, 0.1, 100);
+  // Bullets PENETRATE all objects (walls, trees, rocks, props) — only world edge / max range stops them.
+  // We only intersect against zombie/boss groups, never against scene geometry or colliders.
+  const ray = new THREE.Raycaster(origin, dir, 0.1, 9999);
   const targets = [];
   for(const z of zombies) if(z.alive){ targets.push(z.group); }
   if(state.boss && state.boss.alive) targets.push(state.boss.group);
   const hits = ray.intersectObjects(targets, true);
-  if(hits.length && hits[0].distance < wallDist){
-    const hit = hits[0];
+  for(const hit of hits){
     const z = findZombie(hit.object);
     if(z && z.alive){
       state.shotsHit++;
@@ -2598,6 +2598,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
