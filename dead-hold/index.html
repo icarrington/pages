@@ -2454,7 +2454,7 @@ function killZombie(z, isHead){
 function startWave(n){
   state.wave = n;
   const count = 5 + n * 3;
-  const speed = 1.4 + n * 0.21; // Increased by ~40%
+  const speed = 2.4 + n * 0.30; // Faster base so zombies visibly walk/run toward the player
   const playerX = player.pos.x;
   const playerZ = player.pos.z;
   for(let i=0;i<count;i++){
@@ -2499,6 +2499,13 @@ function spawnZombie(data){
   z.flash = 0;
   z.attackCd = 0;
   z.bobPhase = Math.random()*Math.PI*2;
+  // Obstacle-avoidance / stuck-detection state
+  z.lastX = data.x; z.lastZ = data.z;
+  z.movedDist = 0;
+  z.stuckTimer = 0;
+  z.detourTimer = 0;
+  z.detourDir = Math.random() < 0.5 ? 1 : -1;
+  z.speedVar = 0.85 + Math.random()*0.5; // per-zombie speed variance (0.85-1.35)
   scene.add(z.group);
   zombies.push(z);
 }
@@ -2618,14 +2625,41 @@ function updateBoss(dt){
     b.aR.rotation.x = -0.4 + Math.sin(b.bobPhase)*0.15;
     b.aL.rotation.x = -0.4 - Math.sin(b.bobPhase)*0.15;
     if(dist > 2.5){
-      const step = b.speed*dt;
-      let nx = b.group.position.x + (dx/dist)*step;
-      let nz = b.group.position.z + (dz/dist)*step;
+      // Boss obstacle-avoidance + stuck detection (same scheme as zombies)
+      if(b.lastX==null){ b.lastX=b.group.position.x; b.lastZ=b.group.position.z; b.movedDist=0; b.stuckTimer=0; b.detourTimer=0; b.detourDir=1; }
+      const spd = b.speed;
+      const step = spd*dt;
+      const ux = dx/dist, uz = dz/dist;
+      const px = -uz, pz = ux;
+      let dirX = ux, dirZ = uz;
+      if(b.detourTimer > 0){
+        b.detourTimer -= dt;
+        dirX = ux*0.35 + px*b.detourDir*0.9;
+        dirZ = uz*0.35 + pz*b.detourDir*0.9;
+        const dl = Math.hypot(dirX,dirZ) || 1; dirX/=dl; dirZ/=dl;
+      }
+      let nx = b.group.position.x + dirX*step;
+      let nz = b.group.position.z + dirZ*step;
       if(!zombieBlocked(nx,nz)){ b.group.position.x=nx; b.group.position.z=nz; }
       else {
-        if(!zombieBlocked(nx, b.group.position.z)) b.group.position.x=nx;
-        else if(!zombieBlocked(b.group.position.x, nz)) b.group.position.z=nz;
+        const cand = [
+          [ b.group.position.x + px*b.detourDir*step, b.group.position.z + pz*b.detourDir*step ],
+          [ b.group.position.x - px*b.detourDir*step, b.group.position.z - pz*b.detourDir*step ],
+          [ nx, b.group.position.z ],
+          [ b.group.position.x, nz ]
+        ];
+        for(const c of cand){ if(!zombieBlocked(c[0],c[1])){ b.group.position.x=c[0]; b.group.position.z=c[1]; break; } }
       }
+      const movedThisFrame = Math.hypot(b.group.position.x - b.lastX, b.group.position.z - b.lastZ);
+      b.movedDist += movedThisFrame; b.lastX = b.group.position.x; b.lastZ = b.group.position.z;
+      b.stuckTimer += dt;
+      if(b.stuckTimer >= 0.5){
+        if(b.movedDist < 0.12){ b.detourTimer = 1.0; b.detourDir = Math.random()<0.5?1:-1; }
+        b.movedDist = 0; b.stuckTimer = 0;
+      }
+      const _B = 59.4;
+      if(b.group.position.x < -_B) b.group.position.x = -_B; else if(b.group.position.x > _B) b.group.position.x = _B;
+      if(b.group.position.z < -_B) b.group.position.z = -_B; else if(b.group.position.z > _B) b.group.position.z = _B;
       b.bobPhase += dt*3;
       b.group.position.y = Math.abs(Math.sin(b.bobPhase))*0.08;
     } else {
@@ -3059,14 +3093,67 @@ function loop(){
     const dist = Math.hypot(dx,dz);
     z.group.rotation.y = Math.atan2(dx,dz);
     if(dist>0.9){
-      const step = z.speed*dt;
-      let nx = z.group.position.x + (dx/dist)*step;
-      let nz = z.group.position.z + (dz/dist)*step;
-      if(!zombieBlocked(nx,nz)){ z.group.position.x=nx; z.group.position.z=nz; }
-      else {
-        if(!zombieBlocked(nx, z.group.position.z)) z.group.position.x=nx;
-        else if(!zombieBlocked(z.group.position.x, nz)) z.group.position.z=nz;
+      // ---- Obstacle avoidance + stuck detection ----
+      const spd = z.speed * (z.speedVar || 1);
+      const step = spd*dt;
+      // Direction toward player (unit)
+      const ux = dx/dist, uz = dz/dist;
+      // Perpendicular (left) direction
+      const px = -uz, pz = ux;
+
+      // Decide desired direction: normal pathing, or a lateral detour if stuck
+      let dirX = ux, dirZ = uz;
+      if(z.detourTimer > 0){
+        z.detourTimer -= dt;
+        // Blend detour direction with the toward-player direction so we still
+        // generally head toward the player while sliding around the obstacle.
+        dirX = ux*0.35 + px*z.detourDir*0.9;
+        dirZ = uz*0.35 + pz*z.detourDir*0.9;
+        const dl = Math.hypot(dirX,dirZ) || 1; dirX/=dl; dirZ/=dl;
       }
+
+      let nx = z.group.position.x + dirX*step;
+      let nz = z.group.position.z + dirZ*step;
+
+      // Try the desired step; if blocked, try sliding along the obstacle edge
+      // (perpendicular offsets, left then right), then axis-aligned slides.
+      let moved = false;
+      if(!zombieBlocked(nx,nz)){ z.group.position.x=nx; z.group.position.z=nz; moved=true; }
+      else {
+        // Slide left / right along the obstacle while still heading toward player
+        const cand = [
+          [ z.group.position.x + px*z.detourDir*step, z.group.position.z + pz*z.detourDir*step ],
+          [ z.group.position.x - px*z.detourDir*step, z.group.position.z - pz*z.detourDir*step ],
+          [ nx, z.group.position.z ],
+          [ z.group.position.x, nz ]
+        ];
+        for(const c of cand){
+          if(!zombieBlocked(c[0],c[1])){ z.group.position.x=c[0]; z.group.position.z=c[1]; moved=true; break; }
+        }
+      }
+
+      // Stuck detection: if we barely moved over ~0.5s, trigger a random detour
+      const movedThisFrame = Math.hypot(z.group.position.x - z.lastX, z.group.position.z - z.lastZ);
+      z.movedDist += movedThisFrame;
+      z.lastX = z.group.position.x; z.lastZ = z.group.position.z;
+      z.stuckTimer += dt;
+      if(z.stuckTimer >= 0.5){
+        if(z.movedDist < 0.12){
+          // Stuck — pick a random lateral detour for ~1s, flip direction
+          z.detourTimer = 1.0;
+          z.detourDir = Math.random() < 0.5 ? 1 : -1;
+        }
+        z.movedDist = 0;
+        z.stuckTimer = 0;
+      }
+
+      // Hard clamp inside the arena so zombies can never escape the walls
+      const _B = 59.4;
+      if(z.group.position.x < -_B) z.group.position.x = -_B;
+      else if(z.group.position.x > _B) z.group.position.x = _B;
+      if(z.group.position.z < -_B) z.group.position.z = -_B;
+      else if(z.group.position.z > _B) z.group.position.z = _B;
+
       z.bobPhase += dt*6;
       z.group.position.y = Math.abs(Math.sin(z.bobPhase))*0.06;
       z.aL.rotation.x = -0.5 + Math.sin(z.bobPhase)*0.2;
@@ -3180,6 +3267,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
