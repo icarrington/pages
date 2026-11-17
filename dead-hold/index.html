@@ -249,7 +249,6 @@
     <ul class="controls">
       <li><span class="key">W A S D</span> Move</li>
       <li><span class="key">MOUSE</span> Aim</li>
-      <li><span class="key">SHIFT</span> Sprint</li>
       <li><span class="key">CLICK</span> Shoot</li>
       <li><span class="key">RMB</span> Aim (ADS)</li>
       <li><span class="key">1-4</span> Switch Gun</li>
@@ -1514,7 +1513,7 @@ document.addEventListener('keydown', e=>{
   if(k==='q'){ cycleWeapon(); }
   if(k===' '){ tryJump(); }
   keys[k]=true;
-  if(['w','a','s','d','shift',' '].includes(k)) e.preventDefault();
+  if(['w','a','s','d',' '].includes(k)) e.preventDefault();
 });
 document.getElementById('wbCloseBtn').addEventListener('click', wbCloseMenu);
 function tryJump(){
@@ -2358,10 +2357,8 @@ function loop(){
   const moving = move.lengthSq()>0;
   if(moving) move.normalize();
 
-  const wantSprint = keys['shift'] && moving && state.stamina>0;
+  // No sprint: constant walk speed. Stamina stays full (no drain).
   let speed = 4.2;
-  if(wantSprint){ speed = 7.2; state.stamina = Math.max(0, state.stamina - 22*dt); }
-  else { state.stamina = Math.min(100, state.stamina + 16*dt); }
   if(adsActive) speed *= ADS_SPEED;
 
   const targetVel = move.multiplyScalar(speed);
@@ -2383,8 +2380,8 @@ function loop(){
     player.pos.y = EYE;
   }
 
-  // head bob
-  if(moving && player.grounded){ player.bob += dt * (wantSprint?14:9); }
+  // head bob (subtle vertical bob only while moving)
+  if(moving && player.grounded){ player.bob += dt * 9; }
   const bobY = Math.sin(player.bob)*0.03*(moving && player.grounded ? 1 : 0);
   camera.position.set(player.pos.x, player.pos.y + bobY, player.pos.z);
   camera.rotation.set(player.pitch, player.yaw, 0);
@@ -2392,24 +2389,16 @@ function loop(){
   /* ---- recoil / muzzle ---- */
   if(state.recoil>0){ state.recoil = Math.max(0, state.recoil - dt*8); }
   
-  // Idle sway animation (2Hz sine wave, ~0.01 amplitude)
-  swayX = Math.sin(state.seconds * 12.566) * 0.01;
-  swayY = Math.sin(state.seconds * 12.566 + Math.PI/2) * 0.01;
-
-  // Sprint animation: smooth, deliberate weapon lean (tilt forward + pull back),
-  // ease-in/ease-out. No rapid bobbing — a controlled, cinematic lean.
+  // Lateral gun sway: while moving the weapon rocks SIDEWAYS (left-right)
+  // rhythmically, like a weapon inspect animation. No forward/back bobbing —
+  // only lateral sway. Amplitude eases in/out with movement.
   {
-    const sprintTarget = (wantSprint && moving && player.grounded) ? 1 : 0;
-    const sprintBlend = 1 - Math.pow(0.001, dt); // smooth lerp factor
-    if(sprintTarget === 1){
-      sprintLean += (0.12 - sprintLean) * sprintBlend;   // tilt forward (lean into run)
-      sprintBobY += (-0.02 - sprintBobY) * sprintBlend;  // pull back slightly
-      sprintBobX *= (1 - sprintBlend);                    // no lateral sway
-    } else {
-      sprintBobX *= (1 - sprintBlend);
-      sprintBobY *= (1 - sprintBlend);
-      sprintLean *= (1 - sprintBlend);
-    }
+    const swayTarget = (moving && player.grounded) ? 1 : 0;
+    const swayBlend = 1 - Math.pow(0.001, dt); // smooth lerp factor
+    swayX = Math.sin(state.seconds * 10) * 0.05 * swayTarget; // left-right rock
+    swayY = 0; // no vertical bob
+    // keep sprint vars at rest (sprint removed)
+    sprintBobX = 0; sprintBobY = 0; sprintLean = 0;
   }
 
   // Recoil: kick back (z +0.05) and up (y +0.03)
@@ -2581,6 +2570,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
