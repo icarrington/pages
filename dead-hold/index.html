@@ -154,10 +154,16 @@
   #btnReload{right:20px;bottom:272px;width:64px;height:44px;font-size:11px;border-radius:10px}
   #btnInspect{right:120px;bottom:272px;width:64px;height:44px;font-size:11px;border-radius:10px}
   #btnWorkbench{right:20px;bottom:330px;width:64px;height:44px;font-size:10px;border-radius:10px}
+  #btnCycle{right:120px;bottom:330px;width:64px;height:44px;font-size:10px;border-radius:10px}
   #tSlots{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
   #tSlots .tslot{width:46px;height:46px;border-radius:10px;font-size:16px;font-weight:800;color:var(--dim);background:rgba(10,14,12,.6);border:1px solid var(--line);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
   #tSlots .tslot.active{color:var(--accent);border-color:var(--accent);background:rgba(200,255,77,.12)}
   #mobileTag{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);pointer-events:none}
+  /* Mobile: keep the workbench menu within the safe area and scrollable */
+  @media (max-width:700px){
+    #wbMenu{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+    #wbMenu .wb-card{max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  }
   @media (max-width:700px){
     .corner{padding:8px}
     .bar{width:38vw}
@@ -167,9 +173,12 @@
     .slots{gap:5px}
     #hud .corner.tr{top:auto;bottom:120px;right:8px}
   }
+  /* Mobile: kill native scroll/zoom gestures across the whole page */
+  #game, #touchUI, body, html{touch-action:none;-webkit-user-select:none;user-select:none}
 </style>
 </head>
 <body>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <canvas id="game"></canvas>
 
 <div id="touchUI">
@@ -181,6 +190,7 @@
   <div class="tbtn" id="btnReload">RELOAD</div>
   <div class="tbtn" id="btnInspect">INSPECT</div>
   <div class="tbtn" id="btnWorkbench">WORKBENCH</div>
+  <div class="tbtn" id="btnCycle">CYCLE</div>
   <div id="tSlots"></div>
 </div>
 
@@ -1418,21 +1428,51 @@ function initTouch(){
     if(wbMenuOpen) wbCloseMenu(); else wbOpenMenu();
     btnWorkbench.classList.add('pressed');
   }, e=>{ e.preventDefault(); btnWorkbench.classList.remove('pressed'); });
+  // Cycle weapon (equivalent to Q / wheel)
+  const btnCycle = document.getElementById('btnCycle');
+  if(btnCycle){
+    bindTouch(btnCycle, e=>{
+      e.preventDefault(); ensureAudio();
+      if(state.running && !wbMenuOpen) cycleWeapon();
+      btnCycle.classList.add('pressed');
+    }, e=>{ e.preventDefault(); btnCycle.classList.remove('pressed'); });
+  }
   // Prevent double-tap zoom / scroll on canvas
   canvas.addEventListener('touchstart', e=>{ e.preventDefault(); }, {passive:false});
   canvas.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchend', e=>{ e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchcancel', e=>{ e.preventDefault(); }, {passive:false});
   // Prevent page zoom
   document.addEventListener('gesturestart', e=>{ e.preventDefault(); });
   document.addEventListener('dblclick', e=>{ e.preventDefault(); });
+  // Block iOS double-tap zoom + pinch zoom globally (also covers non-touch UI)
+  document.addEventListener('touchstart', e=>{ if(e.touches && e.touches.length>1) e.preventDefault(); }, {passive:false});
+  document.addEventListener('touchend', e=>{
+    const t = e.changedTouches && e.changedTouches[0];
+    if(t && Date.now() - (t._lastTap||0) < 300 && e.target.closest('button,.tslot,.wb-row,.wb-close')){
+      // allow a single tap on buttons but stop the browser's double-tap zoom
+    }
+    if(t) t._lastTap = Date.now();
+  }, {passive:true});
+  document.addEventListener('touchmove', e=>{ if(e.target.closest('#touchUI')||e.target===canvas) e.preventDefault(); }, {passive:false});
 }
-window.addEventListener('orientationchange', ()=>{
-  setTimeout(()=>{
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  }, 200);
-});
+function onResize(){
+  const w = window.innerWidth, h = window.innerHeight;
+  camera.aspect = w/h;
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', ()=>{ setTimeout(onResize, 120); });
+if(window.visualViewport){ window.visualViewport.addEventListener('resize', onResize); }
 initTouch();
+
+// Kick off the render loop so the world is visible behind the start screen (mobile + desktop)
+if(!window._loopStarted){
+  window._loopStarted = true;
+  requestAnimationFrame(loop);
+}
 
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
@@ -2103,6 +2143,11 @@ function startGame(){
   document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('overScreen').classList.add('hidden');
   canvas.requestPointerLock && canvas.requestPointerLock();
+  // Mobile: kick off the render loop if it hasn't started yet
+  if(!window._loopStarted){
+    window._loopStarted = true;
+    requestAnimationFrame(loop);
+  }
 }
 function endGame(){
   state.running=false; state.over=true;
@@ -2174,7 +2219,14 @@ function loop(){
   let dt = (nowMs - lastT)/1000;
   lastT = nowMs;
   if(dt>0.05) dt=0.05;
-  if(document.hidden){ lastT = nowMs; return; }
+  if(document.hidden){ lastT = nowMs; renderer.render(scene, camera); return; }
+  // Mobile: ensure canvas stays in sync with viewport (orientation change, safe-area, etc.)
+  if(isTouch){
+    const w = window.innerWidth, h = window.innerHeight;
+    if(canvas.width !== Math.floor(w * renderer.getPixelRatio()) || canvas.height !== Math.floor(h * renderer.getPixelRatio())){
+      onResize();
+    }
+  }
 
   // adaptive quality sampling
   fpsAccum += dt; fpsFrames++;
@@ -2515,6 +2567,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
