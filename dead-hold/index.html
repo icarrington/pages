@@ -205,6 +205,7 @@
     <div class="stat" style="margin-top:8px"><span class="k">Points</span><span id="points">0</span></div>
     <div class="stat" style="margin-top:8px"><span class="k">Kills</span><span id="kills">0</span></div>
     <div class="stat" style="margin-top:8px"><span class="k">Headshots</span><span id="headshots">0</span></div>
+    <div class="stat" style="margin-top:8px"><span class="k">Zombies Left</span><span id="zombiesLeft">0</span></div>
   </div>
   <div class="corner bl">
     <div class="label">Ammo</div>
@@ -2234,6 +2235,7 @@ function updateHUD(){
   setNum('points', state.points);
   setNum('kills', state.kills);
   setNum('headshots', state.headshots);
+  setNum('zombiesLeft', zombies.filter(z=>z.alive).length + (state.boss && state.boss.alive ? 1 : 0));
   const mag = mags[activeWeapon];
   const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.5) : MAGS[activeWeapon];
   setNum('mag', mag);
@@ -2651,6 +2653,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
