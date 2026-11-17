@@ -1620,7 +1620,7 @@ const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotM
 scopeDot.position.set(0,0,-0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.14, -0.05); // mounted on TOP of the weapon, near the iron sights
+scopeGroup.position.set(0, 0.11, -0.10); // centered over the barrel (x=0), sitting on top of the receiver, just ahead of the iron sights
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2957,12 +2957,11 @@ function loop(){
     }
   }
   gun.add(model);
-  // Re-attach the 3D red-dot scope on TOP of the new weapon model, near the
-  // iron sights (top of the receiver, pointing forward along the barrel).
+  // Re-attach the 3D red-dot scope on TOP of the new weapon model, centered
+  // over the barrel (x=0) so it reads as mounted on the receiver, just ahead
+  // of the iron sights and never covering the center reticle.
   if(!scopeGroup.parent) gun.add(scopeGroup);
-  // Offset the 3D red-dot scope tube to the side of the crosshair so it never
-  // covers the center reticle while aiming down sights.
-  scopeGroup.position.set(0.10, 0.14, -0.05);
+  scopeGroup.position.set(0, 0.11, -0.10);
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3410,6 +3409,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
