@@ -215,17 +215,17 @@ function wallSeg(x,z,thick,depth,rotY){
   return m;
 }
 // North wall (z=-15): two segments + gap center
-wallSeg(-8.25,-15,0.5,13.5,0); addCollider(-8.25,-15,8.25,0.35);
-wallSeg( 8.25,-15,0.5,13.5,0); addCollider( 8.25,-15,8.25,0.35);
+wallSeg(-8.25,-15,0.5,13.5,0); addCollider(-8.25,-15,8.25,0.5);
+wallSeg( 8.25,-15,0.5,13.5,0); addCollider( 8.25,-15,8.25,0.5);
 // South wall (z=15): gap center
-wallSeg(-8.25,15,0.5,13.5,0); addCollider(-8.25,15,8.25,0.35);
-wallSeg( 8.25,15,0.5,13.5,0); addCollider( 8.25,15,8.25,0.35);
+wallSeg(-8.25,15,0.5,13.5,0); addCollider(-8.25,15,8.25,0.5);
+wallSeg( 8.25,15,0.5,13.5,0); addCollider( 8.25,15,8.25,0.5);
 // West wall (x=-15): gap center
-wallSeg(-15,-8.25,13.5,0.5,0); addCollider(-15,-8.25,0.35,8.25);
-wallSeg(-15, 8.25,13.5,0.5,0); addCollider(-15, 8.25,0.35,8.25);
+wallSeg(-15,-8.25,13.5,0.5,0); addCollider(-15,-8.25,0.5,8.25);
+wallSeg(-15, 8.25,13.5,0.5,0); addCollider(-15, 8.25,0.5,8.25);
 // East wall (x=15): gap center
-wallSeg(15,-8.25,13.5,0.5,0); addCollider(15,-8.25,0.35,8.25);
-wallSeg(15, 8.25,13.5,0.5,0); addCollider(15, 8.25,0.35,8.25);
+wallSeg(15,-8.25,13.5,0.5,0); addCollider(15,-8.25,0.5,8.25);
+wallSeg(15, 8.25,13.5,0.5,0); addCollider(15, 8.25,0.5,8.25);
 
 // Crates & pillars
 const crateDefs = [
@@ -237,14 +237,14 @@ const crateDefs = [
 crateDefs.forEach(c=>{
   const s=c[2];
   box(s,s,s,c[5],c[0],s/2,c[1]);
-  addCollider(c[0],c[1],s/2+0.15,s/2+0.15);
+  addCollider(c[0],c[1],s/2+0.2,s/2+0.2);
 });
 // Pillars (cylinders)
 const pillarDefs = [[-9,-9],[9,-9],[-9,9],[9,9]];
 pillarDefs.forEach(p=>{
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,4.2,16), concrete);
   m.position.set(p[0],2.1,p[1]); m.castShadow=true; m.receiveShadow=true; scene.add(m);
-  addCollider(p[0],p[1],0.85,0.85);
+  addCollider(p[0],p[1],0.9,0.9);
 });
 
 // Doorway markers (subtle glow strips)
@@ -807,21 +807,23 @@ document.addEventListener('wheel', e=>{
 /* ============================ COLLISION ============================ */
 function resolveCollision(pos){
   const r = player.radius;
-  // walls
+  // walls (arena boundary)
   pos.x = Math.max(-HALF+r, Math.min(HALF-r, pos.x));
   pos.z = Math.max(-HALF+r, Math.min(HALF-r, pos.z));
-  // crates/pillars
-  for(const c of colliders){
-    if(pos.x > c.minX-r && pos.x < c.maxX+r && pos.z > c.minZ-r && pos.z < c.maxZ+r){
-      const dxl = (pos.x) - (c.minX-r);
-      const dxr = (c.maxX+r) - (pos.x);
-      const dzl = (pos.z) - (c.minZ-r);
-      const dzr = (c.maxZ+r) - (pos.z);
-      const m = Math.min(dxl,dxr,dzl,dzr);
-      if(m===dxl) pos.x = c.minX-r;
-      else if(m===dxr) pos.x = c.maxX+r;
-      else if(m===dzl) pos.z = c.minZ-r;
-      else pos.z = c.maxZ+r;
+  // crates/pillars — two passes for corner robustness
+  for(let pass=0; pass<2; pass++){
+    for(const c of colliders){
+      if(pos.x > c.minX-r && pos.x < c.maxX+r && pos.z > c.minZ-r && pos.z < c.maxZ+r){
+        const dxl = (pos.x) - (c.minX-r);
+        const dxr = (c.maxX+r) - (pos.x);
+        const dzl = (pos.z) - (c.minZ-r);
+        const dzr = (c.maxZ+r) - (pos.z);
+        const m = Math.min(dxl,dxr,dzl,dzr);
+        if(m===dxl) pos.x = c.minX-r;
+        else if(m===dxr) pos.x = c.maxX+r;
+        else if(m===dzl) pos.z = c.minZ-r;
+        else pos.z = c.maxZ+r;
+      }
     }
   }
   return pos;
@@ -922,9 +924,11 @@ function shoot(){
       const dy = (Math.random()-0.5)*spread;
       const dz = (Math.random()-0.5)*spread;
       const d = new THREE.Vector3(dir.x+dx, dir.y+dy, dir.z+dz).normalize();
+      // Check wall hit first
+      const wallDist = rayHitWalls(origin, d, 100);
       const ray = new THREE.Raycaster(origin, d, 0.1, 100);
       const hits = ray.intersectObjects(targets, true);
-      if(hits.length){
+      if(hits.length && hits[0].distance < wallDist){
         const hit = hits[0];
         const z = findZombie(hit.object);
         if(z && z.alive){
@@ -951,11 +955,13 @@ function shoot(){
   // hitscan
   const origin = new THREE.Vector3(0,0,0).applyMatrix4(camera.matrixWorld);
   const dir = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  // Check wall hit first
+  const wallDist = rayHitWalls(origin, dir, 100);
   const ray = new THREE.Raycaster(origin, dir, 0.1, 100);
   const targets = [];
   for(const z of zombies) if(z.alive){ targets.push(z.group); }
   const hits = ray.intersectObjects(targets, true);
-  if(hits.length){
+  if(hits.length && hits[0].distance < wallDist){
     const hit = hits[0];
     const z = findZombie(hit.object);
     if(z && z.alive){
@@ -979,6 +985,54 @@ function findZombie(obj){
     o = o.parent;
   }
   return null;
+}
+
+// Ray vs AABB (slab method). Returns distance along ray or Infinity if no hit.
+function rayHitAABB(origin, dir, minX, maxX, minZ, maxZ){
+  let tMin = 0, tMax = 100;
+  // X slab
+  if(Math.abs(dir.x) < 1e-8){
+    if(origin.x < minX || origin.x > maxX) return Infinity;
+  } else {
+    let t1 = (minX - origin.x) / dir.x;
+    let t2 = (maxX - origin.x) / dir.x;
+    if(t1 > t2){ const tmp=t1; t1=t2; t2=tmp; }
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if(tMin > tMax) return Infinity;
+  }
+  // Z slab
+  if(Math.abs(dir.z) < 1e-8){
+    if(origin.z < minZ || origin.z > maxZ) return Infinity;
+  } else {
+    let t1 = (minZ - origin.z) / dir.z;
+    let t2 = (maxZ - origin.z) / dir.z;
+    if(t1 > t2){ const tmp=t1; t1=t2; t2=tmp; }
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if(tMin > tMax) return Infinity;
+  }
+  return tMin;
+}
+
+// Check if a ray from origin along dir hits any collider before distance maxDist.
+// Returns the hit distance or Infinity.
+function rayHitWalls(origin, dir, maxDist){
+  let best = Infinity;
+  for(const c of colliders){
+    const t = rayHitAABB(origin, dir, c.minX, c.maxX, c.minZ, c.maxZ);
+    if(t < best && t <= maxDist) best = t;
+  }
+  // Arena boundary walls
+  const tN = rayHitAABB(origin, dir, -HALF-1, HALF+1, -HALF-0.5, -HALF+0.5);
+  if(tN < best && tN <= maxDist) best = tN;
+  const tS = rayHitAABB(origin, dir, -HALF-1, HALF+1, HALF-0.5, HALF+0.5);
+  if(tS < best && tS <= maxDist) best = tS;
+  const tW = rayHitAABB(origin, dir, -HALF-0.5, -HALF+0.5, -HALF-1, HALF+1);
+  if(tW < best && tW <= maxDist) best = tW;
+  const tE = rayHitAABB(origin, dir, HALF-0.5, HALF+0.5, -HALF-1, HALF+1);
+  if(tE < best && tE <= maxDist) best = tE;
+  return best;
 }
 function killZombie(z, isHead){
   z.alive = false;
@@ -1416,6 +1470,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
