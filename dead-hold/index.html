@@ -1050,6 +1050,7 @@ function shoot(){
         }
       }
     }
+    if(state.boss && state.boss.alive) updateBossBar(true);
     updateHUD();
     return;
   }
@@ -1066,6 +1067,7 @@ function shoot(){
   const ray = new THREE.Raycaster(origin, dir, 0.1, 100);
   const targets = [];
   for(const z of zombies) if(z.alive){ targets.push(z.group); }
+  if(state.boss && state.boss.alive) targets.push(state.boss.group);
   const hits = ray.intersectObjects(targets, true);
   if(hits.length && hits[0].distance < wallDist){
     const hit = hits[0];
@@ -1083,6 +1085,7 @@ function shoot(){
       if(z.hp<=0) killZombie(z, isHead);
     }
   }
+  if(state.boss && state.boss.alive) updateBossBar(true);
   updateHUD();
 }
 
@@ -1747,6 +1750,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
