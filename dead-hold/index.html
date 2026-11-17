@@ -195,11 +195,11 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = false;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.6;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e);
-scene.fog = new THREE.Fog(0x1a1a2e, 5, 50);
+scene.background = new THREE.Color(0x3a4a5e);
+scene.fog = new THREE.Fog(0x3a4a5e, 5, 50);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 120);
 camera.rotation.order = 'YXZ';
@@ -210,10 +210,10 @@ const HALF = 15;
 const colliders = []; // {minX,maxX,minZ,maxZ}
 function addCollider(x,z,hw,hd){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd}); }
 
-const concrete = new THREE.MeshLambertMaterial({color:0x6a6a7a});
-const concreteDark = new THREE.MeshLambertMaterial({color:0x4a4a5a});
-const wood = new THREE.MeshLambertMaterial({color:0x8a6a3a});
-const metal = new THREE.MeshLambertMaterial({color:0x5a6068});
+const concrete = new THREE.MeshLambertMaterial({color:0x9a9aaa});
+const concreteDark = new THREE.MeshLambertMaterial({color:0x7a7a8a});
+const wood = new THREE.MeshLambertMaterial({color:0xb89050});
+const metal = new THREE.MeshLambertMaterial({color:0x8a9098});
 
 function box(w,h,d,mat,x,y,z){
   const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
@@ -224,7 +224,7 @@ function box(w,h,d,mat,x,y,z){
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), concreteDark);
 floor.rotation.x = -Math.PI/2; scene.add(floor);
 // Ceiling
-const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), new THREE.MeshLambertMaterial({color:0x2a2d31}));
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), new THREE.MeshLambertMaterial({color:0x5a6068}));
 ceil.rotation.x = Math.PI/2; ceil.position.y = 4.2; scene.add(ceil);
 
 // Walls (with door gaps)
@@ -267,7 +267,7 @@ pillarDefs.forEach(p=>{
 });
 
 // Scattered debris boxes
-const debrisMat = new THREE.MeshLambertMaterial({color:0x33363a});
+const debrisMat = new THREE.MeshLambertMaterial({color:0x6a6e74});
 const debrisDefs = [
   [-2.5,-3,0.5,0.4,0.6],[-3,3.5,0.4,0.3,0.5],[3.5,-5,0.6,0.5,0.7],
   [4,2,0.4,0.35,0.5],[-5,1,0.5,0.4,0.5],[1,6.5,0.45,0.3,0.55],
@@ -279,7 +279,7 @@ debrisDefs.forEach(d=>{
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15);
 });
 // Broken barrels (cylinders)
-const barrelMat = new THREE.MeshLambertMaterial({color:0x4a3a2a});
+const barrelMat = new THREE.MeshLambertMaterial({color:0x7a6a4a});
 const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
 [[-7,-3],[3,-6.5],[7,5.5]].forEach(p=>{
   const m = new THREE.Mesh(barrelGeo, barrelMat);
@@ -298,17 +298,24 @@ const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12
 });
 
 /* ============================ LIGHTS ============================ */
-scene.add(new THREE.AmbientLight(0x3a4550, 1.2));
-const hemi = new THREE.HemisphereLight(0x2a333c, 0x0a0c0e, 0.9); scene.add(hemi);
+scene.add(new THREE.AmbientLight(0x8899aa, 2.5));
+const hemi = new THREE.HemisphereLight(0x667788, 0x334455, 2.0); scene.add(hemi);
 
 // Extra warm fill lights: four corners + two mid-floor (no shadows, cheap)
 function addFill(x,z){
-  const l = new THREE.PointLight(0xffeedd, 2.5, 25, 2);
+  const l = new THREE.PointLight(0xffeedd, 5.0, 25, 2);
   l.castShadow = false;
   l.position.set(x, 3.6, z); scene.add(l);
 }
 addFill(-11,-11); addFill(11,-11); addFill(-11,11); addFill(11,11);
 addFill(-5,0); addFill(5,0);
+
+// 4 extra white fill lights for overall brightness
+[[0,3.8,0],[-11,3.8,0],[11,3.8,0],[0,3.8,-11]].forEach(p=>{
+  const l = new THREE.PointLight(0xffffff, 4.0, 30, 2);
+  l.castShadow = false;
+  l.position.set(p[0],p[1],p[2]); scene.add(l);
+});
 
 const flickerLights = [];
 function makeLight(x,z,color,intensity){
@@ -321,8 +328,8 @@ function makeLight(x,z,color,intensity){
   flickerLights.push({light:l, base:intensity, phase:Math.random()*10, next:0});
   return l;
 }
-makeLight(-6,-6,0xffb36b,3.5);
-makeLight(6,4,0xffd27a,3.5);
+makeLight(-6,-6,0xffb36b,7.0);
+makeLight(6,4,0xffd27a,7.0);
 
 /* ============================ WEAPON ============================ */
 const gun = new THREE.Group();
@@ -1810,6 +1817,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
