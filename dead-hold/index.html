@@ -208,7 +208,7 @@ camera.position.set(0, 1.7, 0);
 /* ============================ WORLD ============================ */
 const HALF = 15;
 const colliders = []; // {minX,maxX,minZ,maxZ}
-function addCollider(x,z,hw,hd){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd}); }
+function addCollider(x,z,hw,hd,h){ colliders.push({minX:x-hw,maxX:x+hw,minZ:z-hd,maxZ:z+hd,height:h||1.5}); }
 
 /* ---- Canvas texture generators (256x256) ---- */
 function makeTex(draw, rx, ry){
@@ -328,17 +328,17 @@ function wallSeg(x,z,thick,depth,rotY){
   return m;
 }
 // North wall (z=-15): two segments + gap center
-wallSeg(-8.25,-15,0.5,13.5,0); addCollider(-8.25,-15,8.25,0.5);
-wallSeg( 8.25,-15,0.5,13.5,0); addCollider( 8.25,-15,8.25,0.5);
+wallSeg(-8.25,-15,0.5,13.5,0); addCollider(-8.25,-15,8.25,0.5,4.2);
+wallSeg( 8.25,-15,0.5,13.5,0); addCollider( 8.25,-15,8.25,0.5,4.2);
 // South wall (z=15): gap center
-wallSeg(-8.25,15,0.5,13.5,0); addCollider(-8.25,15,8.25,0.5);
-wallSeg( 8.25,15,0.5,13.5,0); addCollider( 8.25,15,8.25,0.5);
+wallSeg(-8.25,15,0.5,13.5,0); addCollider(-8.25,15,8.25,0.5,4.2);
+wallSeg( 8.25,15,0.5,13.5,0); addCollider( 8.25,15,8.25,0.5,4.2);
 // West wall (x=-15): gap center
-wallSeg(-15,-8.25,13.5,0.5,0); addCollider(-15,-8.25,0.5,8.25);
-wallSeg(-15, 8.25,13.5,0.5,0); addCollider(-15, 8.25,0.5,8.25);
+wallSeg(-15,-8.25,13.5,0.5,0); addCollider(-15,-8.25,0.5,8.25,4.2);
+wallSeg(-15, 8.25,13.5,0.5,0); addCollider(-15, 8.25,0.5,8.25,4.2);
 // East wall (x=15): gap center
-wallSeg(15,-8.25,13.5,0.5,0); addCollider(15,-8.25,0.5,8.25);
-wallSeg(15, 8.25,13.5,0.5,0); addCollider(15, 8.25,0.5,8.25);
+wallSeg(15,-8.25,13.5,0.5,0); addCollider(15,-8.25,0.5,8.25,4.2);
+wallSeg(15, 8.25,13.5,0.5,0); addCollider(15, 8.25,0.5,8.25,4.2);
 
 // Crates & pillars
 const crateDefs = [
@@ -350,14 +350,14 @@ const crateDefs = [
 crateDefs.forEach(c=>{
   const s=c[2];
   box(s,s,s,c[5],c[0],s/2,c[1]);
-  addCollider(c[0],c[1],s/2+0.2,s/2+0.2);
+  addCollider(c[0],c[1],s/2+0.2,s/2+0.2,s);
 });
 // Pillars (cylinders)
 const pillarDefs = [[-9,-9],[9,-9],[-9,9],[9,9]];
 pillarDefs.forEach(p=>{
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.7,4.2,16), concrete);
   m.position.set(p[0],2.1,p[1]); scene.add(m);
-  addCollider(p[0],p[1],0.9,0.9);
+  addCollider(p[0],p[1],0.9,0.9,4.2);
 });
 
 // Scattered debris boxes
@@ -371,7 +371,7 @@ debrisDefs.forEach(d=>{
   const m = box(d[2],d[3],d[4],debrisMat,d[0],d[3]/2,d[1]);
   m.rotation.y = Math.random()*Math.PI;
   // Low collision footprint so the player can jump over the debris
-  addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15);
+  addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15,d[3]);
 });
 // Broken barrels (cylinders)
 const barrelMat = new THREE.MeshLambertMaterial({map:texBarrel()});
@@ -382,7 +382,7 @@ const barrelGeo = new THREE.CylinderGeometry(0.35,0.35,0.9,12);
   m.rotation.z = 0.15 + Math.random()*0.2;
   m.rotation.y = Math.random()*Math.PI;
   scene.add(m);
-  addCollider(p[0],p[1],0.45,0.45);
+  addCollider(p[0],p[1],0.45,0.45,0.9);
 });
 // Doorway markers (subtle glow strips)
 const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12, emissiveIntensity:1.5});
@@ -1052,12 +1052,15 @@ document.addEventListener('wheel', e=>{
 /* ============================ COLLISION ============================ */
 function resolveCollision(pos){
   const r = player.radius;
-  // walls (arena boundary)
+  // walls (arena boundary) — always block, no height check
   pos.x = Math.max(-HALF+r, Math.min(HALF-r, pos.x));
   pos.z = Math.max(-HALF+r, Math.min(HALF-r, pos.z));
-  // crates/pillars — two passes for corner robustness
+  // crates/pillars — two passes for corner robustness, height-aware
+  const playerFeetY = player.pos.y - EYE; // feet relative to ground (0 when standing)
   for(let pass=0; pass<2; pass++){
     for(const c of colliders){
+      // Skip collider if player's feet are above it (with 0.3 margin)
+      if(playerFeetY > c.height + 0.3) continue;
       if(pos.x > c.minX-r && pos.x < c.maxX+r && pos.z > c.minZ-r && pos.z < c.maxZ+r){
         const dxl = (pos.x) - (c.minX-r);
         const dxr = (c.maxX+r) - (pos.x);
@@ -1946,6 +1949,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
