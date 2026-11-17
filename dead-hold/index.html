@@ -545,9 +545,9 @@ const weaponModels = {
   doubleShotgun: buildDoubleShotgun()
 };
 
-// Scale up weapon models for visibility
+// Scale weapon models for first-person view
 Object.values(weaponModels).forEach(model => {
-  model.scale.setScalar(2.5);
+  model.scale.setScalar(1.5);
 });
 
 // Muzzle flash (single instance)
@@ -1318,6 +1318,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
