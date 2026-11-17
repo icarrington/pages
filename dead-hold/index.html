@@ -170,7 +170,7 @@
 
 <div id="wbMenu" class="hidden">
   <div class="wb-card">
-    <div class="wb-title">WORKBENCH</div>
+    <div class="wb-title">WEAPON WORKBENCH</div>
     <div class="wb-sub">Weapon Upgrades</div>
     <div class="wb-head">
       <div>
@@ -499,7 +499,7 @@ function wbOpenMenu(){
     const owned = att[d.key];
     const canBuy = !owned && state.points >= d.cost;
     const cls = owned ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
-    const right = owned ? '<span class="wb-check">✓ Equipped</span>' : '<span class="wb-cost">'+d.cost+' pts</span>';
+    const right = owned ? '<span class="wb-check">EQUIPPED ✓</span>' : (canBuy ? '<span class="wb-cost">'+d.cost+' pts</span>' : '<span class="wb-cost">Need '+(d.cost-state.points)+' more pts</span>');
     return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
   }).join('');
   const menu = document.getElementById('wbMenu');
@@ -542,7 +542,7 @@ function wbUpdateNear(){
     wbNear = near;
     const hint = document.getElementById('wbHint');
     if(near && state.running && !wbMenuOpen){
-      hint.textContent = 'Press E — Workbench';
+      hint.textContent = '[E] Open Workbench';
       hint.classList.add('show');
     } else if(!near){
       hint.classList.remove('show');
@@ -2137,6 +2137,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
