@@ -1711,6 +1711,7 @@ let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
+let sprintBobX = 0, sprintBobY = 0, sprintLean = 0;
 const adsPos = new THREE.Vector3(0,-0.16,-0.42);
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
@@ -1725,9 +1726,9 @@ function lerpAds(dt){
   camera.fov = 74 + (ADS_FOV-74)*b;
   camera.updateProjectionMatrix();
   _tmpV.copy(hipPos).lerp(adsPos, b);
-  gun.position.set(_tmpV.x + swayX, _tmpV.y + swayY + kickY + dipY, _tmpV.z + kickZ);
+  gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
-  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot, 0, 0);
+  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintLean, 0, 0);
   // Toggle ADS class for red dot visibility
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
@@ -2465,6 +2466,22 @@ function loop(){
   swayX = Math.sin(state.seconds * 12.566) * 0.01;
   swayY = Math.sin(state.seconds * 12.566 + Math.PI/2) * 0.01;
 
+  // Sprint animation: faster, larger bob + forward lean (smoothly interpolated)
+  {
+    const sprintTarget = (wantSprint && moving && player.grounded) ? 1 : 0;
+    const sprintBlend = 1 - Math.pow(0.001, dt); // smooth lerp factor
+    if(sprintTarget === 1){
+      const sprintFreq = state.seconds * 18; // ~2.9Hz
+      sprintBobX += (Math.sin(sprintFreq) * 0.025 - sprintBobX) * sprintBlend;
+      sprintBobY += (Math.abs(Math.sin(sprintFreq)) * 0.035 - sprintBobY) * sprintBlend;
+      sprintLean += (0.08 - sprintLean) * sprintBlend;
+    } else {
+      sprintBobX *= (1 - sprintBlend);
+      sprintBobY *= (1 - sprintBlend);
+      sprintLean *= (1 - sprintBlend);
+    }
+  }
+
   // Recoil: kick back (z +0.05) and up (y +0.03)
   kickZ = state.recoil * 0.05;
   kickY = state.recoil * 0.03;
@@ -2634,6 +2651,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
