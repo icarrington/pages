@@ -1692,6 +1692,7 @@ const ADS_BLEND_SPEED = 1/0.12;
 const SPRINT_MULT = 1.6;
 const SPRINT_BLEND_SPEED = 1/0.15;
 let sprintBlend = 0; // 0 = normal, 1 = full sprint (drives the gun Y rotation)
+let sprintYaw = 0;   // Y-axis (yaw) rotation applied to the gun while sprinting
 function isSprinting(){
   return state.running && player.grounded && !!keys['shift'] && !adsActive && (moving || keys['shift']);
 }
@@ -1714,8 +1715,9 @@ function lerpAds(dt){
   _tmpV.copy(hipPos).lerp(adsPos, b);
   gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
-  // Sprint pose is weapon-specific: rifle points sideways (Z lean), pistol tilts up (X tilt)
-  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintTilt, 0, sprintLean);
+  // Sprint pose: pure Y-axis (yaw) rotation so the barrel sweeps sideways.
+  // No pitch, no roll — only yaw.
+  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintTilt, sprintYaw, sprintLean);
   // Toggle ADS class for red dot visibility
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
@@ -2428,26 +2430,13 @@ function loop(){
     swayY = 0; // no vertical bob
   }
 
-  // Sprint pose: weapon-specific.
-  // Rifle, SMG, Shotgun: barrel points horizontally across the screen (Z rotation).
-  // Pistol: barrel tilts UP over the shoulder (X tilt).
-  // Both ease in/out with the sprintBlend value so they return smoothly.
-  if(activeWeapon === 'rifle'){
-    // Rifle sprint: old "inspect" pose — rotate the barrel to face horizontally
-    // across the screen (carried across the body). Same Z-lean the inspect
-    // animation used before it was removed.
-    sprintLean = sprintBlend * 1.15;
-    sprintTilt = 0;
-  } else if(activeWeapon === 'smg' || activeWeapon === 'shotgun'){
-    sprintLean = sprintBlend * 1.15;   // point the weapon horizontally across the screen
-    sprintTilt = 0;
-  } else if(activeWeapon === 'pistol'){
-    sprintLean = 0;
-    sprintTilt = sprintBlend * 0.85;   // tilt the pistol up over the shoulder
-  } else {
-    sprintLean = sprintBlend * 1.15;   // other weapons: horizontal across screen
-    sprintTilt = 0;
-  }
+  // Sprint pose: ALL weapons rotate HORIZONTALLY around the Y axis (yaw) so the
+  // barrel sweeps sideways across the screen, like the gun is turned to face
+  // left/right across the body. No pitch (up-tilt), no roll — only yaw.
+  // Eases in/out with sprintBlend so it returns smoothly to forward-facing.
+  sprintLean = 0;   // no Z roll
+  sprintTilt = 0;   // no X pitch
+  sprintYaw = sprintBlend * 1.15; // Y-axis yaw: barrel sweeps sideways
   sprintBobX = 0; sprintBobY = 0;
 
   // Recoil: kick back (z +0.05) and up (y +0.03)
@@ -2619,6 +2608,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
