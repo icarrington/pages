@@ -3077,7 +3077,8 @@ function loop(){
       continue;
     }
     if(!z.alive) continue;
-    // flash
+    
+    // Flash effect
     if(z.flash>0){
       z.flash -= dt;
       const f = Math.max(0, z.flash/0.08);
@@ -3087,83 +3088,120 @@ function loop(){
       z.bodyMat.emissive.setRGB(0,0,0);
       z.headMat.emissive.setRGB(0,0,0);
     }
-    // move toward player
+    
+    // Calculate direction to player
     const dx = player.pos.x - z.group.position.x;
     const dz = player.pos.z - z.group.position.z;
     const dist = Math.hypot(dx,dz);
+    
+    // Face the player
     z.group.rotation.y = Math.atan2(dx,dz);
-    if(dist>0.9){
-      // ---- Obstacle avoidance + stuck detection ----
-      const spd = z.speed * (z.speedVar || 1);
-      const step = spd*dt;
-      // Direction toward player (unit)
+    
+    if(dist > 0.9){
+      // --- CRITICAL FIX: Guarantee movement every frame ---
+      const speed = 4.0; // 4 units per second
+      const step = speed * dt;
+      
+      // Unit direction toward player
       const ux = dx/dist, uz = dz/dist;
-      // Perpendicular (left) direction
-      const px = -uz, pz = ux;
-
-      // Decide desired direction: normal pathing, or a lateral detour if stuck
-      let dirX = ux, dirZ = uz;
-      if(z.detourTimer > 0){
-        z.detourTimer -= dt;
-        // Blend detour direction with the toward-player direction so we still
-        // generally head toward the player while sliding around the obstacle.
-        dirX = ux*0.35 + px*z.detourDir*0.9;
-        dirZ = uz*0.35 + pz*z.detourDir*0.9;
-        const dl = Math.hypot(dirX,dirZ) || 1; dirX/=dl; dirZ/=dl;
+      
+      // Check for obstacles within 2 units and add perpendicular offset
+      let offsetX = 0, offsetZ = 0;
+      for(const c of colliders){
+        const cx = (c.minX + c.maxX) / 2;
+        const cz = (c.minZ + c.maxZ) / 2;
+        const cd = Math.hypot(z.group.position.x - cx, z.group.position.z - cz);
+        if(cd < 2.0){
+          // Add perpendicular offset to go around obstacle
+          const px = -uz, pz = ux;
+          offsetX += px * 0.5;
+          offsetZ += pz * 0.5;
+        }
       }
-
-      let nx = z.group.position.x + dirX*step;
-      let nz = z.group.position.z + dirZ*step;
-
-      // Try the desired step; if blocked, try sliding along the obstacle edge
-      // (perpendicular offsets, left then right), then axis-aligned slides.
+      
+      // Combine direction with obstacle avoidance
+      let dirX = ux + offsetX;
+      let dirZ = uz + offsetZ;
+      const dirLen = Math.hypot(dirX, dirZ) || 1;
+      dirX /= dirLen;
+      dirZ /= dirLen;
+      
+      // Move the zombie
+      const nx = z.group.position.x + dirX * step;
+      const nz = z.group.position.z + dirZ * step;
+      
+      // Check if blocked, if so try sliding
       let moved = false;
-      if(!zombieBlocked(nx,nz)){ z.group.position.x=nx; z.group.position.z=nz; moved=true; }
-      else {
-        // Slide left / right along the obstacle while still heading toward player
-        const cand = [
-          [ z.group.position.x + px*z.detourDir*step, z.group.position.z + pz*z.detourDir*step ],
-          [ z.group.position.x - px*z.detourDir*step, z.group.position.z - pz*z.detourDir*step ],
-          [ nx, z.group.position.z ],
-          [ z.group.position.x, nz ]
+      if(!zombieBlocked(nx, nz)){
+        z.group.position.x = nx;
+        z.group.position.z = nz;
+        moved = true;
+      } else {
+        // Try perpendicular slides
+        const px = -uz, pz = ux;
+        const candidates = [
+          [z.group.position.x + px * step, z.group.position.z + pz * step],
+          [z.group.position.x - px * step, z.group.position.z - pz * step],
+          [nx, z.group.position.z],
+          [z.group.position.x, nz]
         ];
-        for(const c of cand){
-          if(!zombieBlocked(c[0],c[1])){ z.group.position.x=c[0]; z.group.position.z=c[1]; moved=true; break; }
+        for(const c of candidates){
+          if(!zombieBlocked(c[0], c[1])){
+            z.group.position.x = c[0];
+            z.group.position.z = c[1];
+            moved = true;
+            break;
+          }
         }
       }
-
-      // Stuck detection: if we barely moved over ~0.5s, trigger a random detour
-      const movedThisFrame = Math.hypot(z.group.position.x - z.lastX, z.group.position.z - z.lastZ);
-      z.movedDist += movedThisFrame;
-      z.lastX = z.group.position.x; z.lastZ = z.group.position.z;
-      z.stuckTimer += dt;
-      if(z.stuckTimer >= 0.5){
-        if(z.movedDist < 0.12){
-          // Stuck — pick a random lateral detour for ~1s, flip direction
-          z.detourTimer = 1.0;
-          z.detourDir = Math.random() < 0.5 ? 1 : -1;
-        }
-        z.movedDist = 0;
-        z.stuckTimer = 0;
+      // FINAL FALLBACK: if still blocked (all slides failed), force move toward player ignoring collisions
+      if(!moved){
+        z.group.position.x += ux * step;
+        z.group.position.z += uz * step;
       }
-
-      // Hard clamp inside the arena so zombies can never escape the walls
+      
+      // --- Anti-stuck: force teleport if barely moved in 3 seconds ---
+      if(!z.lastMoveTime) z.lastMoveTime = state.seconds;
+      if(!z.lastPos) z.lastPos = {x: z.group.position.x, z: z.group.position.z};
+      
+      const movedDist = Math.hypot(z.group.position.x - z.lastPos.x, z.group.position.z - z.lastPos.z);
+      const timeSinceLastMove = state.seconds - z.lastMoveTime;
+      
+      if(timeSinceLastMove > 3.0 && movedDist < 0.1){
+        // Force teleport 3 units closer to player
+        const teleportX = z.group.position.x + ux * 3;
+        const teleportZ = z.group.position.z + uz * 3;
+        if(!zombieBlocked(teleportX, teleportZ)){
+          z.group.position.x = teleportX;
+          z.group.position.z = teleportZ;
+        }
+        z.lastMoveTime = state.seconds;
+        z.lastPos = {x: z.group.position.x, z: z.group.position.z};
+      } else if(movedDist > 0.01){
+        z.lastMoveTime = state.seconds;
+        z.lastPos = {x: z.group.position.x, z: z.group.position.z};
+      }
+      
+      // Hard clamp inside arena
       const _B = 59.4;
       if(z.group.position.x < -_B) z.group.position.x = -_B;
       else if(z.group.position.x > _B) z.group.position.x = _B;
       if(z.group.position.z < -_B) z.group.position.z = -_B;
       else if(z.group.position.z > _B) z.group.position.z = _B;
-
+      
+      // Bob animation
       z.bobPhase += dt*6;
       z.group.position.y = Math.abs(Math.sin(z.bobPhase))*0.06;
       z.aL.rotation.x = -0.5 + Math.sin(z.bobPhase)*0.2;
       z.aR.rotation.x = -0.5 - Math.sin(z.bobPhase)*0.2;
     } else {
+      // Attack
       z.attackCd -= dt;
-      z.aL.rotation.x = -1.2; z.aR.rotation.x = -1.2;
+      z.aL.rotation.x = -1.2;
+      z.aR.rotation.x = -1.2;
       if(z.attackCd<=0){
-        z.attackCd = 0.6 + Math.random()*0.3; // Reduced from 1.0-1.5 to 0.6-0.9
-        damagePlayer(12 + Math.floor(Math.random()*10)); // Increased from 8-14 to 12-21
+        z.attackCd = 0.6 + Math.random()*0.3;
+        damagePlayer(12 + Math.floor(Math.random()*10));
       }
     }
   }
@@ -3267,6 +3305,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
