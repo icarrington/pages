@@ -1329,6 +1329,7 @@ function playReload(){
 const keys = {};
 let pointerLocked = false;
 let mouseDown = false;
+let moving = false;
 
 /* ============================ MOBILE TOUCH ============================ */
 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -1498,6 +1499,7 @@ if(!window._loopStarted){
 
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
+  if(k==='shift'){ keys['shift']=true; }
   if(k==='e'){
     if(wbMenuOpen){ wbCloseMenu(); }
     else if(wbNear){ wbOpenMenu(); }
@@ -1685,6 +1687,14 @@ const ADS_SPEED = 0.6;
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
+
+/* ---- Sprint state: Shift boosts speed, gun rotates to a side pose, shooting blocked ---- */
+const SPRINT_MULT = 1.6;
+const SPRINT_BLEND_SPEED = 1/0.15;
+let sprintBlend = 0; // 0 = normal, 1 = full sprint (drives the gun Y rotation)
+function isSprinting(){
+  return state.running && player.grounded && !!keys['shift'] && !adsActive && (moving || keys['shift']);
+}
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0;
@@ -1727,6 +1737,7 @@ function resetAds(){
 
 function shoot(){
   if(state.reloading) return;
+  if(isSprinting()) return; // sprinting: no bullets, no recoil
   const nowMs = performance.now();
   const interval = isAuto() ? 1000/fireRate() : 300;
   if(nowMs - lastShotTime < interval) return;
@@ -2321,7 +2332,7 @@ function loop(){
   }
 
   /* ---- auto fire (SMG / Rifle) ---- */
-  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && mags[activeWeapon]>0){
+  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && mags[activeWeapon]>0 && !isSprinting()){
     shoot();
   }
 
@@ -2329,6 +2340,14 @@ function loop(){
   if(spawnQueue.length>0 && zombies.length<20){
     const data = spawnQueue.shift();
     spawnZombie(data);
+  }
+
+  /* ---- sprint blend (drives gun side-pose + speed boost) ---- */
+  {
+    const wantSprint = isSprinting() ? 1 : 0;
+    const sStep = SPRINT_BLEND_SPEED*dt;
+    if(sprintBlend < wantSprint) sprintBlend = Math.min(wantSprint, sprintBlend+sStep);
+    else if(sprintBlend > wantSprint) sprintBlend = Math.max(wantSprint, sprintBlend-sStep);
   }
 
   /* ---- wave gap countdown ---- */
@@ -2354,7 +2373,7 @@ function loop(){
     const jr = new THREE.Vector3(1,0,0).applyQuaternion(_q);
     move.add(jf.multiplyScalar(-joyVec.y)).add(jr.multiplyScalar(joyVec.x));
   }
-  const moving = move.lengthSq()>0;
+  moving = move.lengthSq()>0;
   if(moving) move.normalize();
 
   // No sprint: constant walk speed. Stamina stays full (no drain).
@@ -2570,6 +2589,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
