@@ -139,10 +139,50 @@
   .wb-close:hover{color:var(--accent);border-color:var(--accent)}
   #wbHint{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:6}
   #wbHint.show{opacity:1}
+
+  /* ---------- Mobile touch controls ---------- */
+  #touchUI{position:fixed;inset:0;z-index:15;pointer-events:none;display:none}
+  #touchUI.active{display:block}
+  .tbtn{position:absolute;pointer-events:auto;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;font-family:var(--mono);font-weight:800;letter-spacing:.1em;color:var(--accent);background:rgba(10,14,12,.55);border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;touch-action:none}
+  .tbtn:active,.tbtn.pressed{background:rgba(200,255,77,.22);border-color:var(--accent)}
+  #joyBase{position:absolute;left:24px;bottom:24px;width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.05);border:2px solid rgba(200,255,77,.35);pointer-events:auto;touch-action:none}
+  #joyThumb{position:absolute;left:50%;top:50%;width:58px;height:58px;border-radius:50%;background:rgba(200,255,77,.4);border:2px solid var(--accent);transform:translate(-50%,-50%);pointer-events:none}
+  #lookArea{position:absolute;right:0;top:0;width:55%;height:100%;pointer-events:auto;touch-action:none}
+  #btnFire{right:20px;bottom:170px;width:88px;height:88px;border-radius:50%;font-size:14px;color:#fff;background:rgba(255,77,77,.28);border-color:#ff4d4d}
+  #btnFire:active,#btnFire.pressed{background:rgba(255,77,77,.5)}
+  #btnJump{right:120px;bottom:150px;width:64px;height:64px;border-radius:50%;font-size:11px}
+  #btnReload{right:20px;bottom:272px;width:64px;height:44px;font-size:11px;border-radius:10px}
+  #btnInspect{right:120px;bottom:272px;width:64px;height:44px;font-size:11px;border-radius:10px}
+  #btnWorkbench{right:20px;bottom:330px;width:64px;height:44px;font-size:10px;border-radius:10px}
+  #tSlots{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
+  #tSlots .tslot{width:46px;height:46px;border-radius:10px;font-size:16px;font-weight:800;color:var(--dim);background:rgba(10,14,12,.6);border:1px solid var(--line);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+  #tSlots .tslot.active{color:var(--accent);border-color:var(--accent);background:rgba(200,255,77,.12)}
+  #mobileTag{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);pointer-events:none}
+  @media (max-width:700px){
+    .corner{padding:8px}
+    .bar{width:38vw}
+    .stat{font-size:16px}
+    .ammo{font-size:24px}
+    .slot{font-size:9px;padding:3px 6px}
+    .slots{gap:5px}
+    #hud .corner.tr{top:auto;bottom:120px;right:8px}
+  }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+
+<div id="touchUI">
+  <div id="mobileTag">MOBILE MODE</div>
+  <div id="joyBase"><div id="joyThumb"></div></div>
+  <div id="lookArea"></div>
+  <div class="tbtn" id="btnFire">FIRE</div>
+  <div class="tbtn" id="btnJump">JUMP</div>
+  <div class="tbtn" id="btnReload">RELOAD</div>
+  <div class="tbtn" id="btnInspect">INSPECT</div>
+  <div class="tbtn" id="btnWorkbench">WORKBENCH</div>
+  <div id="tSlots"></div>
+</div>
 
 <div id="hud">
   <div class="corner tl">
@@ -246,6 +286,7 @@ if(!window.botScore){
 
 /* ============================ SETUP ============================ */
 const canvas = document.getElementById('game');
+canvas.style.touchAction = 'none';
 const renderer = new THREE.WebGLRenderer({canvas, antialias:false, powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.0));
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1250,6 +1291,149 @@ const keys = {};
 let pointerLocked = false;
 let mouseDown = false;
 
+/* ============================ MOBILE TOUCH ============================ */
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const touchUI = document.getElementById('touchUI');
+const joyBase = document.getElementById('joyBase');
+const joyThumb = document.getElementById('joyThumb');
+const lookArea = document.getElementById('lookArea');
+const btnFire = document.getElementById('btnFire');
+const btnJump = document.getElementById('btnJump');
+const btnReload = document.getElementById('btnReload');
+const btnInspect = document.getElementById('btnInspect');
+const btnWorkbench = document.getElementById('btnWorkbench');
+const tSlots = document.getElementById('tSlots');
+let joyVec = {x:0, y:0};
+let joyActive = false;
+let lookId = null;
+let lookLast = {x:0, y:0};
+let fireHeld = false;
+let touchWeaponList = ['pistol','smg','shotgun','rifle'];
+
+function buildTouchSlots(){
+  const list = touchWeaponList.slice();
+  if(state.hasDoubleShotgun) list.push('doubleShotgun');
+  tSlots.innerHTML = list.map((w,i)=>'<div class="tslot'+(w===activeWeapon?' active':'')+'" data-w="'+w+'">'+(i+1)+'</div>').join('');
+  tSlots.querySelectorAll('.tslot').forEach(el=>{
+    el.addEventListener('touchstart', e=>{ e.preventDefault(); switchWeapon(el.dataset.w); }, {passive:false});
+    el.addEventListener('click', ()=>{ switchWeapon(el.dataset.w); });
+  });
+}
+function updateTouchSlots(){
+  tSlots.querySelectorAll('.tslot').forEach(el=>{
+    el.classList.toggle('active', el.dataset.w===activeWeapon);
+  });
+}
+function joySetVec(dx, dy){
+  joyVec.x = dx; joyVec.y = dy;
+  joyThumb.style.transform = 'translate(calc(-50% + '+(dx*42)+'px), calc(-50% + '+(dy*42)+'px))';
+}
+function joyReset(){
+  joyActive = false;
+  joyVec.x = 0; joyVec.y = 0;
+  joyThumb.style.transform = 'translate(-50%,-50%)';
+}
+function bindTouch(el, onDown, onUp){
+  el.addEventListener('touchstart', e=>{ e.preventDefault(); onDown(e); }, {passive:false});
+  el.addEventListener('touchend', e=>{ e.preventDefault(); onUp && onUp(e); }, {passive:false});
+  el.addEventListener('touchcancel', e=>{ e.preventDefault(); onUp && onUp(e); }, {passive:false});
+}
+function initTouch(){
+  if(!isTouch) return;
+  touchUI.classList.add('active');
+  buildTouchSlots();
+  // Joystick
+  joyBase.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    joyActive = true;
+    const t = e.changedTouches[0];
+    joyMove(t);
+  }, {passive:false});
+  joyBase.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    if(!joyActive) return;
+    const t = e.changedTouches[0];
+    joyMove(t);
+  }, {passive:false});
+  joyBase.addEventListener('touchend', e=>{ e.preventDefault(); joyReset(); }, {passive:false});
+  joyBase.addEventListener('touchcancel', e=>{ e.preventDefault(); joyReset(); }, {passive:false});
+  function joyMove(t){
+    const r = joyBase.getBoundingClientRect();
+    const cx = r.left + r.width/2;
+    const cy = r.top + r.height/2;
+    let dx = (t.clientX - cx) / (r.width/2);
+    let dy = (t.clientY - cy) / (r.height/2);
+    const len = Math.hypot(dx, dy);
+    if(len > 1){ dx = dx/len; dy = dy/len; }
+    joySetVec(dx, dy);
+  }
+  // Look area
+  lookArea.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    ensureAudio();
+    if(!state.running) return;
+    const t = e.changedTouches[0];
+    lookId = t.identifier;
+    lookLast.x = t.clientX; lookLast.y = t.clientY;
+  }, {passive:false});
+  lookArea.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    if(lookId===null || !state.running) return;
+    for(const t of e.changedTouches){
+      if(t.identifier !== lookId) continue;
+      const sens = 0.004 * (adsActive ? ADS_SENS : 1);
+      player.yaw   -= (t.clientX - lookLast.x) * sens;
+      player.pitch -= (t.clientY - lookLast.y) * sens;
+      player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
+      lookLast.x = t.clientX; lookLast.y = t.clientY;
+    }
+  }, {passive:false});
+  lookArea.addEventListener('touchend', e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches){ if(t.identifier===lookId) lookId = null; }
+  }, {passive:false});
+  lookArea.addEventListener('touchcancel', e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches){ if(t.identifier===lookId) lookId = null; }
+  }, {passive:false});
+  // Fire
+  bindTouch(btnFire, e=>{ e.preventDefault(); ensureAudio(); fireHeld = true; if(state.running && !isAuto()) shoot(); btnFire.classList.add('pressed'); },
+    e=>{ e.preventDefault(); fireHeld = false; btnFire.classList.remove('pressed'); });
+  // Jump
+  bindTouch(btnJump, e=>{ e.preventDefault(); ensureAudio(); tryJump(); btnJump.classList.add('pressed'); },
+    e=>{ e.preventDefault(); btnJump.classList.remove('pressed'); });
+  // Reload
+  bindTouch(btnReload, e=>{ e.preventDefault(); ensureAudio(); startReload(); btnReload.classList.add('pressed'); },
+    e=>{ e.preventDefault(); btnReload.classList.remove('pressed'); });
+  // Inspect
+  bindTouch(btnInspect, e=>{
+    e.preventDefault(); ensureAudio();
+    if(inspecting){ inspecting = false; inspectT = 0; }
+    else if(state.running && !state.reloading){ inspecting = true; inspectT = 0; }
+    btnInspect.classList.add('pressed');
+  }, e=>{ e.preventDefault(); btnInspect.classList.remove('pressed'); });
+  // Workbench
+  bindTouch(btnWorkbench, e=>{
+    e.preventDefault(); ensureAudio();
+    if(wbMenuOpen) wbCloseMenu(); else wbOpenMenu();
+    btnWorkbench.classList.add('pressed');
+  }, e=>{ e.preventDefault(); btnWorkbench.classList.remove('pressed'); });
+  // Prevent double-tap zoom / scroll on canvas
+  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
+  // Prevent page zoom
+  document.addEventListener('gesturestart', e=>{ e.preventDefault(); });
+  document.addEventListener('dblclick', e=>{ e.preventDefault(); });
+}
+window.addEventListener('orientationchange', ()=>{
+  setTimeout(()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }, 200);
+});
+initTouch();
+
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
   if(k==='e'){
@@ -1432,6 +1616,7 @@ function updateWeaponSlots(){
   ];
   if(state.hasDoubleShotgun) weapons.push({key:'5', name:'DB Shotgun', active:activeWeapon==='doubleShotgun'});
   slotsEl.innerHTML = weapons.map(w=>'<div class="slot'+(w.active?' active':'')+'"><span class="num">'+w.key+'</span>'+w.name+'</div>').join('');
+  if(isTouch) buildTouchSlots();
 }
 let activeWeapon = 'pistol';
 let lastShotTime = 0;
@@ -2096,7 +2281,7 @@ function loop(){
   }
 
   /* ---- auto fire (SMG / Rifle) ---- */
-  if(mouseDown && isAuto() && !state.reloading && !inspecting && mags[activeWeapon]>0){
+  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && !inspecting && mags[activeWeapon]>0){
     shoot();
   }
 
@@ -2115,6 +2300,12 @@ function loop(){
   if(keys['s']) move.sub(forward);
   if(keys['d']) move.add(right);
   if(keys['a']) move.sub(right);
+  // Mobile joystick input
+  if(isTouch && (joyVec.x !== 0 || joyVec.y !== 0)){
+    const jf = new THREE.Vector3(0,0,-1).applyQuaternion(_q);
+    const jr = new THREE.Vector3(1,0,0).applyQuaternion(_q);
+    move.add(jf.multiplyScalar(-joyVec.y)).add(jr.multiplyScalar(joyVec.x));
+  }
   const moving = move.lengthSq()>0;
   if(moving) move.normalize();
 
@@ -2206,6 +2397,7 @@ function loop(){
 
   /* ---- workbench proximity prompt ---- */
   if(state.running && !wbMenuOpen) wbUpdateNear();
+  if(isTouch) updateTouchSlots();
 
   /* ---- chalk pickup prompt ---- */
   const prompt = document.getElementById('weaponPrompt');
@@ -2323,6 +2515,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
