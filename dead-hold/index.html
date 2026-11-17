@@ -252,7 +252,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x3a4a5e);
 scene.fog = new THREE.Fog(0x3a4a5e, 5, 50);
 
-const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 120);
+const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 360);
 camera.rotation.order = 'YXZ';
 camera.position.set(0, 1.7, 0);
 
@@ -411,25 +411,43 @@ function wallSeg(x,z,thick,depth,rotY){
   if(rotY) m.rotation.y = rotY;
   return m;
 }
-// North wall (z=-15): two segments + gap center
-wallSeg(-8.25,-15,0.5,13.5,0); addCollider(-8.25,-15,8.25,0.5,4.2);
-wallSeg( 8.25,-15,0.5,13.5,0); addCollider( 8.25,-15,8.25,0.5,4.2);
-// South wall (z=15): gap center
-wallSeg(-8.25,15,0.5,13.5,0); addCollider(-8.25,15,8.25,0.5,4.2);
-wallSeg( 8.25,15,0.5,13.5,0); addCollider( 8.25,15,8.25,0.5,4.2);
-// West wall (x=-15): gap center
-wallSeg(-15,-8.25,13.5,0.5,0); addCollider(-15,-8.25,0.5,8.25,4.2);
-wallSeg(-15, 8.25,13.5,0.5,0); addCollider(-15, 8.25,0.5,8.25,4.2);
-// East wall (x=15): gap center
-wallSeg(15,-8.25,13.5,0.5,0); addCollider(15,-8.25,0.5,8.25,4.2);
-wallSeg(15, 8.25,13.5,0.5,0); addCollider(15, 8.25,0.5,8.25,4.2);
+// North wall (z=-45): two segments + gap center
+wallSeg(-24.75,-45,0.5,40.5,0); addCollider(-24.75,-45,24.75,0.5,4.2);
+wallSeg( 24.75,-45,0.5,40.5,0); addCollider( 24.75,-45,24.75,0.5,4.2);
+// South wall (z=45): gap center
+wallSeg(-24.75,45,0.5,40.5,0); addCollider(-24.75,45,24.75,0.5,4.2);
+wallSeg( 24.75,45,0.5,40.5,0); addCollider( 24.75,45,24.75,0.5,4.2);
+// West wall (x=-45): gap center
+wallSeg(-45,-24.75,40.5,0.5,0); addCollider(-45,-24.75,0.5,24.75,4.2);
+wallSeg(-45, 24.75,40.5,0.5,0); addCollider(-45, 24.75,0.5,24.75,4.2);
+// East wall (x=45): gap center
+wallSeg(45,-24.75,40.5,0.5,0); addCollider(45,-24.75,0.5,24.75,4.2);
+wallSeg(45, 24.75,40.5,0.5,0); addCollider(45, 24.75,0.5,24.75,4.2);
 
-// Sand bunkers (low mounds) — obstacles
+// ---- Extra outer walls to make the arena ~3x bigger (x,z in [-60,60]) ----
+// North (z=-60)
+wallSeg(-30,-60,0.5,60,0); addCollider(-30,-60,30,0.5,4.2);
+wallSeg( 30,-60,0.5,60,0); addCollider( 30,-60,30,0.5,4.2);
+// South (z=60)
+wallSeg(-30,60,0.5,60,0); addCollider(-30,60,30,0.5,4.2);
+wallSeg( 30,60,0.5,60,0); addCollider( 30,60,30,0.5,4.2);
+// West (x=-60)
+wallSeg(-60,-30,60,0.5,0); addCollider(-60,-30,0.5,30,4.2);
+wallSeg(-60, 30,60,0.5,0); addCollider(-60, 30,0.5,30,4.2);
+// East (x=60)
+wallSeg(60,-30,60,0.5,0); addCollider(60,-30,0.5,30,4.2);
+wallSeg(60, 30,60,0.5,0); addCollider(60, 30,0.5,30,4.2);
+
+// Sand bunkers (low mounds) — obstacles, spread over the larger arena
 const bunkerDefs = [
-  [-6,-6,1.6,1.6,wood],[6,-4,1.8,1.8,metal],
-  [-4,5,1.4,1.4,wood],[5,6,1.6,1.6,metal],
-  [0,2,1.5,1.5,wood],[-8,8,1.6,1.6,metal],
-  [8,0,1.4,1.4,wood],[2,-8,1.7,1.7,metal]
+  [-18,-18,1.6,1.6,wood],[18,-12,1.8,1.8,metal],
+  [-12,15,1.4,1.4,wood],[15,18,1.6,1.6,metal],
+  [0,6,1.5,1.5,wood],[-24,24,1.6,1.6,metal],
+  [24,0,1.4,1.4,wood],[6,-24,1.7,1.7,metal],
+  [-30,10,1.5,1.5,wood],[30,-10,1.6,1.6,metal],
+  [10,30,1.4,1.4,wood],[-10,-30,1.8,1.8,metal],
+  [35,25,1.5,1.5,wood],[-35,-25,1.6,1.6,metal],
+  [20,35,1.4,1.4,metal],[-20,-35,1.5,1.5,wood]
 ];
 bunkerDefs.forEach(c=>{
   const s=c[2], h=s*0.5;
@@ -437,10 +455,23 @@ bunkerDefs.forEach(c=>{
   m.position.set(c[0], h/2, c[1]); scene.add(m);
   addCollider(c[0],c[1],s*0.6+0.2,s*0.6+0.2,h);
 });
-// Stylized trees (green canopy + brown trunk) scattered around the edges
+// Stylized trees (green canopy + brown trunk) scattered around the edges of the larger arena
 const trunkMat = new THREE.MeshLambertMaterial({color:0x6b4a2a});
 const canopyMat = new THREE.MeshLambertMaterial({color:0x3a8a30});
-const treeDefs = [[-12,-12],[12,-12],[-12,12],[12,12],[-13,0],[13,0],[0,-13],[0,13]];
+const treeDefs = [
+  [-36,-36],[36,-36],[-36,36],[36,36],
+  [-39,0],[39,0],[0,-39],[0,39],
+  [-20,-20],[20,-20],[-20,20],[20,20],
+  [-30,15],[30,15],[-15,-30],[15,30],
+  [25,-25],[-25,25],[10,35],[-10,-35],
+  [35,10],[-35,-10],[15,25],[-15,-25],
+  // extra trees out toward the larger arena edges
+  [-55,-55],[55,-55],[-55,55],[55,55],
+  [-58,0],[58,0],[0,-58],[0,58],
+  [-48,24],[48,24],[-48,-24],[48,-24],
+  [24,48],[-24,48],[24,-48],[-24,-48],
+  [-52,36],[52,36],[-52,-36],[52,-36]
+];
 treeDefs.forEach(p=>{
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,2.2,10), trunkMat);
   trunk.position.set(p[0],1.1,p[1]); scene.add(trunk);
@@ -449,12 +480,16 @@ treeDefs.forEach(p=>{
   addCollider(p[0],p[1],0.5,0.5,4.2);
 });
 
-// Scattered small sand mounds
+// Scattered small sand mounds, spread over the larger arena
 const debrisMat = new THREE.MeshLambertMaterial({map:texCrate()});
 const debrisDefs = [
-  [-2.5,-3,0.5,0.4,0.6],[-3,3.5,0.4,0.3,0.5],[3.5,-5,0.6,0.5,0.7],
-  [4,2,0.4,0.35,0.5],[-5,1,0.5,0.4,0.5],[1,6.5,0.45,0.3,0.55],
-  [-1,-7,0.5,0.4,0.6],[6.5,3,0.4,0.3,0.5]
+  [-7.5,-9,0.5,0.4,0.6],[-9,10.5,0.4,0.3,0.5],[10.5,-15,0.6,0.5,0.7],
+  [12,6,0.4,0.35,0.5],[-15,3,0.5,0.4,0.5],[3,19.5,0.45,0.3,0.55],
+  [-3,-21,0.5,0.4,0.6],[19.5,9,0.4,0.3,0.5],
+  [-25,-15,0.5,0.4,0.6],[25,15,0.4,0.3,0.5],[-15,25,0.6,0.5,0.7],
+  [15,-25,0.4,0.35,0.5],[30,5,0.5,0.4,0.5],[-5,30,0.45,0.3,0.55],
+  [5,-30,0.5,0.4,0.6],[-30,-5,0.4,0.3,0.5],[20,30,0.5,0.4,0.6],
+  [-20,-30,0.4,0.3,0.5],[30,-20,0.6,0.5,0.7],[-30,20,0.4,0.35,0.5]
 ];
 debrisDefs.forEach(d=>{
   const m = box(d[2],d[3],d[4],debrisMat,d[0],d[3]/2,d[1]);
@@ -525,7 +560,7 @@ wbGroup.position.set(WB.x, 0, WB.z);
 addCollider(0, 5, 1.5, 0.75, 1.0);
 scene.add(wbGroup);
 
-// Golf flag landmark — placed at (-10, -10), visible from spawn, in an open spot
+// Golf flag landmark — placed at (-30, -30), visible from spawn, in an open spot
 const flagPoleMat = new THREE.MeshLambertMaterial({color:0xcccccc});
 const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,4,8), flagPoleMat);
 flagPole.position.set(-10,2,-10); scene.add(flagPole);
@@ -533,7 +568,7 @@ const flagMat = new THREE.MeshLambertMaterial({color:0xff3333, side:THREE.Double
 const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.5), flagMat);
 flag.position.set(-9.6,3.7,-10); flag.rotation.y = Math.PI/4; scene.add(flag);
 const flagBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,0.15,12), new THREE.MeshLambertMaterial({color:0x3a8a30}));
-flagBase.position.set(-10,0.075,-10); scene.add(flagBase);
+flagBase.position.set(-30,0.075,-30); scene.add(flagBase);
 // Workbench attachment state: { weaponName: { redDot, extMag, suppressor, vGrip } }
 const wbAttachments = {};
 function wbGet(w){ if(!wbAttachments[w]) wbAttachments[w] = {redDot:false, extMag:false, suppressor:false, vGrip:false}; return wbAttachments[w]; }
@@ -613,15 +648,15 @@ function wbUpdateNear(){
 }
 // Small sand bunkers
 const bunkerMat2 = new THREE.MeshLambertMaterial({map:texBarrel()});
-[[-7,-3],[3,-6.5],[7,5.5]].forEach(p=>{
+[[-21,-9],[9,-19.5],[21,16.5],[-15,20],[15,-20],[25,10],[-25,-10],[10,25],[40,20],[-40,20],[20,40],[-20,40],[40,-20],[-40,-20],[20,-40],[-20,-40]].forEach(p=>{
   const m = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.5,14), bunkerMat2);
   m.position.set(p[0],0.25,p[1]);
   scene.add(m);
   addCollider(p[0],p[1],0.5,0.5,0.5);
 });
-// Doorway markers (subtle glow strips)
+// Doorway markers (subtle glow strips) at the four wall gaps
 const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12, emissiveIntensity:1.5});
-[[0,-15,0.6,0.6],[0,15,0.6,0.6],[-15,0,0.6,0.6],[15,0,0.6,0.6]].forEach(d=>{
+[[0,-45,0.6,0.6],[0,45,0.6,0.6],[-45,0,0.6,0.6],[45,0,0.6,0.6]].forEach(d=>{
   const m = new THREE.Mesh(new THREE.PlaneGeometry(d[2],0.4), doorMat);
   m.position.set(d[0],0.2,d[1]); m.rotation.x=-Math.PI/2; scene.add(m);
 });
@@ -630,18 +665,21 @@ const doorMat = new THREE.MeshLambertMaterial({color:0x111417, emissive:0x1a2a12
 scene.add(new THREE.AmbientLight(0x8899aa, 2.5));
 const hemi = new THREE.HemisphereLight(0x667788, 0x334455, 2.0); scene.add(hemi);
 
-// Extra warm fill lights: four corners + two mid-floor (no shadows, cheap)
+// Extra warm fill lights: corners + mid-floor, spread over the larger arena (no shadows, cheap)
 function addFill(x,z){
-  const l = new THREE.PointLight(0xfff5e0, 3.0, 25, 2);
+  const l = new THREE.PointLight(0xfff5e0, 3.0, 40, 2);
   l.castShadow = false;
   l.position.set(x, 3.6, z); scene.add(l);
 }
-addFill(-11,-11); addFill(11,-11); addFill(-11,11); addFill(11,11);
-addFill(-5,0); addFill(5,0);
+addFill(-33,-33); addFill(33,-33); addFill(-33,33); addFill(33,33);
+addFill(-15,0); addFill(15,0); addFill(0,-15); addFill(0,15);
+// extra fill lights out toward the larger arena edges
+addFill(-52,-52); addFill(52,-52); addFill(-52,52); addFill(52,52);
+addFill(0,-52); addFill(0,52); addFill(-52,0); addFill(52,0);
 
-// 4 extra white fill lights for overall brightness
-[[0,3.8,0],[-11,3.8,0],[11,3.8,0],[0,3.8,-11]].forEach(p=>{
-  const l = new THREE.PointLight(0xffffff, 2.5, 30, 2);
+// Extra white fill lights for overall brightness across the larger arena
+[[0,3.8,0],[-33,3.8,0],[33,3.8,0],[0,3.8,-33],[0,3.8,33],[-33,3.8,-33],[33,3.8,33],[-55,3.8,0],[55,3.8,0],[0,3.8,-55],[0,3.8,55]].forEach(p=>{
+  const l = new THREE.PointLight(0xffffff, 2.5, 50, 2);
   l.castShadow = false;
   l.position.set(p[0],p[1],p[2]); scene.add(l);
 });
@@ -674,7 +712,7 @@ const chalkMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, 
 const chalkGroup = new THREE.Group();
 (function buildChalkOutline(){
   // Chalk outline of a double-barreled shotgun on the north wall (z=-15), near spawn
-  const cx = -2, cy = 1.8, cz = -14.95;
+  const cx = -2, cy = 1.8, cz = -44.95;
   // Stock
   const stock = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), chalkMat);
   stock.position.set(cx+0.5, cy-0.05, cz); chalkGroup.add(stock);
@@ -1048,10 +1086,10 @@ const MAXZ = 22;
 const zombies = [];
 const spawnQueue = [];
 const doors = [
-  {x:0, z:-15, angle:0},
-  {x:0, z:15, angle:Math.PI},
-  {x:-15, z:0, angle:Math.PI/2},
-  {x:15, z:0, angle:-Math.PI/2}
+  {x:0, z:-45, angle:0},
+  {x:0, z:45, angle:Math.PI},
+  {x:-45, z:0, angle:Math.PI/2},
+  {x:45, z:0, angle:-Math.PI/2}
 ];
 
 
@@ -1308,8 +1346,8 @@ document.addEventListener('wheel', e=>{
 function resolveCollision(pos){
   const r = player.radius;
   // walls (arena boundary) — always block, no height check
-  pos.x = Math.max(-HALF+r, Math.min(HALF-r, pos.x));
-  pos.z = Math.max(-HALF+r, Math.min(HALF-r, pos.z));
+  pos.x = Math.max(-60+r, Math.min(60-r, pos.x));
+  pos.z = Math.max(-60+r, Math.min(60-r, pos.z));
   // crates/pillars — two passes for corner robustness, height-aware
   const playerFeetY = player.pos.y - EYE; // feet relative to ground (0 when standing)
   for(let pass=0; pass<2; pass++){
@@ -1583,19 +1621,29 @@ function rayHitAABB(origin, dir, minX, maxX, minZ, maxZ){
 // Returns the hit distance or Infinity.
 function rayHitWalls(origin, dir, maxDist){
   let best = Infinity;
+  const ARENA = 60;
   for(const c of colliders){
     const t = rayHitAABB(origin, dir, c.minX, c.maxX, c.minZ, c.maxZ);
     if(t < best && t <= maxDist) best = t;
   }
   // Arena boundary walls
-  const tN = rayHitAABB(origin, dir, -HALF-1, HALF+1, -HALF-0.5, -HALF+0.5);
+  let tN = rayHitAABB(origin, dir, -HALF-1, HALF+1, -HALF-0.5, -HALF+0.5);
   if(tN < best && tN <= maxDist) best = tN;
-  const tS = rayHitAABB(origin, dir, -HALF-1, HALF+1, HALF-0.5, HALF+0.5);
+  let tS = rayHitAABB(origin, dir, -HALF-1, HALF+1, HALF-0.5, HALF+0.5);
   if(tS < best && tS <= maxDist) best = tS;
-  const tW = rayHitAABB(origin, dir, -HALF-0.5, -HALF+0.5, -HALF-1, HALF+1);
+  let tW = rayHitAABB(origin, dir, -HALF-0.5, -HALF+0.5, -HALF-1, HALF+1);
   if(tW < best && tW <= maxDist) best = tW;
-  const tE = rayHitAABB(origin, dir, HALF-0.5, HALF+0.5, -HALF-1, HALF+1);
+  let tE = rayHitAABB(origin, dir, ARENA-0.5, ARENA+0.5, -ARENA-1, ARENA+1);
   if(tE < best && tE <= maxDist) best = tE;
+  // also check inner walls at ±45
+  tN = rayHitAABB(origin, dir, -45.5, 45.5, -45.5, -44.5);
+  if(tN < best && tN <= maxDist) best = tN;
+  tS = rayHitAABB(origin, dir, -45.5, 45.5, 44.5, 45.5);
+  if(tS < best && tS <= maxDist) best = tS;
+  tW = rayHitAABB(origin, dir, -45.5, -44.5, -45.5, 45.5);
+  if(tW < best && tW <= maxDist) best = tW;
+  const tE2 = rayHitAABB(origin, dir, 44.5, 45.5, -45.5, 45.5);
+  if(tE2 < best && tE2 <= maxDist) best = tE2;
   return best;
 }
 function killZombie(z, isHead){
@@ -1623,10 +1671,10 @@ function startWave(n){
   for(let i=0;i<count;i++){
     const door = doors[Math.floor(Math.random()*doors.length)];
     let x, z;
-    if(door.x===0 && door.z===-15){ x = (Math.random()-0.5)*4; z = -15 + 1.5; }
-    else if(door.x===0 && door.z===15){ x = (Math.random()-0.5)*4; z = 15 - 1.5; }
-    else if(door.x===-15){ x = -15 + 1.5; z = (Math.random()-0.5)*4; }
-    else { x = 15 - 1.5; z = (Math.random()-0.5)*4; }
+    if(door.x===0 && door.z===-45){ x = (Math.random()-0.5)*4; z = -45 + 1.5; }
+    else if(door.x===0 && door.z===45){ x = (Math.random()-0.5)*4; z = 45 - 1.5; }
+    else if(door.x===-45){ x = -45 + 1.5; z = (Math.random()-0.5)*4; }
+    else { x = 45 - 1.5; z = (Math.random()-0.5)*4; }
     spawnQueue.push({
       x, z,
       speed: speed*(0.9+Math.random()*0.25),
@@ -1673,7 +1721,7 @@ function removeZombie(z){
 function spawnBoss(wave){
   const b = makeBoss();
   const hp = 150 + 100*(wave/5);
-  b.group.position.set(0, 0, -13);
+  b.group.position.set(0, 0, -40);
   b.hp = hp; b.maxHp = hp;
   b.alive = true; b.dying = false; b.deathT = 0;
   b.flash = 0; b.attackCd = 0; b.windup = 0; b.bobPhase = 0;
@@ -2269,6 +2317,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
