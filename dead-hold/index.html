@@ -1090,7 +1090,7 @@ scopeGroup.add(scopeRim2);
 // depthTest:false + renderOrder keeps it visible through the open front of the
 // tube; it is a small dot so everything OUTSIDE the scope stays fully transparent.
 const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
-const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.028,12,12), scopeDotMat);
+const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.014,12,12), scopeDotMat);
 scopeDot.position.set(0,0,-0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
@@ -2634,6 +2634,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
