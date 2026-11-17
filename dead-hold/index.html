@@ -824,15 +824,45 @@ function buildPistol(){
   const hammerTip = new THREE.Mesh(new THREE.BoxGeometry(0.015,0.015,0.015), gunDark);
   hammerTip.position.set(0,0.035,0.17); g.add(hammerTip);
   
-  // === FRONT IRON SIGHT: small box on the front top of the slide ===
-  const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.012,0.02,0.012), gunLight);
-  frontSight.position.set(0,0.085,-0.16); g.add(frontSight);
-  
-  // === REAR IRON SIGHT: two small boxes on the rear top of the slide ===
-  const rearSightL = new THREE.Mesh(new THREE.BoxGeometry(0.015,0.015,0.015), gunLight);
-  rearSightL.position.set(-0.01,0.085,0.12); g.add(rearSightL);
-  const rearSightR = new THREE.Mesh(new THREE.BoxGeometry(0.015,0.015,0.015), gunLight);
-  rearSightR.position.set(0.01,0.085,0.12); g.add(rearSightR);
+  // === FRONT IRON SIGHT: raised blade post at the muzzle end ===
+  // Base plate
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.018,0.008,0.022), gunDark);
+  fsBase.position.set(0,0.078,-0.16); g.add(fsBase);
+  // Blade post (tall, narrow, with a slightly rounded top)
+  const fsBlade = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.032,0.012), gunMetal);
+  fsBlade.position.set(0,0.098,-0.16); g.add(fsBlade);
+  // Blade tip (small cap)
+  const fsTip = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.006,0.014), gunDark);
+  fsTip.position.set(0,0.116,-0.16); g.add(fsTip);
+  // Lateral guard wings (small, flanking the blade)
+  const fsWingL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.018,0.010), gunDark);
+  fsWingL.position.set(-0.012,0.092,-0.16); g.add(fsWingL);
+  const fsWingR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.018,0.010), gunDark);
+  fsWingR.position.set(0.012,0.092,-0.16); g.add(fsWingR);
+
+  // === REAR IRON SIGHT: two ears with a center notch gap ===
+  // Left ear
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.022,0.020), gunDark);
+  rsEarL.position.set(-0.014,0.088,0.12); g.add(rsEarL);
+  // Right ear
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.022,0.020), gunDark);
+  rsEarR.position.set(0.014,0.088,0.12); g.add(rsEarR);
+  // Center bridge (top bar connecting the ears, leaving a gap below)
+  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.006,0.018), gunMetal);
+  rsBridge.position.set(0,0.100,0.12); g.add(rsBridge);
+  // Notch floor (dark recess visible through the gap)
+  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.014,0.016), gunBlack);
+  rsNotch.position.set(0,0.090,0.12); g.add(rsNotch);
+  // Rear sight base plate
+  const rsBase = new THREE.Mesh(new THREE.BoxGeometry(0.036,0.006,0.024), gunDark);
+  rsBase.position.set(0,0.078,0.12); g.add(rsBase);
+  // Serration ridges on the ears (3 each)
+  for(let i=0;i<3;i++){
+    const serrL = new THREE.Mesh(new THREE.BoxGeometry(0.017,0.003,0.004), gunMetal);
+    serrL.position.set(-0.014,0.082+i*0.006,0.12); g.add(serrL);
+    const serrR = new THREE.Mesh(new THREE.BoxGeometry(0.017,0.003,0.004), gunMetal);
+    serrR.position.set(0.014,0.082+i*0.006,0.12); g.add(serrR);
+  }
   
   // Beavertail (grip extension)
   const beavertail = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.02,0.03), gunDark);
@@ -3310,6 +3340,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
