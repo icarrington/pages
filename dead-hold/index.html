@@ -2377,10 +2377,18 @@ function loop(){
   moving = move.lengthSq()>0;
   if(moving) move.normalize();
 
-  // Base walk speed; sprint (Shift) boosts it. Stamina stays full (no drain).
+  // Base walk speed; sprint (Shift) boosts it and drains stamina.
   let speed = 4.2;
   if(adsActive) speed *= ADS_SPEED;
   if(isSprinting()) speed *= SPRINT_MULT;
+  // Sprint drains stamina; when exhausted, sprint stops
+  if(isSprinting() && state.stamina > 0){
+    state.stamina = Math.max(0, state.stamina - 25 * dt);
+    updateHUD();
+  } else if(!isSprinting() && state.stamina < 100){
+    state.stamina = Math.min(100, state.stamina + 15 * dt);
+    updateHUD();
+  }
 
   const targetVel = move.multiplyScalar(speed);
   player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
@@ -2420,16 +2428,18 @@ function loop(){
     swayY = 0; // no vertical bob
   }
 
-  // Sprint pose: weapon-specific. Rifle rotates sideways (Z), pistol tilts up (X).
+  // Sprint pose: weapon-specific.
+  // Rifle, SMG, Shotgun: barrel points horizontally across the screen (Z rotation).
+  // Pistol: barrel tilts UP over the shoulder (X tilt).
   // Both ease in/out with the sprintBlend value so they return smoothly.
-  if(activeWeapon === 'rifle'){
-    sprintLean = sprintBlend * 1.15;   // point the rifle to the side
+  if(activeWeapon === 'rifle' || activeWeapon === 'smg' || activeWeapon === 'shotgun'){
+    sprintLean = sprintBlend * 1.15;   // point the weapon horizontally across the screen
     sprintTilt = 0;
   } else if(activeWeapon === 'pistol'){
     sprintLean = 0;
     sprintTilt = sprintBlend * 0.85;   // tilt the pistol up over the shoulder
   } else {
-    sprintLean = sprintBlend * 0.5;    // other weapons: mild sideways lean
+    sprintLean = sprintBlend * 1.15;   // other weapons: horizontal across screen
     sprintTilt = 0;
   }
   sprintBobX = 0; sprintBobY = 0;
@@ -2603,6 +2613,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
