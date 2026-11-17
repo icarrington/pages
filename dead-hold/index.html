@@ -1086,15 +1086,15 @@ scopeGroup.add(scopeRim);
 const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
 scopeRim2.position.z = 0.12;
 scopeGroup.add(scopeRim2);
-// Red dot: bright billboard quad centered in the front opening.
-// depthTest:false + renderOrder keeps it visible through the tube; it is a
-// small dot so everything OUTSIDE the scope stays fully transparent.
-const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, side:THREE.DoubleSide});
-const scopeDot = new THREE.Mesh(new THREE.PlaneGeometry(0.03,0.03), scopeDotMat);
+// Red dot: bright emissive sphere centered on the FRONT face of the tube.
+// depthTest:false + renderOrder keeps it visible through the open front of the
+// tube; it is a small dot so everything OUTSIDE the scope stays fully transparent.
+const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.028,12,12), scopeDotMat);
 scopeDot.position.set(0,0,-0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0,-0.02,-0.45); // lower-center of the view, in front of the eye
+scopeGroup.position.set(0, 0.14, -0.05); // mounted on TOP of the weapon, near the iron sights
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2306,10 +2306,18 @@ function loop(){
   const model = weaponModels[activeWeapon] || weaponModels.pistol;
   if(gun.children.length){
     for(let i=gun.children.length-1;i>=0;i--){
-      if(gun.children[i] !== flash && gun.children[i] !== flashLight) gun.remove(gun.children[i]);
+      if(gun.children[i] !== flash && gun.children[i] !== flashLight && gun.children[i] !== scopeGroup) gun.remove(gun.children[i]);
     }
   }
   gun.add(model);
+  // Re-attach the 3D red-dot scope on TOP of the new weapon model, near the
+  // iron sights (top of the receiver, pointing forward along the barrel).
+  if(!scopeGroup.parent) gun.add(scopeGroup);
+  scopeGroup.position.set(0, 0.14, -0.05);
+  // Show the 3D scope tube only when the active weapon has a red dot (built
+  // ONCE and reused; everything outside the tube stays fully transparent).
+  const _wantScope = wbGet(activeWeapon).redDot;
+  if(scopeGroup.visible !== _wantScope) scopeGroup.visible = _wantScope;
   // Apply inspection rotation to the weapon model
   if(inspecting){
     model.rotation.y = inspRotY;
@@ -2626,6 +2634,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
