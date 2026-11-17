@@ -1896,22 +1896,26 @@ function killZombie(z, isHead){
 /* ============================ WAVES ============================ */
 function startWave(n){
   state.wave = n;
-  const count = 3 + n*2;
-  const speed = 1.0 + n*0.15;
+  const count = 5 + n * 3;
+  const speed = 1.0 + n * 0.15;
+  const playerX = player.pos.x;
+  const playerZ = player.pos.z;
   for(let i=0;i<count;i++){
-    const door = doors[Math.floor(Math.random()*doors.length)];
-    let x, z;
-    if(door.x===0 && door.z===-45){ x = (Math.random()-0.5)*4; z = -45 + 1.5; }
-    else if(door.x===0 && door.z===45){ x = (Math.random()-0.5)*4; z = 45 - 1.5; }
-    else if(door.x===-45){ x = -45 + 1.5; z = (Math.random()-0.5)*4; }
-    else { x = 45 - 1.5; z = (Math.random()-0.5)*4; }
+    // Spawn at random position 15-30 units from player
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 15 + Math.random() * 15;
+    let x = playerX + Math.cos(angle) * dist;
+    let z = playerZ + Math.sin(angle) * dist;
+    // Clamp to arena bounds (±60)
+    x = Math.max(-58, Math.min(58, x));
+    z = Math.max(-58, Math.min(58, z));
     spawnQueue.push({
       x, z,
-      speed: speed*(0.9+Math.random()*0.25),
+      speed: speed * (0.9 + Math.random() * 0.25),
       hp: 100
     });
   }
-  showBanner('WAVE '+n);
+  showBanner('WAVE ' + n);
   if(n % 5 === 0){
     state.bossPending = true;
     state.bossWarnT = 2.0;
@@ -2133,7 +2137,10 @@ function resetGame(){
   chalkMat.opacity = 0.55;
   chalkGroup.visible = true;
   updateWeaponSlots();
-  startWave(1);
+  // 3-second countdown before Wave 1
+  state.waveGap = 3.0;
+  state.wave = 0; // Will be set to 1 when startWave is called
+  showBanner('GET READY', false);
   updateHUD();
 }
 function startGame(){
@@ -2342,6 +2349,14 @@ function loop(){
     spawnZombie(data);
   }
 
+  /* ---- wave gap countdown ---- */
+  if(state.waveGap > 0){
+    state.waveGap -= dt;
+    if(state.waveGap <= 0){
+      startWave(state.wave + 1);
+    }
+  }
+
   /* ---- movement ---- */
   const _q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0,player.yaw,0));
   const forward = new THREE.Vector3(0,0,-1).applyQuaternion(_q);
@@ -2470,7 +2485,8 @@ function loop(){
 
   /* ---- zombies ---- */
   const toRemove = [];
-  for(const z of zombies){
+  for(let zi = zombies.length - 1; zi >= 0; zi--){
+    const z = zombies[zi];
     if(z.dying){
       z.deathT += dt;
       const p = Math.min(1, z.deathT/0.6);
@@ -2540,7 +2556,7 @@ function loop(){
   /* ---- wave complete ---- */
   if(zombies.length===0 && spawnQueue.length===0 && !state.boss){
     if(state.waveGap<=0){
-      state.waveGap = 4;
+      state.waveGap = 5;
     } else {
       state.waveGap -= dt;
       if(state.waveGap<=0) startWave(state.wave+1);
@@ -2566,6 +2582,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
