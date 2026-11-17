@@ -3109,7 +3109,7 @@ function loop(){
       z.headMat.emissive.setRGB(0,0,0);
     }
     
-    // Calculate direction to player
+    // Calculate direction to player (real-time tracking every frame)
     const dx = player.pos.x - z.group.position.x;
     const dz = player.pos.z - z.group.position.z;
     const dist = Math.hypot(dx,dz);
@@ -3118,60 +3118,69 @@ function loop(){
     z.group.rotation.y = Math.atan2(dx,dz);
     
     if(dist > 0.9){
-      // Use the zombie's individual speed (set per-wave in startWave)
-      const speed = z.speed || 2.5;
+      // Moderate speed: faster than walking, slower than sprint
+      const speed = z.speed || 3.0;
       const step = speed * dt;
       
-      // Unit direction toward player (re-targeted every frame)
+      // Unit direction toward player
       const ux = dx/dist, uz = dz/dist;
       
-      // Obstacle avoidance: check nearby colliders and steer around them
-      let offsetX = 0, offsetZ = 0;
-      const zx = z.group.position.x, zz = z.group.position.z;
-      for(let ci = 0; ci < colliders.length; ci++){
-        const c = colliders[ci];
-        // Quick reject: skip if zombie is far from this collider
-        if(zx < c.minX - 2 || zx > c.maxX + 2 || zz < c.minZ - 2 || zz > c.maxZ + 2) continue;
-        const cx = (c.minX + c.maxX) / 2;
-        const cz = (c.minZ + c.maxZ) / 2;
-        const cd = Math.hypot(zx - cx, zz - cz);
-        if(cd < 2.5){
-          // Steer perpendicular to go around obstacle
-          const px = -uz, pz = ux;
-          const strength = 0.6 * (1 - cd/2.5);
-          offsetX += px * strength;
-          offsetZ += pz * strength;
+      // Anti-stuck tracking: measure actual movement over 0.5s window
+      if(!z._moveTrack) z._moveTrack = {t: state.seconds, x: z.group.position.x, z: z.group.position.z, dist: 0};
+      if(!z._detourTimer) z._detourTimer = 0;
+      if(!z._detourDir) z._detourDir = 1;
+      
+      // Determine movement direction
+      let dirX = ux, dirZ = uz;
+      
+      // If in detour mode, use perpendicular direction
+      if(z._detourTimer > 0){
+        z._detourTimer -= dt;
+        const px = -uz * z._detourDir, pz = ux * z._detourDir;
+        dirX = ux * 0.3 + px * 0.9;
+        dirZ = uz * 0.3 + pz * 0.9;
+        const dl = Math.hypot(dirX, dirZ) || 1;
+        dirX /= dl; dirZ /= dl;
+      } else {
+        // Obstacle avoidance: steer around nearby colliders
+        let offX = 0, offZ = 0;
+        const zx = z.group.position.x, zz = z.group.position.z;
+        for(let ci = 0; ci < colliders.length; ci++){
+          const c = colliders[ci];
+          if(zx < c.minX - 1.5 || zx > c.maxX + 1.5 || zz < c.minZ - 1.5 || zz > c.maxZ + 1.5) continue;
+          const cx = (c.minX + c.maxX) / 2;
+          const cz = (c.minZ + c.maxZ) / 2;
+          const cd = Math.hypot(zx - cx, zz - cz);
+          if(cd < 2.0){
+            const px = -uz, pz = ux;
+            const strength = 0.8 * (1 - cd/2.0);
+            offX += px * strength;
+            offZ += pz * strength;
+          }
         }
+        dirX = ux + offX;
+        dirZ = uz + offZ;
+        const dl = Math.hypot(dirX, dirZ) || 1;
+        dirX /= dl; dirZ /= dl;
       }
       
-      // Combine direction with obstacle avoidance
-      let dirX = ux + offsetX;
-      let dirZ = uz + offsetZ;
-      const dirLen = Math.hypot(dirX, dirZ) || 1;
-      dirX /= dirLen;
-      dirZ /= dirLen;
-      
-      // Move the zombie
+      // Attempt movement with collision sliding
       const nx = z.group.position.x + dirX * step;
       const nz = z.group.position.z + dirZ * step;
       
-      // Check if blocked, if so try sliding along obstacle
       let moved = false;
       if(!zombieBlocked(nx, nz)){
         z.group.position.x = nx;
         z.group.position.z = nz;
         moved = true;
       } else {
-        // Try multiple slide directions to find a path around
+        // Slide along obstacle: try perpendicular and axis-aligned directions
         const px = -uz, pz = ux;
         const candidates = [
           [z.group.position.x + px * step, z.group.position.z + pz * step],
           [z.group.position.x - px * step, z.group.position.z - pz * step],
           [nx, z.group.position.z],
-          [z.group.position.x, nz],
-          // Diagonal slides for tighter corners
-          [z.group.position.x + px * step * 0.7, z.group.position.z + pz * step * 0.7],
-          [z.group.position.x - px * step * 0.7, z.group.position.z - pz * step * 0.7]
+          [z.group.position.x, nz]
         ];
         for(let ci = 0; ci < candidates.length; ci++){
           if(!zombieBlocked(candidates[ci][0], candidates[ci][1])){
@@ -3183,31 +3192,23 @@ function loop(){
         }
       }
       
-      // Anti-stuck: if barely moved in 1.5 seconds, try a stronger detour
-      if(!z.lastMoveTime) z.lastMoveTime = state.seconds;
-      if(!z.lastPos) z.lastPos = {x: z.group.position.x, z: z.group.position.z};
+      // Update movement tracking
+      const actualDist = Math.hypot(z.group.position.x - z._moveTrack.x, z.group.position.z - z._moveTrack.z);
+      z._moveTrack.dist += actualDist;
+      z._moveTrack.x = z.group.position.x;
+      z._moveTrack.z = z.group.position.z;
       
-      const movedDist = Math.hypot(z.group.position.x - z.lastPos.x, z.group.position.z - z.lastPos.z);
-      const timeSinceLastMove = state.seconds - z.lastMoveTime;
-      
-      if(timeSinceLastMove > 1.5 && movedDist < 0.05){
-        // Force a stronger perpendicular detour
-        const px = -uz, pz = ux;
-        const detourStep = step * 1.5;
-        const cand1 = [z.group.position.x + px * detourStep, z.group.position.z + pz * detourStep];
-        const cand2 = [z.group.position.x - px * detourStep, z.group.position.z - pz * detourStep];
-        if(!zombieBlocked(cand1[0], cand1[1])){
-          z.group.position.x = cand1[0];
-          z.group.position.z = cand1[1];
-        } else if(!zombieBlocked(cand2[0], cand2[1])){
-          z.group.position.x = cand2[0];
-          z.group.position.z = cand2[1];
+      // Anti-stuck: if speed dropped below 5% of target over 0.5s, trigger detour
+      const elapsed = state.seconds - z._moveTrack.t;
+      if(elapsed >= 0.5){
+        const actualSpeed = z._moveTrack.dist / elapsed;
+        const targetSpeed = speed;
+        if(actualSpeed < targetSpeed * 0.05){
+          z._detourTimer = 1.0;
+          z._detourDir = Math.random() < 0.5 ? 1 : -1;
         }
-        z.lastMoveTime = state.seconds;
-        z.lastPos = {x: z.group.position.x, z: z.group.position.z};
-      } else if(movedDist > 0.01){
-        z.lastMoveTime = state.seconds;
-        z.lastPos = {x: z.group.position.x, z: z.group.position.z};
+        z._moveTrack.t = state.seconds;
+        z._moveTrack.dist = 0;
       }
       
       // Hard clamp inside arena
@@ -3333,6 +3334,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
