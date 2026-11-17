@@ -1717,7 +1717,9 @@ function lerpAds(dt){
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
   // Sprint pose: pure Y-axis (yaw) rotation so the barrel sweeps sideways.
   // No pitch, no roll — only yaw.
-  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot + sprintTilt, sprintYaw, sprintLean);
+  // sprintTilt: pistol pitches UP (negative X lifts the muzzle toward the sky);
+  // other weapons use sprintYaw (sideways sweep) instead.
+  gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot - sprintTilt, sprintYaw, sprintLean);
   // Toggle ADS class for red dot visibility
   const hud = document.getElementById('hud');
   if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
@@ -2434,9 +2436,13 @@ function loop(){
   // barrel sweeps sideways across the screen, like the gun is turned to face
   // left/right across the body. No pitch (up-tilt), no roll — only yaw.
   // Eases in/out with sprintBlend so it returns smoothly to forward-facing.
+  // Sprint pose per weapon:
+  //  - RIFLE / SMG / SHOTGUN: yaw around Y (barrel sweeps sideways across the body).
+  //  - PISTOL: no yaw — instead it tilts UP (barrel faces the sky).
+  const _sprintIsPistol = (activeWeapon === 'pistol');
   sprintLean = 0;   // no Z roll
-  sprintTilt = 0;   // no X pitch
-  sprintYaw = sprintBlend * 1.15; // Y-axis yaw: barrel sweeps sideways
+  sprintTilt = _sprintIsPistol ? sprintBlend * 1.15 : 0; // pistol: pitch up; others: none
+  sprintYaw = _sprintIsPistol ? 0 : sprintBlend * 1.15;  // others: yaw sideways; pistol: none
   sprintBobX = 0; sprintBobY = 0;
 
   // Recoil: kick back (z +0.05) and up (y +0.03)
@@ -2608,6 +2614,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
