@@ -2544,6 +2544,8 @@ const pGeo = new THREE.BoxGeometry(0.08,0.08,0.08);
 const pMat = new THREE.MeshBasicMaterial({color:0x6b8a4a});
 const pMatRed = new THREE.MeshBasicMaterial({color:0xff3b2f});
 const particles = [];
+// Beacon pool (created lazily in the loop, declared here for closure)
+let _beaconPool = null, _beaconCylGeo = null, _beaconCylMat = null, _beaconSpriteMat = null, _beaconLightMat = null;
 for(let i=0;i<P_MAX;i++){
   const m = new THREE.Mesh(pGeo, pMat);
   m.visible = false; scene.add(m);
@@ -3100,14 +3102,49 @@ function loop(){
   /* ---- boss ---- */
   updateBoss(dt);
 
-  /* ---- zombie beacon: show tall glowing beam when fewer than 3 zombies remain ---- */
-  const _aliveZ = zombies.filter(z=>z.alive).length + (state.boss && state.boss.alive ? 1 : 0);
-  const _showBeacon = _aliveZ > 0 && _aliveZ < 3;
-  if(typeof beaconMesh !== 'undefined' && beaconMesh){
-    if(beaconMesh.visible !== _showBeacon) beaconMesh.visible = _showBeacon;
-    if(_showBeacon){
-      beaconMesh.position.set(player.pos.x, 0, player.pos.z);
-      if(typeof beaconMat !== 'undefined' && beaconMat) beaconMat.emissiveIntensity = 1.5 + Math.sin(state.seconds*4)*0.5;
+  /* ---- zombie beacon: show tall glowing beam above each zombie when fewer than 3 remain ---- */
+  {
+    const _aliveList = zombies.filter(z => z.alive);
+    const _aliveCount = _aliveList.length + (state.boss && state.boss.alive ? 1 : 0);
+    const _showBeacons = _aliveCount > 0 && _aliveCount < 3;
+    // Ensure beacon pool exists (created once)
+    if(!_beaconPool) {
+      _beaconPool = [];
+      _beaconCylGeo = new THREE.CylinderGeometry(0.35, 0.35, 8, 16, 1, true);
+      _beaconCylMat = new THREE.MeshBasicMaterial({color:0xff4422, transparent:true, opacity:0.35, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide});
+      _beaconSpriteMat = new THREE.SpriteMaterial({color:0xff2200, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+      _beaconLightMat = new THREE.PointLight(0xff3311, 3, 12, 2);
+      for(let bi=0; bi<20; bi++){
+        const grp = new THREE.Group();
+        const cyl = new THREE.Mesh(_beaconCylGeo, _beaconCylMat);
+        cyl.position.y = 4;
+        grp.add(cyl);
+        const spr = new THREE.Sprite(_beaconSpriteMat);
+        spr.position.y = 8.2;
+        spr.scale.set(1.2, 1.2, 1);
+        grp.add(spr);
+        const lt = new THREE.PointLight(0xff3311, 3, 12, 2);
+        lt.position.y = 5;
+        grp.add(lt);
+        grp.visible = false;
+        scene.add(grp);
+        _beaconPool.push(grp);
+      }
+    }
+    // Assign beacons to alive zombies
+    for(let bi=0; bi<_beaconPool.length; bi++){
+      const b = _beaconPool[bi];
+      if(bi < _aliveCount && _showBeacons){
+        const target = (bi < _aliveList.length) ? _aliveList[bi] : state.boss;
+        if(target){
+          b.visible = true;
+          b.position.set(target.group.position.x, 0, target.group.position.z);
+        } else {
+          b.visible = false;
+        }
+      } else {
+        b.visible = false;
+      }
     }
   }
 
@@ -3140,6 +3177,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
