@@ -279,28 +279,28 @@ const flashLight = new THREE.PointLight(0xffd27a, 0, 6, 2);
 flashLight.position.set(0,0.035,-0.30); gun.add(flashLight);
 
 /* ============================ ZOMBIE FACTORY ============================ */
-const zBodyMat = new THREE.MeshStandardMaterial({color:0x4a6b3a, roughness:0.9, metalness:0.0});
-const zHeadMat = new THREE.MeshStandardMaterial({color:0x5f7d45, roughness:0.85, metalness:0.0});
-const zArmMat  = new THREE.MeshStandardMaterial({color:0x416033, roughness:0.9, metalness:0.0});
-const zEyeMat  = new THREE.MeshBasicMaterial({color:0xff3b2f});
-
-const geoBody = new THREE.BoxGeometry(0.6,1.7,0.6);
-const geoHead = new THREE.BoxGeometry(0.35,0.35,0.35);
+const geoBody = new THREE.BoxGeometry(0.6,0.9,0.6);
+const geoHead = new THREE.BoxGeometry(0.3,0.3,0.3);
 const geoArm  = new THREE.BoxGeometry(0.14,0.7,0.14);
 const geoLeg  = new THREE.BoxGeometry(0.18,0.7,0.18);
-const geoEye  = new THREE.SphereGeometry(0.05,6,6);
+const geoEye  = new THREE.BoxGeometry(0.06,0.06,0.06);
 
 function makeZombie(){
   const g = new THREE.Group();
-  const body = new THREE.Mesh(geoBody, zBodyMat); body.position.y=0.85; body.castShadow=true; g.add(body);
-  const head = new THREE.Mesh(geoHead, zHeadMat); head.position.y=1.85; head.castShadow=true; g.add(head);
-  const e1 = new THREE.Mesh(geoEye, zEyeMat); e1.position.set(-0.08,1.88,0.18); g.add(e1);
-  const e2 = new THREE.Mesh(geoEye, zEyeMat); e2.position.set(0.08,1.88,0.18); g.add(e2);
-  const aL = new THREE.Mesh(geoArm, zArmMat); aL.position.set(-0.4,1.0,0.1); aL.rotation.x=-0.5; g.add(aL);
-  const aR = new THREE.Mesh(geoArm, zArmMat); aR.position.set(0.4,1.0,0.1); aR.rotation.x=-0.5; g.add(aR);
-  const lL = new THREE.Mesh(geoLeg, zArmMat); lL.position.set(-0.16,0.35,0); g.add(lL);
-  const lR = new THREE.Mesh(geoLeg, zArmMat); lR.position.set(0.16,0.35,0); g.add(lR);
-  return {group:g, body, head, aL, aR, lL, lR};
+  const bodyMat = new THREE.MeshStandardMaterial({color:0x4a6b3a, roughness:0.9, metalness:0.0});
+  const headMat = new THREE.MeshStandardMaterial({color:0x5f7d45, roughness:0.85, metalness:0.0});
+  const armMat  = new THREE.MeshStandardMaterial({color:0x416033, roughness:0.9, metalness:0.0});
+  const eyeMat  = new THREE.MeshBasicMaterial({color:0xff3b2f});
+  
+  const body = new THREE.Mesh(geoBody, bodyMat); body.position.y=0.45; body.castShadow=true; g.add(body);
+  const head = new THREE.Mesh(geoHead, headMat); head.position.y=1.05; head.castShadow=true; g.add(head);
+  const e1 = new THREE.Mesh(geoEye, eyeMat); e1.position.set(-0.08,1.08,0.16); g.add(e1);
+  const e2 = new THREE.Mesh(geoEye, eyeMat); e2.position.set(0.08,1.08,0.16); g.add(e2);
+  const aL = new THREE.Mesh(geoArm, armMat); aL.position.set(-0.4,0.6,0.1); aL.rotation.x=-0.5; g.add(aL);
+  const aR = new THREE.Mesh(geoArm, armMat); aR.position.set(0.4,0.6,0.1); aR.rotation.x=-0.5; g.add(aR);
+  const lL = new THREE.Mesh(geoLeg, armMat); lL.position.set(-0.16,0.35,0); g.add(lL);
+  const lR = new THREE.Mesh(geoLeg, armMat); lR.position.set(0.16,0.35,0); g.add(lR);
+  return {group:g, body, head, aL, aR, lL, lR, bodyMat, headMat, armMat, eyeMat};
 }
 
 /* ============================ GAME STATE ============================ */
@@ -324,9 +324,9 @@ const state = {
   lastHitTime:-99,
   reloading:false, reloadT:0,
   recoil:0, muzzleT:0,
-  spawnTimer:0,
   groanTimer:0,
-  damageFlash:0
+  damageFlash:0,
+  waveGap:0
 };
 
 const player = {
@@ -399,6 +399,15 @@ function playReload(){
     const g=audioCtx.createGain(); g.gain.setValueAtTime(0.12,t+off); g.gain.exponentialRampToValueAtTime(0.001,t+off+0.06);
     o.connect(g).connect(audioCtx.destination); o.start(t+off); o.stop(t+off+0.07);
   });
+}
+function playHurt(){
+  if(!audioCtx) return;
+  const t=now();
+  const o=audioCtx.createOscillator(); o.type='sawtooth';
+  o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(60,t+0.18);
+  const g=audioCtx.createGain(); g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  const filt=audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=900;
+  o.connect(filt).connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.22);
 }
 
 /* ============================ INPUT ============================ */
@@ -490,10 +499,10 @@ function shoot(){
     if(z && z.alive){
       state.shotsHit++;
       const isHead = (hit.object === z.head);
-      const dmg = isHead ? 20 : 10;
+      const dmg = isHead ? 30 : 15;
       z.hp -= dmg;
       z.flash = 0.08;
-      state.points += isHead ? 20 : 10;
+      state.points += 10;
       playHit();
       if(z.hp<=0) killZombie(z, isHead);
     }
@@ -501,17 +510,19 @@ function shoot(){
   updateHUD();
 }
 function findZombie(obj){
-  while(obj){ if(zombies.includes(obj)) return obj; obj = obj.parent; }
-  // search by group
-  for(const z of zombies){ if(z.group === obj) return z; }
+  let o = obj;
+  while(o){
+    for(const z of zombies){ if(z.group === o) return z; }
+    o = o.parent;
+  }
   return null;
 }
 function killZombie(z, isHead){
   z.alive = false;
   z.dying = true; z.deathT = 0;
   state.kills++;
-  if(isHead){ state.headshots++; state.points += 80; } // 20 (hit) + 80 = 100 total
-  else { state.points += 50; } // 10 (hit) + 50 = 60 total
+  state.points += 60;
+  if(isHead){ state.headshots++; state.points += 100; }
   spawnParticleBurst(z.group.position);
   playHit();
   updateHUD();
@@ -520,23 +531,21 @@ function killZombie(z, isHead){
 /* ============================ WAVES ============================ */
 function startWave(n){
   state.wave = n;
-  const count = 3 + (n-1)*2;
-  const speed = 1.2 + n*0.15;
+  const count = 3 + n*2;
+  const speed = 1.0 + n*0.15;
   for(let i=0;i<count;i++){
     const door = doors[Math.floor(Math.random()*doors.length)];
-    // Spawn 1-2m INSIDE the arena from the doorway
     let x, z;
-    if(door.x===0 && door.z===-15){ x = (Math.random()-0.5)*4; z = -15 + 1.5 + Math.random(); }
-    else if(door.x===0 && door.z===15){ x = (Math.random()-0.5)*4; z = 15 - 1.5 - Math.random(); }
-    else if(door.x===-15){ x = -15 + 1.5 + Math.random(); z = (Math.random()-0.5)*4; }
-    else { x = 15 - 1.5 - Math.random(); z = (Math.random()-0.5)*4; }
+    if(door.x===0 && door.z===-15){ x = (Math.random()-0.5)*4; z = -15 + 1.5; }
+    else if(door.x===0 && door.z===15){ x = (Math.random()-0.5)*4; z = 15 - 1.5; }
+    else if(door.x===-15){ x = -15 + 1.5; z = (Math.random()-0.5)*4; }
+    else { x = 15 - 1.5; z = (Math.random()-0.5)*4; }
     spawnQueue.push({
       x, z,
       speed: speed*(0.9+Math.random()*0.25),
       hp: 100
     });
   }
-  state.spawnTimer = 0.3;
   showBanner('WAVE '+n);
   updateHUD();
 }
@@ -548,6 +557,7 @@ function showBanner(text){
 
 /* ============================ SPAWN / UPDATE ZOMBIES ============================ */
 function spawnZombie(data){
+  if(zombies.length >= 15) return;
   const z = makeZombie();
   z.group.position.set(data.x, 0, data.z);
   z.speed = data.speed;
@@ -556,10 +566,8 @@ function spawnZombie(data){
   z.flash = 0;
   z.attackCd = 0;
   z.bobPhase = Math.random()*Math.PI*2;
-  z.group.traverse(o=>{ if(o.isMesh) o.castShadow=true; });
   scene.add(z.group);
   zombies.push(z);
-  console.log('[DEAD HOLD] Zombie spawned at', data.x.toFixed(1), data.z.toFixed(1));
 }
 function removeZombie(z){
   const idx = zombies.indexOf(z);
@@ -604,6 +612,7 @@ function damagePlayer(amount){
   state.health -= amount;
   state.lastHitTime = state.seconds;
   state.damageFlash = 1;
+  playHurt();
   if(state.health<=0){ state.health=0; endGame(); }
   updateHUD();
 }
@@ -621,7 +630,7 @@ function resetGame(){
   state.seconds=0; state.lastHitTime=-99;
   state.reloading=false; state.reloadT=0;
   state.recoil=0; state.muzzleT=0;
-  state.spawnTimer=0; state.groanTimer=0; state.damageFlash=0;
+  state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
   camera.position.set(0,1.7,0);
@@ -650,7 +659,7 @@ function endGame(){
   document.getElementById('overScreen').classList.remove('hidden');
   // call botScore once
   if(window.botScore){
-    try{ window.botScore(state.wave, state.kills, state.points, state.headshots, secs); }catch(e){}
+    try{ window.botScore({wave:state.wave, kills:state.kills, points:state.points, headshots:state.headshots, seconds:secs}); }catch(e){}
   }
 }
 
@@ -703,6 +712,12 @@ function loop(){
   }
 
   state.seconds += dt;
+
+  /* ---- spawn queue ---- */
+  if(spawnQueue.length>0 && zombies.length<15){
+    const data = spawnQueue.shift();
+    spawnZombie(data);
+  }
 
   /* ---- movement ---- */
   const forward = new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(0,player.yaw,0)));
@@ -778,15 +793,6 @@ function loop(){
     document.getElementById('vignette').style.opacity = state.damageFlash;
   }
 
-  /* ---- spawn queue ---- */
-  if(spawnQueue.length>0){
-    state.spawnTimer -= dt;
-    if(state.spawnTimer<=0){
-      state.spawnTimer = 0.6 + Math.random()*0.6;
-      spawnZombie(spawnQueue.shift());
-    }
-  }
-
   /* ---- zombies ---- */
   const toRemove = [];
   for(const z of zombies){
@@ -803,40 +809,36 @@ function loop(){
     if(z.flash>0){
       z.flash -= dt;
       const f = Math.max(0, z.flash/0.08);
-      z.body.material.emissive.setRGB(f, f*0.2, f*0.1);
-      z.head.material.emissive.setRGB(f, f*0.2, f*0.1);
+      z.bodyMat.emissive.setRGB(f, f*0.2, f*0.1);
+      z.headMat.emissive.setRGB(f, f*0.2, f*0.1);
     } else {
-      z.body.material.emissive.setRGB(0,0,0);
-      z.head.material.emissive.setRGB(0,0,0);
+      z.bodyMat.emissive.setRGB(0,0,0);
+      z.headMat.emissive.setRGB(0,0,0);
     }
     // move toward player
     const dx = player.pos.x - z.group.position.x;
     const dz = player.pos.z - z.group.position.z;
     const dist = Math.hypot(dx,dz);
-    // Always face the player so they are visible and shootable
     z.group.rotation.y = Math.atan2(dx,dz);
-    if(dist>1.5){
+    if(dist>0.9){
       const step = z.speed*dt;
       let nx = z.group.position.x + (dx/dist)*step;
       let nz = z.group.position.z + (dz/dist)*step;
       if(!zombieBlocked(nx,nz)){ z.group.position.x=nx; z.group.position.z=nz; }
       else {
-        // try slide
         if(!zombieBlocked(nx, z.group.position.z)) z.group.position.x=nx;
         else if(!zombieBlocked(z.group.position.x, nz)) z.group.position.z=nz;
       }
-      // bob
       z.bobPhase += dt*6;
       z.group.position.y = Math.abs(Math.sin(z.bobPhase))*0.06;
       z.aL.rotation.x = -0.5 + Math.sin(z.bobPhase)*0.2;
       z.aR.rotation.x = -0.5 - Math.sin(z.bobPhase)*0.2;
     } else {
-      // attack
       z.attackCd -= dt;
       z.aL.rotation.x = -1.2; z.aR.rotation.x = -1.2;
       if(z.attackCd<=0){
-        z.attackCd = 1.0;
-        damagePlayer(15);
+        z.attackCd = 1.0 + Math.random()*0.5;
+        damagePlayer(8 + Math.floor(Math.random()*7));
       }
     }
   }
@@ -858,10 +860,14 @@ function loop(){
   }
 
   /* ---- wave complete ---- */
-  if(spawnQueue.length===0 && zombies.length===0){
-    // refill a little reserve
-    state.reserve = Math.min(48, state.reserve + 8);
-    startWave(state.wave+1);
+  if(zombies.length===0 && spawnQueue.length===0){
+    if(state.waveGap<=0){
+      state.waveGap = 4;
+      state.reserve = Math.min(48, state.reserve + 8);
+    } else {
+      state.waveGap -= dt;
+      if(state.waveGap<=0) startWave(state.wave+1);
+    }
   }
 
   renderer.render(scene, camera);
@@ -883,6 +889,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
