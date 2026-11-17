@@ -38,6 +38,7 @@
   .ammo{font-family:var(--mono);font-size:34px;font-weight:800;letter-spacing:.02em}
   .ammo .res{font-size:18px;color:var(--dim);font-weight:600}
   .ammo.low #mag{color:var(--danger)}
+  .ammo.empty #mag,.ammo.empty .res{color:var(--danger);opacity:.6}
   #crosshair{position:absolute;top:50%;left:50%;width:26px;height:26px;transform:translate(-50%,-50%);opacity:.85}
   #crosshair::before,#crosshair::after{content:"";position:absolute;background:var(--accent);box-shadow:0 0 4px rgba(200,255,77,.6)}
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
@@ -1639,15 +1640,23 @@ const state = {
   bossPending:false
 };
 
-/* finite magazine sizes; reserve is infinite for every weapon */
+/* finite magazine sizes; reserve is finite (10 full mags per weapon) */
 const MAGS = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200 };
 const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun:1.2, uzi:1.2, m4a1:1.5, awp:2.0, deagle:1.3, minigun:3.0 };
 const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200 };
-function refillMag(w){ mags[w] = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]; }
+const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20, uzi:320, m4a1:300, awp:50, deagle:60, minigun:2000 };
+function refillMag(w){
+  const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
+  const need = cap - mags[w];
+  const take = Math.min(need, reserves[w]);
+  mags[w] += take;
+  reserves[w] -= take;
+}
 function startReload(){
   const w = activeWeapon;
   const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
   if(mags[w] >= cap) return;
+  if(reserves[w] <= 0) return;
   state.reloading = true;
   state.reloadT = 0;
   state.reloadDur = RELOAD_TIME[w];
@@ -1792,7 +1801,10 @@ let touchWeaponList = ['pistol','smg','shotgun','rifle'];
 
 function buildTouchSlots(){
   const list = weaponList();
-  tSlots.innerHTML = list.map((w,i)=>'<div class="tslot'+(w===activeWeapon?' active':'')+'" data-w="'+w+'">'+(i+1)+'</div>').join('');
+  tSlots.innerHTML = list.map((w,i)=>{
+    const empty = (mags[w] <= 0 && reserves[w] <= 0);
+    return '<div class="tslot'+(w===activeWeapon?' active':'')+(empty?' empty':'')+'" data-w="'+w+'">'+(i+1)+'</div>';
+  }).join('');
   tSlots.querySelectorAll('.tslot').forEach(el=>{
     el.addEventListener('touchstart', e=>{ e.preventDefault(); switchWeapon(el.dataset.w); }, {passive:false});
     el.addEventListener('click', ()=>{ switchWeapon(el.dataset.w); });
@@ -1968,7 +1980,6 @@ function switchWeapon(w){
   if(!isOwned(w)) return;
   if(w===activeWeapon) return;
   activeWeapon = w;
-  refillMag(w);
   state.reloading = false;
   updateRedDot();
   updateHUD();
@@ -2082,7 +2093,10 @@ function updateWeaponSlots(){
   const slotsEl = document.getElementById('slots');
   const names = {pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',doubleShotgun:'DB Shotgun'};
   const list = weaponList();
-  slotsEl.innerHTML = list.map((w,i)=>'<div class="slot'+(w===activeWeapon?' active':'')+'"><span class="num">'+(i+1)+'</span>'+(names[w]||w)+'</div>').join('');
+  slotsEl.innerHTML = list.map((w,i)=>{
+    const empty = (mags[w] <= 0 && reserves[w] <= 0);
+    return '<div class="slot'+(w===activeWeapon?' active':'')+(empty?' empty':'')+'"><span class="num">'+(i+1)+'</span>'+(names[w]||w)+'</div>';
+  }).join('');
   if(isTouch) buildTouchSlots();
 }
 let activeWeapon = 'pistol';
@@ -2091,11 +2105,19 @@ let lastShotTime = 0;
    from zombie drops (see killZombie / weaponDrops). ---- */
 const ownedWeapons = ['pistol'];
 function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
-function addWeapon(w){ if(ownedWeapons.indexOf(w) < 0){ ownedWeapons.push(w); refillMag(w); } }
+function addWeapon(w){
+  if(ownedWeapons.indexOf(w) < 0){
+    ownedWeapons.push(w);
+    // Give 10 full magazines of reserve ammo for this weapon
+    const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
+    reserves[w] += cap * 10;
+    mags[w] = cap;
+  }
+}
 function weaponList(){
   const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
-  return list.filter(isOwned);
+  return list.filter(w => isOwned(w) && (mags[w] > 0 || reserves[w] > 0));
 }
 /* ---- Weapon drop pool (the 8 non-pistol weapons) ---- */
 const DROP_POOL = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
@@ -2212,6 +2234,12 @@ function shoot(){
   lastShotTime = nowMs;
 
   if(mags[activeWeapon] <= 0){
+    if(reserves[activeWeapon] <= 0){
+      // No reserve ammo left — weapon is unusable
+      playEmpty();
+      updateHUD();
+      return;
+    }
     playEmpty();
     startReload();
     updateHUD();
@@ -2219,6 +2247,17 @@ function shoot(){
   }
 
   if(state.hasDoubleShotgun && activeWeapon === 'doubleShotgun'){
+    if(mags[activeWeapon] <= 0){
+      if(reserves[activeWeapon] <= 0){
+        playEmpty();
+        updateHUD();
+        return;
+      }
+      playEmpty();
+      startReload();
+      updateHUD();
+      return;
+    }
     mags[activeWeapon]--;
     state.shotsFired++;
     const _vg2 = wbGet('doubleShotgun').vGrip ? 0.7 : 1;
@@ -2649,7 +2688,10 @@ function resetGame(){
   resetAds();
   state.over=false; state.running=true;
   activeWeapon='pistol';
-  Object.keys(MAGS).forEach(w=>{ mags[w]=MAGS[w]; });
+  Object.keys(MAGS).forEach(w=>{
+    mags[w]=MAGS[w];
+    reserves[w]=MAGS[w]*10; // 10 full magazines of reserve
+  });
   updateWeaponSlots();
   // 3-second countdown before Wave 1
   state.waveGap = 3.0;
@@ -2707,9 +2749,12 @@ function updateHUD(){
   const mag = mags[activeWeapon];
   const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.5) : MAGS[activeWeapon];
   setNum('mag', mag);
-  setNum('reserve', '∞');
+  setNum('reserve', reserves[activeWeapon]);
   const ammoEl = document.getElementById('ammo');
   if(mag <= cap*0.25) ammoEl.classList.add('low'); else ammoEl.classList.remove('low');
+  // Show empty state if no ammo at all
+  if(mag <= 0 && reserves[activeWeapon] <= 0) ammoEl.classList.add('empty');
+  else ammoEl.classList.remove('empty');
 }
 function updateHint(){
   const hint = document.getElementById('hint');
@@ -2811,6 +2856,13 @@ function loop(){
       state.reloading = false;
       refillMag(activeWeapon);
       updateHUD();
+      // If we still have no ammo and no reserves, try to switch to another weapon
+      if(mags[activeWeapon] <= 0 && reserves[activeWeapon] <= 0){
+        const list = weaponList();
+        if(list.length > 0 && list[0] !== activeWeapon){
+          switchWeapon(list[0]);
+        }
+      }
     }
   }
 
@@ -3077,6 +3129,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
