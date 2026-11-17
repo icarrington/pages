@@ -172,16 +172,16 @@ if(!window.botScore){
 
 /* ============================ SETUP ============================ */
 const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+const renderer = new THREE.WebGLRenderer({canvas, antialias:false, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0d10);
-scene.fog = new THREE.FogExp2(0x0a0d10, 0.025);
+scene.fog = new THREE.Fog(0x0a0d10, 8, 30);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 120);
 camera.rotation.order = 'YXZ';
@@ -262,6 +262,7 @@ const hemi = new THREE.HemisphereLight(0x2a333c, 0x0a0c0e, 0.4); scene.add(hemi)
 const flickerLights = [];
 function makeLight(x,z,color,intensity){
   const l = new THREE.PointLight(color, intensity, 22, 2);
+  l.castShadow = false;
   l.position.set(x,3.6,z); scene.add(l);
   // small bulb
   const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8), new THREE.MeshBasicMaterial({color}));
@@ -273,7 +274,6 @@ makeLight(-6,-6,0xffb36b,2.2);
 makeLight(6,4,0xffd27a,2.0);
 makeLight(-4,7,0xff9d5a,2.0);
 makeLight(7,-7,0xffc07a,1.9);
-makeLight(0,0,0xffe0a0,1.4);
 
 /* ============================ WEAPON ============================ */
 const gun = new THREE.Group();
@@ -561,6 +561,8 @@ flashLight.position.set(0,0.035,-0.30); gun.add(flashLight);
 
 // Player flashlight
 const flashlight = new THREE.SpotLight(0xfff5e0, 1.5, 15, Math.PI/3, 0.3, 1);
+flashlight.castShadow = true;
+flashlight.shadow.mapSize.set(512,512);
 flashlight.position.set(0,0,0);
 flashlight.target.position.set(0,0,-1);
 camera.add(flashlight);
@@ -579,13 +581,18 @@ const geoArm  = new THREE.BoxGeometry(0.14,0.7,0.14);
 const geoLeg  = new THREE.BoxGeometry(0.18,0.7,0.18);
 const geoEye  = new THREE.BoxGeometry(0.06,0.06,0.06);
 
+const zBodyMat = new THREE.MeshStandardMaterial({color:0x4a6b3a, roughness:0.9, metalness:0.0});
+const zHeadMat = new THREE.MeshStandardMaterial({color:0x5f7d45, roughness:0.85, metalness:0.0});
+const zArmMat  = new THREE.MeshStandardMaterial({color:0x416033, roughness:0.9, metalness:0.0});
+const zEyeMat  = new THREE.MeshBasicMaterial({color:0xff3b2f});
+
 function makeZombie(){
   const g = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({color:0x4a6b3a, roughness:0.9, metalness:0.0});
-  const headMat = new THREE.MeshStandardMaterial({color:0x5f7d45, roughness:0.85, metalness:0.0});
-  const armMat  = new THREE.MeshStandardMaterial({color:0x416033, roughness:0.9, metalness:0.0});
-  const eyeMat  = new THREE.MeshBasicMaterial({color:0xff3b2f});
-  
+  const bodyMat = zBodyMat;
+  const headMat = zHeadMat;
+  const armMat  = zArmMat;
+  const eyeMat  = zEyeMat;
+
   const body = new THREE.Mesh(geoBody, bodyMat); body.position.y=0.45; body.castShadow=true; g.add(body);
   const head = new THREE.Mesh(geoHead, headMat); head.position.y=1.05; head.castShadow=true; g.add(head);
   const e1 = new THREE.Mesh(geoEye, eyeMat); e1.position.set(-0.08,1.08,0.16); g.add(e1);
@@ -1113,7 +1120,7 @@ function showBanner(text){
 
 /* ============================ SPAWN / UPDATE ZOMBIES ============================ */
 function spawnZombie(data){
-  if(zombies.length >= 15) return;
+  if(zombies.length >= 20) return;
   const z = makeZombie();
   z.group.position.set(data.x, 0, data.z);
   z.speed = data.speed;
@@ -1257,6 +1264,17 @@ function updateHint(){
 
 /* ============================ MAIN LOOP ============================ */
 let lastT = performance.now();
+let fpsFrames = 0, fpsAccum = 0, fpsLow = 0;
+function adaptQuality(fps){
+  if(fps < 30 && fpsLow < 1){
+    fpsLow = 1;
+    renderer.setPixelRatio(0.75);
+  } else if(fps < 20 && fpsLow < 2){
+    fpsLow = 2;
+    flashlight.castShadow = false;
+    renderer.shadowMap.enabled = false;
+  }
+}
 function loop(){
   requestAnimationFrame(loop);
   const nowMs = performance.now();
@@ -1264,6 +1282,14 @@ function loop(){
   lastT = nowMs;
   if(dt>0.05) dt=0.05;
   if(document.hidden){ lastT = nowMs; return; }
+
+  // adaptive quality sampling
+  fpsAccum += dt; fpsFrames++;
+  if(fpsAccum >= 3){
+    const fps = fpsFrames / fpsAccum;
+    fpsAccum = 0; fpsFrames = 0;
+    adaptQuality(fps);
+  }
 
   // flicker lights always
   for(const f of flickerLights){
@@ -1306,7 +1332,7 @@ function loop(){
   }
 
   /* ---- spawn queue ---- */
-  if(spawnQueue.length>0 && zombies.length<15){
+  if(spawnQueue.length>0 && zombies.length<20){
     const data = spawnQueue.shift();
     spawnZombie(data);
   }
@@ -1504,6 +1530,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
