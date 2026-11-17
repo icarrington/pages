@@ -245,7 +245,7 @@
   <div class="card">
     <div class="tag">Zombie Survival // Sector Bunker</div>
     <h1>DEAD <span>HOLD</span></h1>
-    <p class="sub">Hold the line. Survive the waves. Every round counts — the dead keep coming.</p>
+    <p class="sub">Hold the line. Survive the waves. Every round counts — the dead keep coming. You start with only a pistol; kill zombies to drop more weapons — walk over them to pick them up.</p>
     <ul class="controls">
       <li><span class="key">W A S D</span> Move</li>
       <li><span class="key">MOUSE</span> Aim</li>
@@ -253,7 +253,7 @@
       <li><span class="key">RMB</span> Aim (ADS)</li>
       <li><span class="key">1-4</span> Switch Gun</li>
       <li><span class="key">R</span> Reload</li>
-      <li><span class="key">E</span> Take Weapon</li>
+      <li><span class="key">WALK OVER</span> Pick Up Drop</li>
       <li><span class="key">SPACE</span> Jump</li>
       <li><span class="key">ESC</span> Pause</li>
       <li><span class="key">Q / WHEEL</span> Cycle Gun</li>
@@ -1791,8 +1791,7 @@ let fireHeld = false;
 let touchWeaponList = ['pistol','smg','shotgun','rifle'];
 
 function buildTouchSlots(){
-  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
-  if(state.hasDoubleShotgun) list.push('doubleShotgun');
+  const list = weaponList();
   tSlots.innerHTML = list.map((w,i)=>'<div class="tslot'+(w===activeWeapon?' active':'')+'" data-w="'+w+'">'+(i+1)+'</div>').join('');
   tSlots.querySelectorAll('.tslot').forEach(el=>{
     el.addEventListener('touchstart', e=>{ e.preventDefault(); switchWeapon(el.dataset.w); }, {passive:false});
@@ -1966,6 +1965,7 @@ function tryJump(){
   }
 }
 function switchWeapon(w){
+  if(!isOwned(w)) return;
   if(w===activeWeapon) return;
   activeWeapon = w;
   refillMag(w);
@@ -1983,15 +1983,14 @@ function fireRate(){
   return 8;
 }
 function cycleWeapon(){
-  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
-  if(state.hasDoubleShotgun) list.push('doubleShotgun');
+  const list = weaponList();
   let i = list.indexOf(activeWeapon);
   switchWeapon(list[(i+1)%list.length]);
 }
 document.addEventListener('keydown', e=>{
   const k = e.key;
   if(k>='1'&&k<='9'){
-    const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+    const list = weaponList();
     const idx = parseInt(k)-1;
     if(idx < list.length) switchWeapon(list[idx]);
   }
@@ -2032,8 +2031,7 @@ document.addEventListener('mousemove', e=>{
 });
 document.addEventListener('wheel', e=>{
   if(!state.running) return;
-  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
-  if(state.hasDoubleShotgun) list.push('doubleShotgun');
+  const list = weaponList();
   let i = list.indexOf(activeWeapon);
   i = (i + (e.deltaY>0?1:-1) + list.length) % list.length;
   switchWeapon(list[i]);
@@ -2082,23 +2080,62 @@ function zombieBlocked(x,z){
 
 function updateWeaponSlots(){
   const slotsEl = document.getElementById('slots');
-  const weapons = [
-    {key:'1', name:'Pistol', active:activeWeapon==='pistol'},
-    {key:'2', name:'SMG', active:activeWeapon==='smg'},
-    {key:'3', name:'Shotgun', active:activeWeapon==='shotgun'},
-    {key:'4', name:'Rifle', active:activeWeapon==='rifle'},
-    {key:'5', name:'Uzi', active:activeWeapon==='uzi'},
-    {key:'6', name:'M4A1', active:activeWeapon==='m4a1'},
-    {key:'7', name:'AWP', active:activeWeapon==='awp'},
-    {key:'8', name:'Deagle', active:activeWeapon==='deagle'},
-    {key:'9', name:'Minigun', active:activeWeapon==='minigun'}
-  ];
-  if(state.hasDoubleShotgun) weapons.push({key:'0', name:'DB Shotgun', active:activeWeapon==='doubleShotgun'});
-  slotsEl.innerHTML = weapons.map(w=>'<div class="slot'+(w.active?' active':'')+'"><span class="num">'+w.key+'</span>'+w.name+'</div>').join('');
+  const names = {pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',doubleShotgun:'DB Shotgun'};
+  const list = weaponList();
+  slotsEl.innerHTML = list.map((w,i)=>'<div class="slot'+(w===activeWeapon?' active':'')+'"><span class="num">'+(i+1)+'</span>'+(names[w]||w)+'</div>').join('');
   if(isTouch) buildTouchSlots();
 }
 let activeWeapon = 'pistol';
 let lastShotTime = 0;
+/* ---- Player loadout: starts with ONLY the pistol. Other weapons are picked up
+   from zombie drops (see killZombie / weaponDrops). ---- */
+const ownedWeapons = ['pistol'];
+function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
+function addWeapon(w){ if(ownedWeapons.indexOf(w) < 0){ ownedWeapons.push(w); refillMag(w); } }
+function weaponList(){
+  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+  if(state.hasDoubleShotgun) list.push('doubleShotgun');
+  return list.filter(isOwned);
+}
+/* ---- Weapon drop pool (the 8 non-pistol weapons) ---- */
+const DROP_POOL = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+const weaponDrops = [];
+const _dropMat = new THREE.MeshLambertMaterial({color:0x1a2a1a, emissive:0x66ff33, emissiveIntensity:0.6});
+function spawnWeaponDrop(x, z, w){
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.36,0.06,16), _dropMat);
+  base.position.y = 0.03; g.add(base);
+  const model = weaponModels[w].clone();
+  model.scale.setScalar(0.55);
+  model.rotation.set(0, Math.random()*Math.PI*2, 0);
+  model.position.y = 0.14;
+  g.add(model);
+  g.position.set(x, 0, z);
+  g.userData = { w: w, t: Math.random()*Math.PI*2 };
+  scene.add(g);
+  weaponDrops.push(g);
+}
+function updateWeaponDrops(dt){
+  for(let i = weaponDrops.length - 1; i >= 0; i--){
+    const d = weaponDrops[i];
+    d.userData.t += dt*2.2;
+    d.position.y = 0.12 + Math.abs(Math.sin(d.userData.t))*0.12; // gentle bounce
+    d.rotation.y += dt*0.8;
+    const dx = player.pos.x - d.position.x, dz = player.pos.z - d.position.z;
+    if(Math.hypot(dx,dz) < 1.2){
+      addWeapon(d.userData.w);
+      switchWeapon(d.userData.w);
+      scene.remove(d);
+      weaponDrops.splice(i,1);
+      updateWeaponSlots();
+      updateHUD();
+    }
+  }
+}
+function clearWeaponDrops(){
+  for(const d of weaponDrops) scene.remove(d);
+  weaponDrops.length = 0;
+}
 function updateRedDot(){
   const el = document.getElementById('crosshair');
   const hud = document.getElementById('hud');
@@ -2364,6 +2401,11 @@ function killZombie(z, isHead){
   } else {
     spawnParticleBurst(z.group.position);
     playHit();
+    // 10% chance a normal zombie drops a random weapon pickup at its death spot.
+    if(Math.random() < 0.10){
+      const w = DROP_POOL[Math.floor(Math.random()*DROP_POOL.length)];
+      spawnWeaponDrop(z.group.position.x, z.group.position.z, w);
+    }
   }
   updateHUD();
 }
@@ -2598,6 +2640,8 @@ function resetGame(){
   state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
   state.hasDoubleShotgun=false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
+  clearWeaponDrops();
+  ownedWeapons.length = 0; ownedWeapons.push('pistol'); // start with pistol only
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
   player.grounded=true;
@@ -2983,6 +3027,9 @@ function loop(){
   }
   for(const z of toRemove) removeZombie(z);
 
+  /* ---- weapon drops (pickup / bounce) ---- */
+  updateWeaponDrops(dt);
+
   /* ---- death particles ---- */
   updateParticles(dt);
 
@@ -3030,6 +3077,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
