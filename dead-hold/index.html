@@ -2276,7 +2276,10 @@ function isSprinting(){
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
-const adsPos = new THREE.Vector3(0,-0.22,-0.10); // lowered (y) so the weapon/iron sights/red dot sit lower in the FOV and don't float high on screen during ADS
+// ADS: push the weapon FARther back (-Z) and slightly down so it reads as
+// smaller / farther away and more of the scene is visible around it.
+const adsPos = new THREE.Vector3(0,-0.26,-0.32);
+const ADS_Z_OFFSET = 0.12; // rear-aperture offset of the red dot (z=+0.12) from the scope group
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -2310,8 +2313,8 @@ function lerpAds(dt){
     scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
     // During ADS, pull the scope forward so the rear-aperture dot (z=+0.12)
     // lands exactly on the screen-center crosshair. At b=1 the dot is at
-    // z=-0.10+0.12=+0.02 (just behind the eye), i.e. dead-center on the reticle.
-    scopeGroup.position.z = -0.10 + b*0.12;
+    // z=-0.32+0.12=-0.20 (just behind the eye), i.e. dead-center on the reticle.
+    scopeGroup.position.z = adsPos.z + b*ADS_Z_OFFSET;
   }
 }
 function resetAds(){
@@ -2972,6 +2975,9 @@ function loop(){
   // at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center.
   if(!scopeGroup.parent) gun.add(scopeGroup);
   scopeGroup.position.set(0, 0.11, 0);
+  // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
+  // toward the ADS value each frame.
+  scopeGroup.position.z = adsPos.z;
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3419,6 +3425,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
