@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794965456 -->
+<!-- page-version: 1794965631 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -848,18 +848,19 @@ function buildPistol(){
   // === RED DOT SIGHT HOUSING (mounted on top of the slide, at the REAR sight position) ===
   // The housing sits at the REAR of the slide, co-located with the rear iron sight
   // block (z≈0.12). This is where a real rear-mounted red dot optic would sit.
+  // Positioned to sit directly on top of the rear iron sight structure (ears at y=0.088, bridge at y=0.100).
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.028,0.045), gunDark);
-  rdHousing.position.set(0,0.090,0.12); g.add(rdHousing);
+  rdHousing.position.set(0,0.100,0.12); g.add(rdHousing);
   // Housing top cap (slightly lighter)
   const rdCap = new THREE.Mesh(new THREE.BoxGeometry(0.033,0.004,0.043), gunMetal);
-  rdCap.position.set(0,0.106,0.12); g.add(rdCap);
+  rdCap.position.set(0,0.116,0.12); g.add(rdCap);
   // Red dot emitter (small emissive sphere centered in the housing)
   const rdEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.004,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
-  rdEmitter.position.set(0,0.098,0.12); g.add(rdEmitter);
+  rdEmitter.position.set(0,0.108,0.12); g.add(rdEmitter);
   // Small aperture ring around the emitter
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
-  rdRing.position.set(0,0.098,0.12); g.add(rdRing);
+  rdRing.position.set(0,0.108,0.12); g.add(rdRing);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -3484,6 +3485,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
