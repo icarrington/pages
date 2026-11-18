@@ -2293,7 +2293,11 @@ function lerpAds(dt){
   camera.fov = 74 + (ADS_FOV-74)*b;
   camera.updateProjectionMatrix();
   _tmpV.copy(hipPos).lerp(adsPos, b);
-  gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY, _tmpV.z + kickZ);
+  // Extra ADS lift: shift the weapon UP by an additional 3% of the hip/ADS
+  // vertical span, on top of all previous vertical adjustments. Scales with b
+  // so it is 0 at hip and fully applied while aiming.
+  const adsLift = (adsPos.y - hipPos.y) * 0.03 * b;
+  gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY + adsLift, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
   // Sprint pose: pure Y-axis (yaw) rotation so the barrel sweeps sideways.
   // No pitch, no roll — only yaw.
@@ -3425,6 +3429,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
