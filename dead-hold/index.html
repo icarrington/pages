@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794963040 -->
+<!-- page-version: 1794963216 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -847,18 +847,19 @@ function buildPistol(){
 
   // === RED DOT SIGHT HOUSING (mounted on top of the slide, just behind the barrel) ===
   // Small rectangular housing sitting on the top of the slide near the rear
+  // Raised slightly higher and moved closer to the player/camera (toward rear)
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.022,0.045), gunDark);
-  rdHousing.position.set(0,0.10,0.12); g.add(rdHousing);
+  rdHousing.position.set(0,0.115,0.08); g.add(rdHousing);
   // Housing top cap (slightly lighter)
   const rdCap = new THREE.Mesh(new THREE.BoxGeometry(0.033,0.004,0.043), gunMetal);
-  rdCap.position.set(0,0.112,0.12); g.add(rdCap);
+  rdCap.position.set(0,0.127,0.08); g.add(rdCap);
   // Red dot emitter (small emissive sphere centered in the housing)
   const rdEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.004,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
-  rdEmitter.position.set(0,0.105,0.12); g.add(rdEmitter);
+  rdEmitter.position.set(0,0.12,0.08); g.add(rdEmitter);
   // Small aperture ring around the emitter
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
-  rdRing.position.set(0,0.105,0.06); g.add(rdRing);
+  rdRing.position.set(0,0.12,0.02); g.add(rdRing);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -2280,7 +2281,7 @@ const ADS_SPEED = 0.6;
 // Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
 // scope group's Y). Default 0 keeps every weapon exactly as before; only the
 // pistol is lowered so its sight sits tighter against the slide.
-const SCOPE_Y_OFFSET = { pistol: -0.029 };
+const SCOPE_Y_OFFSET = { pistol: -0.014 };
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
@@ -2338,7 +2339,9 @@ function lerpAds(dt){
     // During ADS, pull the scope forward so the rear-aperture dot (z=+0.12)
     // lands exactly on the screen-center crosshair. At b=1 the dot is at
     // z=-0.32+0.12=-0.20 (just behind the eye), i.e. dead-center on the reticle.
-    scopeGroup.position.z = adsPos.z + b*ADS_Z_OFFSET;
+    // For the pistol, move the scope closer to the player (more negative Z)
+    const _zOffset = (activeWeapon === 'pistol') ? -0.04 : 0;
+    scopeGroup.position.z = adsPos.z + b*ADS_Z_OFFSET + _zOffset;
     // Per-weapon housing height: tighten the sight against the pistol body.
     // The dot is shifted the opposite way so it stays dead-center on the crosshair.
     const _sy = (SCOPE_Y_OFFSET[activeWeapon] || 0);
@@ -3011,6 +3014,9 @@ function loop(){
   const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
   scopeGroup.position.y = 0.11 + _sy0;
   scopeDot.position.y = -_sy0;
+  // Reset per-weapon Z offset (pistol scope is closer to player)
+  const _z0 = (activeWeapon === 'pistol') ? -0.04 : 0;
+  scopeGroup.position.z = adsPos.z + _z0;
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3458,6 +3464,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
