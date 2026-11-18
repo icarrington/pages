@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795012936 -->
+<!-- page-version: 1795013048 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2806,12 +2806,12 @@ function removeZombie(z){
 /* ---- boss spawn / removal ---- */
 function spawnBoss(wave){
   const b = makeBoss();
-  const hp = 150 + 100*(wave/5);
+  const hp = Math.round((150 + 100*(wave/5)) * 1.5);
   b.group.position.set(0, 0, -40);
   b.hp = hp; b.maxHp = hp;
   b.alive = true; b.dying = false; b.deathT = 0;
   b.flash = 0; b.attackCd = 0; b.windup = 0; b.bobPhase = 0;
-  b.speed = 0.7;
+  b.speed = 0.7 * 1.25;
   scene.add(b.group);
   state.boss = b;
   updateBossBar(true);
@@ -2906,7 +2906,7 @@ function updateBoss(dt){
     const wp = 1 - Math.max(0,b.windup)/0.6;
     b.aR.rotation.x = -0.4 - wp*1.6;
     if(b.windup<=0){
-      if(dist < 3.2){ damagePlayer(30); }
+      if(dist < 3.2){ damagePlayer(45); }
       b.attackCd = 1.2;
     }
   } else {
@@ -3624,6 +3624,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
