@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795012416 -->
+<!-- page-version: 1795012663 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2197,7 +2197,8 @@ function switchWeapon(w){
   activeWeapon = w;
   state.reloading = false;
   updateRedDot();
-  updateHUD();
+  updateWeaponSlots(); // refresh the bottom-right WEAPONS list so the active slot glows green
+  updateHUD();        // refresh the bottom-left weapon name label + ammo
 }
 function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || activeWeapon==='uzi' || activeWeapon==='m4a1' || activeWeapon==='minigun'; }
 function fireRate(){
@@ -3083,7 +3084,8 @@ function updateHUD(){
   const ammoEl = document.getElementById('ammo');
   const wnames = {pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',doubleShotgun:'DB Shotgun'};
   const wnameEl = document.getElementById('weaponName');
-  if(wnameEl && wnameEl.textContent !== (wnames[activeWeapon]||activeWeapon)) wnameEl.textContent = wnames[activeWeapon]||activeWeapon;
+  const _wname = wnames[activeWeapon] || activeWeapon;
+  if(wnameEl && wnameEl.textContent !== _wname) wnameEl.textContent = _wname;
   if(mag <= cap*0.25) ammoEl.classList.add('low'); else ammoEl.classList.remove('low');
   // Show empty state if no ammo at all
   if(mag <= 0 && reserves[activeWeapon] <= 0) ammoEl.classList.add('empty');
@@ -3616,6 +3618,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
