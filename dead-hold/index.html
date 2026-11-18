@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794966285 -->
+<!-- page-version: 1794966539 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -845,22 +845,21 @@ function buildPistol(){
   const fsWingR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.018,0.010), gunDark);
   fsWingR.position.set(0.012,0.092,-0.16); g.add(fsWingR);
 
-  // === RED DOT SIGHT HOUSING (mounted on top of the slide, at the MIDDLE position) ===
-  // The housing sits in the MIDDLE of the slide, between the front iron sight (z=-0.16)
-  // and the rear iron sight (z=0.12). This is where a mid-mounted red dot optic would sit.
+  // === RED DOT SIGHT HOUSING (mounted on top of the slide, at the REAR IRON SIGHT position) ===
+  // The housing sits at the REAR of the slide, where the rear iron sight block is (z=0.12).
   // Positioned to sit on top of the slide (y=0.100).
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.028,0.045), gunDark);
-  rdHousing.position.set(0,0.100,-0.02); g.add(rdHousing);
+  rdHousing.position.set(0,0.100,0.12); g.add(rdHousing);
   // Housing top cap (slightly lighter)
   const rdCap = new THREE.Mesh(new THREE.BoxGeometry(0.033,0.004,0.043), gunMetal);
-  rdCap.position.set(0,0.116,-0.02); g.add(rdCap);
+  rdCap.position.set(0,0.116,0.12); g.add(rdCap);
   // Red dot emitter (small emissive sphere centered in the housing)
   const rdEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.004,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
-  rdEmitter.position.set(0,0.108,-0.02); g.add(rdEmitter);
+  rdEmitter.position.set(0,0.108,0.12); g.add(rdEmitter);
   // Small aperture ring around the emitter
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
-  rdRing.position.set(0,0.108,-0.02); g.add(rdRing);
+  rdRing.position.set(0,0.108,0.12); g.add(rdRing);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -1643,7 +1642,7 @@ const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotM
 scopeDot.position.set(0,0,0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.11, 0); // centered at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center during ADS
+scopeGroup.position.set(0, 0.11, 0.12); // centered at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center during ADS
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2354,7 +2353,7 @@ function lerpAds(dt){
     // During ADS, pull the scope back so the rear-aperture dot (z=0.12)
     // lands exactly on the screen-center crosshair.
     const _zOffset = (activeWeapon === 'pistol') ? 0.04 : 0;
-    scopeGroup.position.z = adsPos.z - b*ADS_Z_OFFSET + _zOffset;
+    scopeGroup.position.z = adsPos.z - b*ADS_Z_OFFSET + _zOffset + 0.12; // +0.12 to account for rear-mounted position
     // RULE 2: RESTING ADS POSITION — the optic housing is positioned so the
     // red dot floats in the CENTER of the optic glass, while the front aperture
     // and front sight post sit at the FRONT.
@@ -3023,21 +3022,20 @@ function loop(){
   }
   gun.add(model);
   // Re-attach the 3D red-dot scope on TOP of the new weapon model.
-  // Front-mounted: the dot floats in the center of the glass, front sight
-  // sits at the front. The dot is the independent POA (Rule 1).
+  // Rear-mounted: the dot sits at the rear iron sight position (z=0.12).
   if(!scopeGroup.parent) gun.add(scopeGroup);
-  scopeGroup.position.set(0, 0.11, 0);
+  scopeGroup.position.set(0, 0.11, 0.12);
   // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
   // toward the ADS value each frame.
-  scopeGroup.position.z = adsPos.z;
-  // Reset per-weapon housing height (pistol raised for proper front-mounted geometry).
+  scopeGroup.position.z = adsPos.z + 0.12;
+  // Reset per-weapon housing height (pistol raised for proper rear-mounted geometry).
   const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
   scopeGroup.position.y = 0.11 + _sy0;
   // Dot stays at the scope group's local origin (center of glass, independent POA).
   scopeDot.position.set(0, 0, 0.12);
   // Reset per-weapon Z offset (pistol scope is closer to player)
   const _z0 = (activeWeapon === 'pistol') ? 0.04 : 0;
-  scopeGroup.position.z = adsPos.z + _z0;
+  scopeGroup.position.z = adsPos.z + _z0 + 0.12;
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3485,6 +3483,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
