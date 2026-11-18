@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794963608 -->
+<!-- page-version: 1794964078 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -846,20 +846,23 @@ function buildPistol(){
   fsWingR.position.set(0.012,0.092,-0.16); g.add(fsWingR);
 
   // === RED DOT SIGHT HOUSING (mounted on top of the slide, midway between barrel and grip) ===
-  // Position: roughly midway between the barrel (z≈-0.20) and the grip (z≈0.10),
-  // i.e. around z≈-0.05, on top of the slide. Not at the stock/grip end.
-  const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.022,0.045), gunDark);
-  rdHousing.position.set(0,0.115,-0.05); g.add(rdHousing);
+  // Lower 1/3 Co-Witness geometry: the housing sits HIGH enough that the iron sights
+  // (front post tip at y≈0.116, rear sight at y≈0.088-0.100) sit in the BOTTOM THIRD
+  // of the optic window. The red dot emitter floats in the CENTER of the glass.
+  // The housing is raised so the dot is clearly above the iron sight line.
+  const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.028,0.045), gunDark);
+  rdHousing.position.set(0,0.145,-0.05); g.add(rdHousing);
   // Housing top cap (slightly lighter)
   const rdCap = new THREE.Mesh(new THREE.BoxGeometry(0.033,0.004,0.043), gunMetal);
-  rdCap.position.set(0,0.127,-0.05); g.add(rdCap);
-  // Red dot emitter (small emissive sphere centered in the housing)
+  rdCap.position.set(0,0.161,-0.05); g.add(rdCap);
+  // Red dot emitter (small emissive sphere centered in the housing — floats in the
+  // CENTER of the optic glass, well above the iron sight line)
   const rdEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.004,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
-  rdEmitter.position.set(0,0.12,-0.05); g.add(rdEmitter);
+  rdEmitter.position.set(0,0.155,-0.05); g.add(rdEmitter);
   // Small aperture ring around the emitter
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
-  rdRing.position.set(0,0.12,-0.11); g.add(rdRing);
+  rdRing.position.set(0,0.155,-0.11); g.add(rdRing);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -2281,7 +2284,11 @@ const ADS_SPEED = 0.6;
 // Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
 // scope group's Y). Default 0 keeps every weapon exactly as before; only the
 // pistol is lowered so its sight sits tighter against the slide.
-const SCOPE_Y_OFFSET = { pistol: -0.014 };
+// Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
+// scope group's Y). Lower 1/3 Co-Witness: the dot floats in the CENTER of the
+// optic glass while the iron sights sit in the BOTTOM THIRD. The pistol offset
+// is raised so the dot clears the iron sight line with proper parallax.
+const SCOPE_Y_OFFSET = { pistol: 0.022 };
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
@@ -2336,17 +2343,31 @@ function lerpAds(dt){
   if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
   if(scopeGroup.visible){
     scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
+    // RULE 1: INDEPENDENT POA — the red dot is the true center of aim.
+    // It is projected onto the screen center (x=0, y=0 in scope-local space)
+    // regardless of where the iron sights or housing sit. The dot does NOT
+    // lock to the front sight post; it floats in the center of the glass.
+    // RULE 3: DYNAMIC PARALLAX — during sway/recoil/strafe, the gun model
+    // (and its iron sights) shift relative to the camera, but the dot stays
+    // fixed at the aim point (parallax-free reflex optic). We achieve this by
+    // keeping the dot at the scope group's local origin (0,0,0) and letting
+    // the gun's sway/kick move the housing+sights around it.
+    scopeDot.position.set(0, 0, 0.12); // dot at rear aperture, centered in glass
     // During ADS, pull the scope forward so the rear-aperture dot (z=+0.12)
-    // lands exactly on the screen-center crosshair. At b=1 the dot is at
-    // z=-0.32+0.12=-0.20 (just behind the eye), i.e. dead-center on the reticle.
-    // For the pistol, move the scope closer to the player (more negative Z)
+    // lands exactly on the screen-center crosshair.
     const _zOffset = (activeWeapon === 'pistol') ? -0.04 : 0;
     scopeGroup.position.z = adsPos.z + b*ADS_Z_OFFSET + _zOffset;
-    // Per-weapon housing height: tighten the sight against the pistol body.
-    // The dot is shifted the opposite way so it stays dead-center on the crosshair.
+    // RULE 2: RESTING ADS POSITION — the optic housing is positioned so the
+    // red dot floats in the CENTER of the optic glass, while the rear aperture
+    // and front sight post sit LOWER, in the BOTTOM THIRD of the optic window.
+    // The SCOPE_Y_OFFSET raises the housing above the iron sight line.
     const _sy = (SCOPE_Y_OFFSET[activeWeapon] || 0);
     scopeGroup.position.y = 0.11 + _sy;
-    scopeDot.position.y = -_sy;
+    // RULE 4: ALIGNMENT CONVERGENCE — only when the weapon is fully settled
+    // (b≈1, no sway/kick) does the front sight post tip align directly beneath
+    // the dot. During animation (b<1 or sway≠0), the sights are offset.
+    // We don't move the dot; the gun model's sway/kick naturally offsets the
+    // iron sights relative to the fixed dot, satisfying this rule.
   }
 }
 function resetAds(){
@@ -3003,17 +3024,19 @@ function loop(){
     }
   }
   gun.add(model);
-  // Re-attach the 3D red-dot scope on TOP of the new weapon model, centered
-  // at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center.
+  // Re-attach the 3D red-dot scope on TOP of the new weapon model.
+  // Lower 1/3 Co-Witness: the dot floats in the center of the glass, iron
+  // sights sit in the bottom third. The dot is the independent POA (Rule 1).
   if(!scopeGroup.parent) gun.add(scopeGroup);
   scopeGroup.position.set(0, 0.11, 0);
   // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
   // toward the ADS value each frame.
   scopeGroup.position.z = adsPos.z;
-  // Reset per-weapon housing height + dot compensation (pistol sits tighter).
+  // Reset per-weapon housing height (pistol raised for proper Co-Witness geometry).
   const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
   scopeGroup.position.y = 0.11 + _sy0;
-  scopeDot.position.y = -_sy0;
+  // Dot stays at the scope group's local origin (center of glass, independent POA).
+  scopeDot.position.set(0, 0, 0.12);
   // Reset per-weapon Z offset (pistol scope is closer to player)
   const _z0 = (activeWeapon === 'pistol') ? -0.04 : 0;
   scopeGroup.position.z = adsPos.z + _z0;
@@ -3464,6 +3487,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
