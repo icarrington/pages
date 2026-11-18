@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795027149 -->
+<!-- page-version: 1795027535 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3003,39 +3003,80 @@ function updateParticles(dt){
   }
 }
 
-/* ---- Lightning projectile system ---- */
+/* ---- Fireball projectile system (boss) ---- */
 const lightningProjectiles = [];
-const lightningGeo = new THREE.SphereGeometry(0.15, 12, 12);
-const lightningMat = new THREE.MeshBasicMaterial({color: 0xffff00, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false});
-const lightningTrailMat = new THREE.MeshBasicMaterial({color: 0xffffaa, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false});
+const fireballCoreGeo = new THREE.SphereGeometry(0.16, 20, 20);
+const fireballCoreMat = new THREE.MeshBasicMaterial({color: 0xfff2d0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false});
+const fireballGlowGeo = new THREE.SphereGeometry(0.30, 20, 20);
+const fireballGlowMat = new THREE.MeshBasicMaterial({color: 0xff5a1e, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false});
+const fireballLightMat = new THREE.PointLight(0xff7a2a, 14.0, 12, 2);
+const flameTex = (function(){
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32,32,2,32,32,32);
+  grad.addColorStop(0,'rgba(255,240,200,1)');
+  grad.addColorStop(0.35,'rgba(255,150,40,0.9)');
+  grad.addColorStop(0.7,'rgba(255,70,20,0.4)');
+  grad.addColorStop(1,'rgba(255,40,10,0)');
+  g.fillStyle = grad; g.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(c);
+})();
+const smokeTex = (function(){
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32,32,2,32,32,32);
+  grad.addColorStop(0,'rgba(90,80,70,0.55)');
+  grad.addColorStop(0.6,'rgba(60,55,50,0.3)');
+  grad.addColorStop(1,'rgba(40,38,35,0)');
+  g.fillStyle = grad; g.fillRect(0,0,64,64);
+  return new THREE.CanvasTexture(c);
+})();
+const flameSpriteMat = new THREE.SpriteMaterial({map: flameTex, color: 0xffb050, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false});
+const smokeSpriteMat = new THREE.SpriteMaterial({map: smokeTex, color: 0x665a50, transparent: true, opacity: 0.5, depthWrite: false, depthTest: false});
+const flameSpriteGeo = new THREE.SphereGeometry(0.12, 8, 8);
+const flameSpriteMat2 = new THREE.MeshBasicMaterial({color: 0xffa030, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false});
+const smokeSpriteGeo = new THREE.SphereGeometry(0.14, 8, 8);
+const smokeSpriteMat2 = new THREE.MeshBasicMaterial({color: 0x554a40, transparent: true, opacity: 0.4, depthWrite: false});
 
 function spawnLightningProjectile(fromPos, toPos){
-  // Create projectile with trail
+  // Fireball: bright core + orange glow + point light + flame/smoke particle trail
   const proj = new THREE.Group();
-  
-  // Main orb
-  const orb = new THREE.Mesh(lightningGeo, lightningMat);
-  proj.add(orb);
-  
-  // Trail (elongated sphere)
-  const trail = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), lightningTrailMat);
-  trail.scale.set(1, 1, 3);
-  proj.add(trail);
-  
-  // Position and direction
+
+  const core = new THREE.Mesh(fireballCoreGeo, fireballCoreMat);
+  proj.add(core);
+  const glow = new THREE.Mesh(fireballGlowGeo, fireballGlowMat);
+  proj.add(glow);
+  const light = new THREE.PointLight(0xff7a2a, 14.0, 12, 2);
+  proj.add(light);
+
+  // Pre-allocate a small particle pool (flames + smoke) reused every frame
+  const trail = [];
+  for(let i=0;i<10;i++){
+    const m = new THREE.Mesh(flameSpriteGeo, flameSpriteMat2);
+    m.visible = false; proj.add(m);
+    trail.push({m, life: 0, vel: new THREE.Vector3(), isFlame: true, size: 0.8 + Math.random()*0.6});
+  }
+  for(let i=0;i<8;i++){
+    const m = new THREE.Mesh(smokeSpriteGeo, smokeSpriteMat2);
+    m.visible = false; proj.add(m);
+    trail.push({m, life: 0, vel: new THREE.Vector3(), isFlame: false, size: 0.9 + Math.random()*0.8});
+  }
+
   proj.position.copy(fromPos);
   proj.position.y += 1.0; // Start at boss height
-  
-  // Calculate direction to player (slow-moving, so player can dodge)
+
+  // Faster than the old lightning bolt (~1.5-2x) but still dodgeable
   const dir = new THREE.Vector3().subVectors(toPos, fromPos).normalize();
-  const speed = 8.0; // Slow enough to dodge
-  
+  const speed = 15.0;
+
   proj.userData = {
     vel: dir.multiplyScalar(speed),
-    life: 5.0, // 5 second lifetime
-    damage: 25
+    life: 5.0,
+    damage: 25,
+    trail: trail,
+    spawnT: 0
   };
-  
+
   scene.add(proj);
   lightningProjectiles.push(proj);
 }
@@ -3044,16 +3085,46 @@ function updateLightningProjectiles(dt){
   for(let i = lightningProjectiles.length - 1; i >= 0; i--){
     const p = lightningProjectiles[i];
     p.userData.life -= dt;
-    
+
     if(p.userData.life <= 0){
       scene.remove(p);
       lightningProjectiles.splice(i, 1);
       continue;
     }
-    
+
     // Move projectile
     p.position.addScaledVector(p.userData.vel, dt);
-    
+
+    // Emit flame + smoke particles from the trail pool (reuse, no allocation)
+    p.userData.spawnT -= dt;
+    if(p.userData.spawnT <= 0){
+      p.userData.spawnT = 0.03;
+      let spawned = 0;
+      for(const t of p.userData.trail){
+        if(t.life > 0) continue;
+        t.m.visible = true;
+        t.m.position.copy(p.position);
+        t.vel.set((Math.random()-0.5)*1.5, (Math.random()-0.5)*1.5, (Math.random()-0.5)*1.5);
+        t.life = t.isFlame ? 0.25 + Math.random()*0.15 : 0.5 + Math.random()*0.3;
+        t.m.scale.setScalar(t.size);
+        if(++spawned >= 2) break; // ~1 flame + 1 smoke per emit
+      }
+    }
+    // Update trail particles
+    for(const t of p.userData.trail){
+      if(t.life <= 0) continue;
+      t.life -= dt;
+      if(t.life <= 0){ t.m.visible = false; continue; }
+      t.m.position.addScaledVector(t.vel, dt);
+      if(t.isFlame){
+        t.m.scale.multiplyScalar(1 - dt*1.5);
+        t.m.material.opacity = Math.max(0, t.life * 3);
+      } else {
+        t.m.scale.multiplyScalar(1 + dt*1.2);
+        t.m.material.opacity = Math.max(0, t.life * 0.8);
+      }
+    }
+
     // Check collision with player
     const distToPlayer = p.position.distanceTo(player.pos);
     if(distToPlayer < 1.2){
@@ -3062,7 +3133,7 @@ function updateLightningProjectiles(dt){
       lightningProjectiles.splice(i, 1);
       continue;
     }
-    
+
     // Remove if out of bounds
     if(Math.abs(p.position.x) > 60 || Math.abs(p.position.z) > 60 || p.position.y < 0 || p.position.y > 30){
       scene.remove(p);
@@ -3228,7 +3299,7 @@ function resetGame(){
   window._touchSprint = false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   state.spawnShieldT=0;
-  // Clean up lightning projectiles
+  // Clean up fireball projectiles
   for(const p of lightningProjectiles){
     scene.remove(p);
   }
@@ -3848,6 +3919,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
