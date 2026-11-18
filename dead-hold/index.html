@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794968380 -->
+<!-- page-version: 1794968674 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -870,17 +870,17 @@ function buildPistol(){
     serrR.position.set(0.014,0.082+i*0.006,0.12); g.add(serrR);
   }
 
-  // === RED DOT SIGHT: mounted at the rear iron sight position (z=0.12) ===
+  // === RED DOT SIGHT: mounted at the rear iron sight position (z=0) ===
   // Housing: small rectangular block sitting on top of the rear sight base
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.026,0.018,0.030), gunDark);
-  rdHousing.position.set(0,0.112,0.12); g.add(rdHousing);
+  rdHousing.position.set(0,0.112,0); g.add(rdHousing);
   // Red dot emitter: bright emissive sphere at the center of the housing top
   const rdDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
   const rdDot = new THREE.Mesh(new THREE.SphereGeometry(0.004,10,10), rdDotMat);
-  rdDot.position.set(0,0.124,0.12); g.add(rdDot);
+  rdDot.position.set(0,0.124,0); g.add(rdDot);
   // Tiny ring around the dot (reads as the sight aperture)
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
-  rdRing.position.set(0,0.124,0.12); g.add(rdRing);
+  rdRing.position.set(0,0.124,0); g.add(rdRing);
 
   // Beavertail (grip extension)
   const beavertail = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.02,0.03), gunDark);
@@ -3480,6 +3480,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
