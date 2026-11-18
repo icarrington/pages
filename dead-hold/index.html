@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795041069 -->
+<!-- page-version: 1795041386 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -72,6 +72,10 @@
   .bossTrack .bossFill{position:absolute;inset:0;transform-origin:left;background:linear-gradient(90deg,#7a1010,#ff3b2f);transition:transform .08s linear}
   .bossTrack .bossNum{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:#fff;mix-blend-mode:difference}
   #weaponName{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dim);margin-top:6px;text-transform:uppercase}
+  #rpgReload{position:absolute;bottom:180px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:8px 16px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:10}
+  #rpgReload.show{opacity:1}
+  .rpg-reload-track{width:120px;height:8px;background:rgba(0,0,0,.5);border:1px solid var(--line);margin-top:6px;overflow:hidden;position:relative}
+  .rpg-reload-fill{position:absolute;inset:0;background:linear-gradient(90deg,#2f8f4d,var(--health));transform-origin:left;transform:scaleX(0)}
   #weaponPrompt{position:absolute;left:50%;bottom:22%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap}
   #weaponPrompt.show{opacity:1}
   #weaponPrompt .cost{color:var(--accent);font-weight:700}
@@ -300,6 +304,9 @@
   <div id="bossBar" class="hidden"><div class="bossLabel">BOSS</div><div class="bossTrack"><div class="bossFill" id="bossFill"></div><span class="bossNum" id="bossNum">0</span></div></div>
   <div id="hint">CLICK TO RESUME</div>
   <div id="weaponPrompt"></div>
+  <div id="rpgReload">
+    <div class="rpg-reload-track"><div class="rpg-reload-fill"></div></div>
+  </div>
   <div id="waveBanner"></div>
   <div id="wbHint"></div>
   <div id="waveCountdown"><div class="cd-label">Next wave in</div><div class="cd-num" id="cdNum">15</div></div>
@@ -2151,7 +2158,8 @@ const state = {
   bossWarnT:0,
   bossSpawnT:0,
   bossPending:false,
-  spawnShieldT:0
+  spawnShieldT:0,
+  rpgReloading:false, rpgReloadT:0, rpgReloadDur:0, rpgFullReload:false
 };
 
 /* finite magazine sizes; reserve is finite (10 full mags per weapon) */
@@ -2867,6 +2875,7 @@ function resetAds(){
 
 function shoot(){
   if(state.reloading) return;
+  if(state.rpgReloading && activeWeapon === 'rpg') return; // RPG reloading: cannot fire
   if(isSprinting()) return; // sprinting: no bullets, no recoil
   const nowMs = performance.now();
   const interval = isAuto() ? 1000/fireRate() : 300;
@@ -2893,6 +2902,11 @@ function shoot(){
     state.recoil = 2.0; state.muzzleT = 0.1;
     playRPGShot();
     spawnRPGRocket();
+    // Start reload animation: single-shot reload (2.5s) or full mag reload (4s)
+    state.rpgReloading = true;
+    state.rpgReloadT = 0;
+    state.rpgReloadDur = (mags['rpg'] <= 0) ? 4.0 : 2.5;
+    state.rpgFullReload = (mags['rpg'] <= 0);
     updateHUD();
     return;
   }
@@ -3773,6 +3787,7 @@ function resetGame(){
   window._touchSprint = false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   state.spawnShieldT=0;
+  state.rpgReloading=false; state.rpgReloadT=0; state.rpgReloadDur=0; state.rpgFullReload=false;
   // Clean up fireball projectiles
   for(const p of lightningProjectiles){
     scene.remove(p);
@@ -3862,6 +3877,18 @@ function updateHUD(){
   // Show empty state if no ammo at all
   if(mag <= 0 && reserves[activeWeapon] <= 0) ammoEl.classList.add('empty');
   else ammoEl.classList.remove('empty');
+  
+  // RPG reload indicator
+  const rpgReloadEl = document.getElementById('rpgReload');
+  if(rpgReloadEl){
+    if(activeWeapon === 'rpg' && state.rpgReloading){
+      rpgReloadEl.classList.add('show');
+      const progress = Math.min(1, state.rpgReloadT / state.rpgReloadDur);
+      rpgReloadEl.querySelector('.rpg-reload-fill').style.transform = `scaleX(${progress})`;
+    } else {
+      rpgReloadEl.classList.remove('show');
+    }
+  }
 }
 function updateHint(){
   const hint = document.getElementById('hint');
@@ -3965,6 +3992,65 @@ function loop(){
           switchWeapon(list[0]);
         }
       }
+    }
+  }
+  
+  /* ---- RPG reload animation ---- */
+  if(state.rpgReloading){
+    state.rpgReloadT += dt;
+    const rpgProgress = Math.min(1, state.rpgReloadT / state.rpgReloadDur);
+    
+    // Visual animation: tube slides back and new rocket is inserted
+    // Two types: single-shot reload (2.5s) vs full mag reload (4s)
+    const rpgModel = weaponModels['rpg'];
+    if(rpgModel){
+      // Find the rocket and tip (children of the RPG group)
+      // The rocket is at index 0 (body), tip at index 1
+      const rocketBody = rpgModel.children[0];
+      const rocketTip = rpgModel.children[1];
+      if(rocketBody && rocketTip){
+        if(state.rpgFullReload){
+          // Full reload: tube fully retracts, then new mag inserted
+          // Phase 1 (0-0.5): tube slides back
+          // Phase 2 (0.5-1.0): new rocket inserted
+          if(rpgProgress < 0.5){
+            const t = rpgProgress / 0.5;
+            const slideBack = Math.sin(t * Math.PI * 0.5) * 0.3;
+            rocketBody.position.z = -0.12 + slideBack;
+            rocketTip.position.z = -0.25 + slideBack;
+          } else {
+            const t = (rpgProgress - 0.5) / 0.5;
+            const slideIn = Math.sin(t * Math.PI * 0.5) * 0.3;
+            rocketBody.position.z = -0.12 - slideIn + 0.3;
+            rocketTip.position.z = -0.25 - slideIn + 0.3;
+          }
+        } else {
+          // Single-shot reload: tube slides back slightly, new rocket inserted
+          const slideOut = Math.sin(rpgProgress * Math.PI) * 0.15;
+          rocketBody.position.z = -0.12 + slideOut;
+          rocketTip.position.z = -0.25 + slideOut;
+        }
+      }
+    }
+    
+    if(state.rpgReloadT >= state.rpgReloadDur){
+      state.rpgReloading = false;
+      state.rpgReloadT = 0;
+      state.rpgFullReload = false;
+      // Refill RPG magazine
+      if(mags['rpg'] === 0 && reserves['rpg'] > 0){
+        mags['rpg'] = 3;
+        reserves['rpg'] -= 3;
+      }
+      // Reset rocket position
+      const rpgModel = weaponModels['rpg'];
+      if(rpgModel){
+        const rocketBody = rpgModel.children[0];
+        const rocketTip = rpgModel.children[1];
+        if(rocketBody) rocketBody.position.z = -0.12;
+        if(rocketTip) rocketTip.position.z = -0.25;
+      }
+      updateHUD();
     }
   }
 
@@ -4399,6 +4485,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
