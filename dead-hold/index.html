@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794971999 -->
+<!-- page-version: 1794972637 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2706,8 +2706,8 @@ function killZombie(z, isHead){
   } else {
     spawnParticleBurst(z.group.position);
     playHit();
-    // 10% chance a normal zombie drops a random weapon pickup at its death spot.
-    if(Math.random() < 0.10){
+    // 3% chance a normal zombie drops a random weapon pickup at its death spot.
+    if(Math.random() < 0.03){
       const w = DROP_POOL[Math.floor(Math.random()*DROP_POOL.length)];
       spawnWeaponDrop(z.group.position.x, z.group.position.z, w);
     }
@@ -3603,6 +3603,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
