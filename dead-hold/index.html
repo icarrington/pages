@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795011624 -->
+<!-- page-version: 1795012162 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2361,8 +2361,12 @@ function updateWeaponDrops(dt){
     d.rotation.y += dt*0.8;
     const dx = player.pos.x - d.position.x, dz = player.pos.z - d.position.z;
     if(Math.hypot(dx,dz) < 1.2){
+      const wasOwned = isOwned(d.userData.w);
       addWeapon(d.userData.w);
-      switchWeapon(d.userData.w);
+      // Only auto-switch if this is the first time acquiring this weapon type
+      if(!wasOwned){
+        switchWeapon(d.userData.w);
+      }
       scene.remove(d);
       weaponDrops.splice(i,1);
       updateWeaponSlots();
@@ -3609,6 +3613,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
