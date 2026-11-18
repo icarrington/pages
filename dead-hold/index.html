@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795012162 -->
+<!-- page-version: 1795012416 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3081,6 +3081,9 @@ function updateHUD(){
   setNum('mag', mag);
   setNum('reserve', reserves[activeWeapon]);
   const ammoEl = document.getElementById('ammo');
+  const wnames = {pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',doubleShotgun:'DB Shotgun'};
+  const wnameEl = document.getElementById('weaponName');
+  if(wnameEl && wnameEl.textContent !== (wnames[activeWeapon]||activeWeapon)) wnameEl.textContent = wnames[activeWeapon]||activeWeapon;
   if(mag <= cap*0.25) ammoEl.classList.add('low'); else ammoEl.classList.remove('low');
   // Show empty state if no ammo at all
   if(mag <= 0 && reserves[activeWeapon] <= 0) ammoEl.classList.add('empty');
@@ -3613,6 +3616,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
