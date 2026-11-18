@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795027535 -->
+<!-- page-version: 1795027690 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1448,15 +1448,16 @@ function buildM4A1(){
   handleRim.position.set(0,0.1155,0.12); g.add(handleRim);
   
   // === FRONT IRON SIGHT (M4-style: slim post + protective hood, on barrel centerline x=0) ===
-  // Low cradle base the post rises out of (steel sheen)
-  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.020,0.010,0.022), sightSteel);
+  // Low cradle base the post rises out of (dark, distinct from gun body)
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.020,0.010,0.022), gunBlack);
   fsBase.position.set(0,0.068,-0.34); g.add(fsBase);
-  // Slim vertical post (precise, narrow)
-  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.034,0.005), sightSteel);
-  fsPost.position.set(0,0.092,-0.34); g.add(fsPost);
-  // Tiny bead cap on the post tip
-  const fsCap = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.005,0.008), gunLight);
-  fsCap.position.set(0,0.112,-0.34); g.add(fsCap);
+  // Slim vertical post (precise, narrow, dark) — raised so it reads clearly as the
+  // aiming reference even at hip; the ADS profile above is tuned to this height.
+  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.038,0.006), gunBlack);
+  fsPost.position.set(0,0.094,-0.34); g.add(fsPost);
+  // Tiny bead cap on the post tip (dark)
+  const fsCap = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.006,0.009), gunBlack);
+  fsCap.position.set(0,0.116,-0.34); g.add(fsCap);
   // Protective hood: two curved prongs that arch over the post (front + back)
   const hoodArc = new THREE.Mesh(new THREE.TorusGeometry(0.014,0.0035,8,14,Math.PI), sightSteel);
   hoodArc.rotation.y = Math.PI/2; // arc now spans the X (left-right) axis
@@ -1466,22 +1467,22 @@ function buildM4A1(){
   hoodArc2.position.set(0,0.090,-0.34); hoodArc2.rotation.z = Math.PI; g.add(hoodArc2);
 
   // === REAR IRON SIGHT (M4-style: crisp narrow aperture notch, beveled edges, on centerline x=0) ===
-  // Rear sight body: a low, wide plate near the receiver (steel sheen)
-  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.038,0.018,0.024), sightSteel);
+  // Rear sight body: a low, wide plate near the receiver (dark, distinct from gun body)
+  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.038,0.018,0.024), gunBlack);
   rsBody.position.set(0,0.072,0.16); g.add(rsBody);
-  // Beveled top edge (thin lighter rim reads as a machined bevel)
+  // Beveled top edge (thin dark rim reads as a machined bevel)
   const rsBevel = new THREE.Mesh(new THREE.BoxGeometry(0.040,0.003,0.026), gunLight);
   rsBevel.position.set(0,0.0815,0.16); g.add(rsBevel);
   // Crisp narrow aperture notch: a dark recessed slot cut across the top
   const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.014,0.018), gunBlack);
   rsNotch.position.set(0,0.080,0.16); g.add(rsNotch);
-  // Two thin metallic ears flanking the notch (the U-shape walls)
-  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), sightSteel);
+  // Two thin dark ears flanking the notch (the U-shape walls)
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), gunDark);
   rsEarL.position.set(-0.0085,0.078,0.16); g.add(rsEarL);
-  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), sightSteel);
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), gunDark);
   rsEarR.position.set(0.0085,0.078,0.16); g.add(rsEarR);
   // Thin top bridge over the notch (closes the U at the top)
-  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.004,0.016), sightSteel);
+  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.004,0.016), gunDark);
   rsBridge.position.set(0,0.088,0.16); g.add(rsBridge);
   
   // === SIDE PANELS (textured, on receiver) ===
@@ -2516,7 +2517,10 @@ const ADS_BLEND_SPEED = 1/0.12;
 // red-dot optic. Iron-sight weapons (rifle) need their own values so the FRONT
 // POST lands exactly on screen-center when aiming down sights.
 const ADS_PROFILES = {
-  rifle: { pos: new THREE.Vector3(0, -0.05, -0.9), rot: new THREE.Euler(0, 0, 0), fov: 60 }
+  // NOTE: the M4A1 is registered under the weapon key 'rifle' (see isAuto/fireRate/MAGS/wnames),
+  // so the M4's ADS profile MUST live here, not under 'm4a1'.
+  // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
+  rifle: { pos: new THREE.Vector3(0, -0.058, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
@@ -3919,6 +3923,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
