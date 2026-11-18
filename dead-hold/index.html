@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794962211 -->
+<!-- page-version: 1794962620 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2262,6 +2262,10 @@ function updateRedDot(){
 const ADS_FOV = 60;
 const ADS_SENS = 0.5;
 const ADS_SPEED = 0.6;
+// Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
+// scope group's Y). Default 0 keeps every weapon exactly as before; only the
+// pistol is lowered so its sight sits tighter against the slide.
+const SCOPE_Y_OFFSET = { pistol: -0.035 };
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
@@ -2320,6 +2324,11 @@ function lerpAds(dt){
     // lands exactly on the screen-center crosshair. At b=1 the dot is at
     // z=-0.32+0.12=-0.20 (just behind the eye), i.e. dead-center on the reticle.
     scopeGroup.position.z = adsPos.z + b*ADS_Z_OFFSET;
+    // Per-weapon housing height: tighten the sight against the pistol body.
+    // The dot is shifted the opposite way so it stays dead-center on the crosshair.
+    const _sy = (SCOPE_Y_OFFSET[activeWeapon] || 0);
+    scopeGroup.position.y = 0.11 + _sy;
+    scopeDot.position.y = -_sy;
   }
 }
 function resetAds(){
@@ -2983,6 +2992,10 @@ function loop(){
   // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
   // toward the ADS value each frame.
   scopeGroup.position.z = adsPos.z;
+  // Reset per-weapon housing height + dot compensation (pistol sits tighter).
+  const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
+  scopeGroup.position.y = 0.11 + _sy0;
+  scopeDot.position.y = -_sy0;
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3430,6 +3443,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
