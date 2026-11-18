@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794968900 -->
+<!-- page-version: 1794969048 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1619,15 +1619,15 @@ scopeGroup.add(scopeFrontAperture);
 const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
 scopeRim2.position.z = 0.12;
 scopeGroup.add(scopeRim2);
-// Red dot: bright emissive sphere at the REAR aperture (z=+0.12) — this is where
-// the eye looks through a real red-dot sight, so the dot sits at the sight plane
-// and, during ADS, lands exactly on the screen-center crosshair.
+// Red dot: bright emissive sphere. Positioned in the MIDDLE of the pistol slide
+// (z=0), i.e. between the front iron sight (z=-0.16) and the rear iron sight
+// (z=+0.12), as requested. During ADS it still lands on the screen-center crosshair.
 const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
 const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotMat);
-scopeDot.position.set(0,0,0.12);
+scopeDot.position.set(0,0,0);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.11, 0); // positioned so the rear aperture (z=+0.12) aligns with the pistol's rear iron sight (z=+0.12 in gun-local space)
+scopeGroup.position.set(0, 0.11, 0); // dot at slide center (z=0), between the two iron sights
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2289,7 +2289,7 @@ let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
 // ADS: push the weapon FARther back (-Z) and slightly down so it reads as
 // smaller / farther away and more of the scene is visible around it.
 const adsPos = new THREE.Vector3(0,-0.234*0.85,-0.9);
-const ADS_Z_OFFSET = 0.12; // rear-aperture offset of the red dot (z=+0.12) from the scope group
+const ADS_Z_OFFSET = 0.12; // (legacy) rear-aperture offset; dot now sits at slide center (z=0)
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -2334,11 +2334,11 @@ function lerpAds(dt){
     // fixed at the aim point (parallax-free reflex optic). We achieve this by
     // keeping the dot at the scope group's local origin (0,0,0) and letting
     // the gun's sway/kick move the housing+sights around it.
-    scopeDot.position.set(0, 0, 0.12); // dot at REAR aperture, centered in glass
-    // During ADS, pull the scope back so the rear-aperture dot (z=0.12)
+    scopeDot.position.set(0, 0, 0); // dot at slide CENTER (z=0), between the two iron sights
+    // During ADS, pull the scope back so the slide-center dot (z=0)
     // lands exactly on the screen-center crosshair.
     const _zOffset = (activeWeapon === 'pistol') ? 0.04 : 0;
-    scopeGroup.position.z = adsPos.z - b*ADS_Z_OFFSET + _zOffset; // scope rear aperture aligns with pistol rear iron sight
+    scopeGroup.position.z = adsPos.z + _zOffset; // scope dot (z=0) sits mid-slide, between front & rear sights
     // RULE 2: RESTING ADS POSITION — the optic housing is positioned so the
     // red dot floats in the CENTER of the optic glass, while the front aperture
     // and front sight post sit at the FRONT.
@@ -3007,17 +3007,18 @@ function loop(){
   }
   gun.add(model);
   // Re-attach the 3D red-dot scope on TOP of the new weapon model.
-  // Rear-mounted: the dot sits at the rear iron sight position (z=0.12).
+  // Mid-slide: the dot sits in the middle of the slide (z=0), between the
+  // front and rear iron sights.
   if(!scopeGroup.parent) gun.add(scopeGroup);
-  scopeGroup.position.set(0, 0.11, 0.12);
+  scopeGroup.position.set(0, 0.11, 0);
   // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
   // toward the ADS value each frame.
   scopeGroup.position.z = adsPos.z;
-  // Reset per-weapon housing height (pistol raised for proper rear-mounted geometry).
+  // Reset per-weapon housing height (pistol raised for proper mid-slide geometry).
   const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
   scopeGroup.position.y = 0.11 + _sy0;
-  // Dot stays at the scope group's local origin (center of glass, independent POA).
-  scopeDot.position.set(0, 0, 0.12);
+  // Dot stays at the scope group's local origin (slide center, independent POA).
+  scopeDot.position.set(0, 0, 0);
   // Reset per-weapon Z offset (pistol scope is closer to player)
   const _z0 = (activeWeapon === 'pistol') ? 0.04 : 0;
   scopeGroup.position.z = adsPos.z + _z0;
@@ -3468,6 +3469,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
