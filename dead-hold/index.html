@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795026584 -->
+<!-- page-version: 1795027149 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1237,8 +1237,32 @@ function buildRifle(){
   carryHandle.position.set(0,0.07,0.1); g.add(carryHandle);
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.1,0.07), gunDark);
   grip.position.set(0,-0.09,0.15); grip.rotation.x = 0.25; g.add(grip);
-  const sight = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.02), gunMetal);
-  sight.position.set(0,0.06,-0.3); g.add(sight);
+
+  // === FRONT IRON SIGHT: thin vertical blade post on a low base, at the muzzle ===
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.018,0.010,0.022), gunDark);
+  fsBase.position.set(0,0.065,-0.30); g.add(fsBase);
+  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.036,0.006), gunMetal);
+  fsPost.position.set(0,0.090,-0.30); g.add(fsPost);
+  const fsTip = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.006,0.009), gunDark);
+  fsTip.position.set(0,0.112,-0.30); g.add(fsTip);
+  // Lateral guard wings flanking the blade
+  const fsWingL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.020,0.008), gunDark);
+  fsWingL.position.set(-0.011,0.085,-0.30); g.add(fsWingL);
+  const fsWingR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.020,0.008), gunDark);
+  fsWingR.position.set(0.011,0.085,-0.30); g.add(fsWingR);
+
+  // === REAR IRON SIGHT: two ears with a center notch (aperture), on the receiver ===
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.018), gunDark);
+  rsEarL.position.set(-0.013,0.085,0.10); g.add(rsEarL);
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.018), gunDark);
+  rsEarR.position.set(0.013,0.085,0.10); g.add(rsEarR);
+  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.030,0.006,0.016), gunMetal);
+  rsBridge.position.set(0,0.098,0.10); g.add(rsBridge);
+  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.014,0.014), gunBlack);
+  rsNotch.position.set(0,0.088,0.10); g.add(rsNotch);
+  const rsBase = new THREE.Mesh(new THREE.BoxGeometry(0.034,0.006,0.022), gunDark);
+  rsBase.position.set(0,0.074,0.10); g.add(rsBase);
+
   return g;
 }
 
@@ -2488,6 +2512,13 @@ const ADS_SPEED = 0.6;
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
+// Per-weapon ADS profiles. The default (hipPos/adsPos/adsRot) is tuned for the
+// red-dot optic. Iron-sight weapons (rifle) need their own values so the FRONT
+// POST lands exactly on screen-center when aiming down sights.
+const ADS_PROFILES = {
+  rifle: { pos: new THREE.Vector3(0, -0.05, -0.9), rot: new THREE.Euler(0, 0, 0), fov: 60 }
+};
+function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
 /* ---- Sprint state: Shift boosts speed, gun rotates to a side pose, shooting blocked ---- */
 const SPRINT_MULT = 1.6;
@@ -2515,15 +2546,21 @@ function lerpAds(dt){
   if(adsBlend < target) adsBlend = Math.min(target, adsBlend+step);
   else if(adsBlend > target) adsBlend = Math.max(target, adsBlend-step);
   const b = adsBlend;
-  camera.fov = 74 + (ADS_FOV-74)*b;
+  // Pick this weapon's ADS target (iron-sight weapons use their own profile so
+  // the front post centers on the crosshair; red-dot weapons keep the default).
+  const prof = adsProfileFor(activeWeapon);
+  const aPos = prof ? prof.pos : adsPos;
+  const aRot = prof ? prof.rot : adsRot;
+  const aFov = prof ? prof.fov : ADS_FOV;
+  camera.fov = 74 + (aFov-74)*b;
   camera.updateProjectionMatrix();
-  _tmpV.copy(hipPos).lerp(adsPos, b);
+  _tmpV.copy(hipPos).lerp(aPos, b);
   // Extra ADS lift: shift the weapon UP by an additional 5% of the hip/ADS
   // vertical span, on top of all previous vertical adjustments. Scales with b
   // so it is 0 at hip and fully applied while aiming.
-  const adsLift = (adsPos.y - hipPos.y) * 0.05 * b;
+  const adsLift = (aPos.y - hipPos.y) * 0.05 * b;
   gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY + adsLift, _tmpV.z + kickZ);
-  _tmpE.set(hipRot.x + (adsRot.x-hipRot.x)*b, 0, 0);
+  _tmpE.set(hipRot.x + (aRot.x-hipRot.x)*b, 0, 0);
   // Sprint pose: pure Y-axis (yaw) rotation so the barrel sweeps sideways.
   // No pitch, no roll — only yaw.
   // sprintTilt: pistol pitches UP (negative X lifts the muzzle toward the sky);
@@ -2569,7 +2606,8 @@ function lerpAds(dt){
 function resetAds(){
   adsActive = false;
   adsBlend = 0;
-  camera.fov = 74;
+  const prof = adsProfileFor(activeWeapon);
+  camera.fov = prof ? prof.fov : ADS_FOV;
   camera.updateProjectionMatrix();
   const hud = document.getElementById('hud');
   hud.classList.remove('ads-active');
@@ -3810,6 +3848,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
