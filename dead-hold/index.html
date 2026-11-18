@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794968212 -->
+<!-- page-version: 1794968380 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1639,7 +1639,7 @@ const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotM
 scopeDot.position.set(0,0,0.12);
 scopeDot.renderOrder = 999;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.11, 0.12); // centered at the crosshair (x=0, z=0) so the red dot aligns exactly with the screen center during ADS
+scopeGroup.position.set(0, 0.11, 0); // positioned so the rear aperture (z=+0.12) aligns with the pistol's rear iron sight (z=+0.12 in gun-local space)
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 
@@ -2350,7 +2350,7 @@ function lerpAds(dt){
     // During ADS, pull the scope back so the rear-aperture dot (z=0.12)
     // lands exactly on the screen-center crosshair.
     const _zOffset = (activeWeapon === 'pistol') ? 0.04 : 0;
-    scopeGroup.position.z = adsPos.z - b*ADS_Z_OFFSET + _zOffset + 0.12; // +0.12 to account for rear-mounted position
+    scopeGroup.position.z = adsPos.z - b*ADS_Z_OFFSET + _zOffset; // scope rear aperture aligns with pistol rear iron sight
     // RULE 2: RESTING ADS POSITION — the optic housing is positioned so the
     // red dot floats in the CENTER of the optic glass, while the front aperture
     // and front sight post sit at the FRONT.
@@ -3024,7 +3024,7 @@ function loop(){
   scopeGroup.position.set(0, 0.11, 0.12);
   // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
   // toward the ADS value each frame.
-  scopeGroup.position.z = adsPos.z + 0.12;
+  scopeGroup.position.z = adsPos.z;
   // Reset per-weapon housing height (pistol raised for proper rear-mounted geometry).
   const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
   scopeGroup.position.y = 0.11 + _sy0;
@@ -3032,7 +3032,7 @@ function loop(){
   scopeDot.position.set(0, 0, 0.12);
   // Reset per-weapon Z offset (pistol scope is closer to player)
   const _z0 = (activeWeapon === 'pistol') ? 0.04 : 0;
-  scopeGroup.position.z = adsPos.z + _z0 + 0.12;
+  scopeGroup.position.z = adsPos.z + _z0;
   // Show the 3D scope tube only when the active weapon has a red dot (built
   // ONCE and reused; everything outside the tube stays fully transparent).
   const _wantScope = wbGet(activeWeapon).redDot;
@@ -3480,6 +3480,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
