@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795043334 -->
+<!-- page-version: 1795043600 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -72,6 +72,8 @@
   .bossTrack .bossFill{position:absolute;inset:0;transform-origin:left;background:linear-gradient(90deg,#7a1010,#ff3b2f);transition:transform .08s linear}
   .bossTrack .bossNum{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:#fff;mix-blend-mode:difference}
   #weaponName{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--dim);margin-top:6px;text-transform:uppercase}
+  #crouchInd{position:absolute;left:50%;bottom:38%;transform:translateX(-50%);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.25em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:5px 14px;opacity:0;transition:opacity .12s;pointer-events:none;z-index:10;text-shadow:0 0 8px rgba(200,255,77,.5)}
+  #crouchInd.show{opacity:1}
   #rpgReload{position:absolute;bottom:180px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.1em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:8px 16px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:10}
   #rpgReload.show{opacity:1}
   .rpg-reload-track{width:120px;height:8px;background:rgba(0,0,0,.5);border:1px solid var(--line);margin-top:6px;overflow:hidden;position:relative}
@@ -202,6 +204,7 @@
   #btnScope{right:20px;bottom:330px;width:64px;height:48px;font-size:11px;border-radius:10px}
   #btnWorkbench{right:120px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
   #btnCycle{right:200px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
+  #btnCrouch{right:200px;bottom:272px;width:64px;height:48px;font-size:10px;border-radius:10px}
   #tSlots{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
   #tSlots .tslot{width:46px;height:46px;border-radius:10px;font-size:16px;font-weight:800;color:var(--dim);background:rgba(10,14,12,.6);border:1px solid var(--line);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
   #tSlots .tslot.active{color:var(--health);border-color:var(--health);background:rgba(47,143,77,.15);box-shadow:0 0 10px rgba(47,143,77,.5),inset 0 0 8px rgba(47,143,77,.25)}
@@ -2473,6 +2476,15 @@ function initTouch(){
   }, e=>{ e.preventDefault(); btnWorkbench.classList.remove('pressed'); });
   // Cycle weapon (equivalent to Q / wheel)
   const btnCycle = document.getElementById('btnCycle');
+  // Crouch (toggle, equivalent to C key)
+  const btnCrouch = document.getElementById('btnCrouch');
+  if(btnCrouch){
+    bindTouch(btnCrouch, e=>{
+      e.preventDefault(); ensureAudio();
+      if(state.running) setCrouch(!crouching);
+      btnCrouch.classList.add('pressed');
+    }, e=>{ e.preventDefault(); btnCrouch.classList.remove('pressed'); });
+  }
   if(btnCycle){
     bindTouch(btnCycle, e=>{
       e.preventDefault(); ensureAudio();
@@ -2630,6 +2642,9 @@ document.addEventListener('keydown', e=>{
     const list = weaponList();
     const idx = parseInt(k)-1;
     if(idx < list.length) switchWeapon(list[idx]);
+  }
+  if(k==='c' || k==='C'){
+    if(state.running) setCrouch(!crouching);
   }
 });
 document.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
@@ -2833,8 +2848,34 @@ let sprintYaw = 0;   // Y-axis (yaw) rotation applied to the gun while sprinting
 window._touchSprint = false; // set by DASH button on touch devices
 function isSprinting(){
   if(window._touchSprint) return true;
+  if(crouching) return false;
   return state.running && player.grounded && !!keys['shift'] && !adsActive && (moving || keys['shift']);
 }
+
+/* ---- Crouch (toggle with C / CROUCH button) ---- */
+let crouching = false;
+const EYE_STAND = EYE;
+const EYE_CROUCH = EYE * 0.575; // ~57% of standing eye height
+const CROUCH_SPEED_MULT = 0.5;
+const CROUCH_BLEND_SPEED = 1/0.12;
+let crouchBlend = 0; // 0 = standing, 1 = fully crouched
+function setCrouch(on){
+  if(on === crouching) return;
+  crouching = on;
+  if(crouching){
+    // Crouching cancels any ADS / sprint so the low eye height is the only thing changing
+    adsActive = false;
+    if(window._touchSprint) window._touchSprint = false;
+  }
+  updateHUD();
+}
+function lerpCrouch(dt){
+  const target = crouching ? 1 : 0;
+  const step = CROUCH_BLEND_SPEED*dt;
+  if(crouchBlend < target) crouchBlend = Math.min(target, crouchBlend+step);
+  else if(crouchBlend > target) crouchBlend = Math.max(target, crouchBlend-step);
+}
+function currentEye(){ return EYE_STAND + (EYE_CROUCH - EYE_STAND)*crouchBlend; }
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
@@ -2864,7 +2905,9 @@ function lerpAds(dt){
   // vertical span, on top of all previous vertical adjustments. Scales with b
   // so it is 0 at hip and fully applied while aiming.
   const adsLift = (aPos.y - hipPos.y) * 0.05 * b;
-  gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY + adsLift, _tmpV.z + kickZ);
+  // Crouch: drop the weapon to match the lowered eye height
+  const crouchDrop = -0.16 * crouchBlend;
+  gun.position.set(_tmpV.x + swayX + sprintBobX, _tmpV.y + swayY + kickY + dipY + sprintBobY + adsLift + crouchDrop, _tmpV.z + kickZ);
   _tmpE.set(hipRot.x + (aRot.x-hipRot.x)*b, 0, 0);
   // Sprint pose: pure Y-axis (yaw) rotation so the barrel sweeps sideways.
   // No pitch, no roll — only yaw.
@@ -3846,6 +3889,8 @@ function damagePlayer(amount){
 
 /* ============================ GAME FLOW ============================ */
 function resetGame(){
+  crouching = false;
+  crouchBlend = 0;
   // clear zombies
   for(const z of zombies) scene.remove(z.group);
   zombies.length = 0;
@@ -3943,6 +3988,8 @@ function showToast(msg, dur){
   el._t = setTimeout(()=>{ el.classList.remove('show'); }, dur || 2000);
 }
 function updateHUD(){
+  const crouchEl = document.getElementById('crouchInd');
+  if(crouchEl) crouchEl.classList.toggle('show', crouching);
   const h = Math.max(0,Math.round(state.health));
   const s = Math.max(0,Math.round(state.stamina));
   document.getElementById('healthFill').style.transform = 'scaleX('+(h/100)+')';
@@ -4192,6 +4239,7 @@ function loop(){
   let speed = 4.2 * getSpeedMultiplier();
   if(adsActive) speed *= ADS_SPEED;
   if(isSprinting()) speed *= SPRINT_MULT;
+  if(crouchBlend > 0.01) speed *= (1 - CROUCH_SPEED_MULT * crouchBlend);
   // Sprint drains stamina; when exhausted, sprint stops
   if(isSprinting() && state.stamina > 0){
     state.stamina = Math.max(0, state.stamina - 25 * dt);
@@ -4574,6 +4622,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
