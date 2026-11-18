@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794969201 -->
+<!-- page-version: 1794966987 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -46,17 +46,10 @@
   #crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
-  #redDot{display:none;position:absolute;width:6px;height:6px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 8px rgba(255,42,30,.9);left:50%;top:50%;transform:translate(-50%,-50%)}
-  #crosshair.rd #redDot{display:block;width:5px;height:5px;border-radius:50%;background:#ff2a1e;box-shadow:0 0 3px rgba(255,42,30,1),0 0 8px rgba(255,42,30,.9),0 0 14px rgba(255,42,30,.55);left:50%;top:50%;transform:translate(-50%,-50%)}
-  #crosshair.rd::before,#crosshair.rd::after{display:none}
-  #crosshair.rd i{display:none}
-  /* Red dot sight is now a 3D scope tube attached to the weapon (see scopeGroup).
-     No 2D ring / housing / brackets are drawn on the screen; everything outside
-     the tube stays fully transparent. */
-  /* With red dot: keep the crosshair visible (the 3D dot sits at the center, crosshair frames it) */
-  #hud.rd-active #crosshair::before,
-  #hud.rd-active #crosshair::after,
-  #hud.rd-active #crosshair i{display:block}
+  /* The optic is a real 3D attachment, not a screen-sized fake scope.
+     Use the normal crosshair at hip; on ADS the illuminated optic is the reticle. */
+  #crosshair{transition:opacity .09s ease}
+  #hud.rd-active.ads-active #crosshair{opacity:0}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
@@ -623,7 +616,7 @@ function wbGet(w){ if(!wbAttachments[w]) wbAttachments[w] = {redDot:false, extMa
 let wbMenuOpen = false;
 let wbNear = false;
 const WB_ATTACH_DEFS = [
-  {key:'redDot', name:'Red Dot Sight', cost:50, desc:'Red dot crosshair + accuracy boost'},
+  {key:'redDot', name:'Red Dot Sight', cost:50, desc:'Rail-mounted optic with precise ADS reticle'},
   {key:'extMag', name:'Extended Magazine', cost:75, desc:'+50% max ammo'},
   {key:'suppressor', name:'Suppressor', cost:100, desc:'Smaller muzzle flash, quieter'},
   {key:'vGrip', name:'Vertical Grip', cost:125, desc:'-30% recoil spread'}
@@ -667,6 +660,7 @@ function wbOpenMenu(){
       // small click sound
       if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(400,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
       wbOpenMenu(); // refresh
+      updateRedDot();
       updateHUD();
     });
   });
@@ -869,7 +863,7 @@ function buildPistol(){
     const serrR = new THREE.Mesh(new THREE.BoxGeometry(0.017,0.003,0.004), gunMetal);
     serrR.position.set(0.014,0.082+i*0.006,0.12); g.add(serrR);
   }
-
+  
   // Beavertail (grip extension)
   const beavertail = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.02,0.03), gunDark);
   beavertail.position.set(0,-0.05,0.14); g.add(beavertail);
@@ -1596,40 +1590,65 @@ camera.add(flashlight);
 camera.add(flashlight.target);
 scene.add(camera);
 
-/* ---- 3D red dot sight scope (tube) attached to the weapon viewmodel ----
-   Built ONCE and reused; toggled visible only when the active weapon has a
-   red dot AND the player is aiming down sights. Everything outside the tube
-   is fully transparent (no 2D vignette/overlay). */
+/* ---- Red-dot optic attached to the WEAPON, in weapon-local coordinates. ----
+   Previous code added the ADS camera-Z offset to an optic already parented to
+   the gun (which itself moves during ADS). That shifted the optic away from the
+   rail, and the render loop reset its location on every frame.
+   This mount never moves relative to the gun; the eye/reticle are handled below. */
+const SCOPE_MOUNT_Y = 0.194; // chosen so the optic's optical axis is screen-center at full ADS
+const SCOPE_MOUNT_Z = 0.08;  // sits on the receiver/slide, NOT in camera space
+const SCOPE_LENS_Z = -0.065; // reticle is projected inside the front of the tube
+const SCOPE_CLEAR_RADIUS = 0.064;
 const scopeGroup = new THREE.Group();
-const scopeTubeMat = new THREE.MeshLambertMaterial({color:0x14161a, side:THREE.DoubleSide});
-const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.24,24,1,true), scopeTubeMat);
-scopeTube.rotation.x = Math.PI/2; // axis along Z (forward)
+scopeGroup.position.set(0, SCOPE_MOUNT_Y, SCOPE_MOUNT_Z);
+const scopeTubeMat = new THREE.MeshLambertMaterial({color:0x14191e, side:THREE.DoubleSide});
+const scopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.081,0.081,0.22,24,1,true), scopeTubeMat);
+scopeTube.rotation.x = Math.PI/2; // open tube axis runs down the barrel (-Z)
 scopeGroup.add(scopeTube);
-// Front ring (opening rim) — thick so the hollow opening reads clearly
-const scopeRimMat = new THREE.MeshLambertMaterial({color:0x2a2e34});
-const scopeRim = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
-scopeRim.position.z = -0.12;
-scopeGroup.add(scopeRim);
-// Faint front aperture (thin dark ring) — reads as the front lens of a red-dot sight
-const scopeFrontApertureMat = new THREE.MeshBasicMaterial({color:0x0a0a0a, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false});
-const scopeFrontAperture = new THREE.Mesh(new THREE.RingGeometry(0.055,0.085,28), scopeFrontApertureMat);
-scopeFrontAperture.position.z = -0.119;
-scopeGroup.add(scopeFrontAperture);
-// Rear ring (the aperture the eye looks through)
-const scopeRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.085,0.014,12,28), scopeRimMat);
-scopeRim2.position.z = 0.12;
-scopeGroup.add(scopeRim2);
-// Red dot: bright emissive sphere. Positioned at the REAR of the pistol slide
-// (z=0.12), directly over the rear iron sight, as requested. During ADS it
-// still lands on the screen-center crosshair.
-const scopeDotMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
-const scopeDot = new THREE.Mesh(new THREE.SphereGeometry(0.007,12,12), scopeDotMat);
-scopeDot.position.set(0,0,0);
+const scopeRimMat = new THREE.MeshLambertMaterial({color:0x343d45});
+for(const z of [-0.11, 0.11]){
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.081,0.012,10,28), scopeRimMat);
+  rim.position.z = z;
+  scopeGroup.add(rim);
+}
+// A pair of machined mount pieces connects the sight to the top rail.
+const scopeFoot = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.018,0.12), scopeRimMat);
+scopeFoot.position.set(0,-0.105,0);
+scopeGroup.add(scopeFoot);
+const scopePost = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.057,0.060), scopeTubeMat);
+scopePost.position.set(0,-0.072,0);
+scopeGroup.add(scopePost);
+// The glass remains transparent. Never use a fullscreen dark overlay.
+const scopeGlass = new THREE.Mesh(new THREE.CircleGeometry(0.076,28),
+  new THREE.MeshBasicMaterial({color:0x508a80, transparent:true, opacity:0.07,
+    side:THREE.DoubleSide, depthWrite:false}));
+scopeGlass.position.z = SCOPE_LENS_Z-0.004;
+scopeGroup.add(scopeGlass);
+// A radial glow texture makes the reticle readable without turning into a big red ball.
+const scopeDotCanvas = document.createElement('canvas');
+scopeDotCanvas.width = scopeDotCanvas.height = 64;
+const scopeDotCtx = scopeDotCanvas.getContext('2d');
+const scopeDotGradient = scopeDotCtx.createRadialGradient(32,32,0,32,32,32);
+scopeDotGradient.addColorStop(0,'rgba(255,235,204,1)');
+scopeDotGradient.addColorStop(0.10,'rgba(255,65,40,1)');
+scopeDotGradient.addColorStop(0.25,'rgba(255,24,12,.65)');
+scopeDotGradient.addColorStop(1,'rgba(255,15,5,0)');
+scopeDotCtx.fillStyle = scopeDotGradient;
+scopeDotCtx.fillRect(0,0,64,64);
+const scopeDotTexture = new THREE.CanvasTexture(scopeDotCanvas);
+const scopeDotMat = new THREE.SpriteMaterial({map:scopeDotTexture, color:0xffffff,
+  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
+const scopeDot = new THREE.Sprite(scopeDotMat);
+scopeDot.scale.set(0.032,0.032,1);
+scopeDot.position.set(0,0,SCOPE_LENS_Z);
 scopeDot.renderOrder = 999;
+scopeDot.visible = false;
 scopeGroup.add(scopeDot);
-scopeGroup.position.set(0, 0.11, 0.12); // dot at REAR of slide (z=0.12), over the rear iron sight
 scopeGroup.visible = false;
 gun.add(scopeGroup);
+// Reused scratch vectors for projecting the CAMERA AIM RAY onto the actual lens.
+const scopeRayOrigin = new THREE.Vector3();
+const scopeRayEnd = new THREE.Vector3();
 
 // Attach gun to camera as viewmodel
 camera.add(gun);
@@ -2263,14 +2282,6 @@ function updateRedDot(){
 const ADS_FOV = 60;
 const ADS_SENS = 0.5;
 const ADS_SPEED = 0.6;
-  // Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
-  // scope group's Y). Default 0 keeps every weapon exactly as before; only the
-  // pistol is lowered so its sight sits tighter against the slide.
-  // Per-weapon vertical offset for the 3D red-dot scope housing (applied to the
-  // scope group's Y). Front-mounted: the dot floats in the CENTER of the
-  // optic glass while the front iron sight sits at the FRONT. The pistol offset
-  // is raised so the dot clears the front sight line with proper parallax.
-  const SCOPE_Y_OFFSET = { pistol: 0.035 };
 let adsActive = false;
 let adsBlend = 0;
 const ADS_BLEND_SPEED = 1/0.12;
@@ -2289,7 +2300,6 @@ let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
 // ADS: push the weapon FARther back (-Z) and slightly down so it reads as
 // smaller / farther away and more of the scene is visible around it.
 const adsPos = new THREE.Vector3(0,-0.234*0.85,-0.9);
-const ADS_Z_OFFSET = 0.12; // (legacy) rear-aperture offset; dot now sits at slide center (z=0)
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -2314,42 +2324,38 @@ function lerpAds(dt){
   // sprintTilt: pistol pitches UP (negative X lifts the muzzle toward the sky);
   // other weapons use sprintYaw (sideways sweep) instead.
   gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot - sprintTilt, sprintYaw, sprintLean);
-  // Toggle ADS class for red dot visibility
-  const hud = document.getElementById('hud');
-  if(adsBlend > 0.5 && !hud.classList.contains('ads-active')) hud.classList.add('ads-active');
-  else if(adsBlend <= 0.5 && hud.classList.contains('ads-active')) hud.classList.remove('ads-active');
-  // Show the 3D scope tube whenever this weapon has a red dot (visible while
-  // held, and stays visible while aiming). Everything outside the tube is
-  // fully transparent — no dark overlay or vignette on the rest of the screen.
+  // With a red dot installed, the center of the optic becomes the reticle at ADS.
+  // The standard green crosshair stays available while aiming from the hip.
   const wantScope = wbGet(activeWeapon).redDot;
-  if(scopeGroup.visible !== wantScope) scopeGroup.visible = wantScope;
-  if(scopeGroup.visible){
-    scopeDot.quaternion.copy(camera.quaternion); // keep dot facing the eye
-    // RULE 1: INDEPENDENT POA — the red dot is the true center of aim.
-    // It is projected onto the screen center (x=0, y=0 in scope-local space)
-    // regardless of where the iron sights or housing sit. The dot does NOT
-    // lock to the front sight post; it floats in the center of the glass.
-    // RULE 3: DYNAMIC PARALLAX — during sway/recoil/strafe, the gun model
-    // (and its iron sights) shift relative to the camera, but the dot stays
-    // fixed at the aim point (parallax-free reflex optic). We achieve this by
-    // keeping the dot at the scope group's local origin (0,0,0) and letting
-    // the gun's sway/kick move the housing+sights around it.
-    scopeDot.position.set(0, 0, 0); // dot at REAR of slide (z=0.12), over the rear iron sight
-    // During ADS, pull the scope back so the rear slide dot (z=0.12)
-    // lands exactly on the screen-center crosshair.
-    const _zOffset = (activeWeapon === 'pistol') ? 0.04 : 0;
-    scopeGroup.position.z = adsPos.z + _zOffset; // scope dot (z=0.12) sits at rear slide, over rear iron sight
-    // RULE 2: RESTING ADS POSITION — the optic housing is positioned so the
-    // red dot floats in the CENTER of the optic glass, while the front aperture
-    // and front sight post sit at the FRONT.
-    // The SCOPE_Y_OFFSET raises the housing above the front sight line.
-    const _sy = (SCOPE_Y_OFFSET[activeWeapon] || 0);
-    scopeGroup.position.y = 0.11 + _sy;
-    // RULE 4: ALIGNMENT CONVERGENCE — only when the weapon is fully settled
-    // (b≈1, no sway/kick) does the front sight post tip align directly beneath
-    // the dot. During animation (b<1 or sway≠0), the sights are offset.
-    // We don't move the dot; the gun model's sway/kick naturally offsets the
-    // iron sights relative to the fixed dot, satisfying this rule.
+  const hud = document.getElementById('hud');
+  hud.classList.toggle('ads-active', wantScope && b > 0.88);
+  scopeGroup.visible = wantScope;
+  scopeDot.visible = false;
+  if(wantScope){
+    // The camera fires hitscan straight through screen center. Intersect that
+    // exact ray with the lens plane in SCOPE coordinates. This makes the dot
+    // indicate the true point of aim while the housing can sway/recoil around it.
+    // If the eye is no longer looking through the aperture, the dot disappears
+    // instead of glowing through the metal tube or floating outside the sight.
+    camera.updateMatrixWorld(true);
+    scopeRayOrigin.set(0,0,0);
+    camera.localToWorld(scopeRayOrigin);
+    scopeGroup.worldToLocal(scopeRayOrigin);
+    scopeRayEnd.set(0,0,-5);
+    camera.localToWorld(scopeRayEnd);
+    scopeGroup.worldToLocal(scopeRayEnd);
+    const dx = scopeRayEnd.x - scopeRayOrigin.x;
+    const dy = scopeRayEnd.y - scopeRayOrigin.y;
+    const dz = scopeRayEnd.z - scopeRayOrigin.z;
+    if(Math.abs(dz) > 1e-6){
+      const t = (SCOPE_LENS_Z - scopeRayOrigin.z) / dz;
+      const x = scopeRayOrigin.x + dx*t;
+      const y = scopeRayOrigin.y + dy*t;
+      if(b > 0.55 && t > 0 && t < 1 && x*x+y*y < SCOPE_CLEAR_RADIUS*SCOPE_CLEAR_RADIUS){
+        scopeDot.position.set(x,y,SCOPE_LENS_Z);
+        scopeDot.visible = true;
+      }
+    }
   }
 }
 function resetAds(){
@@ -2866,6 +2872,7 @@ function resetGame(){
   player.grounded=true;
   camera.position.set(0,1.7,0);
   resetAds();
+  updateRedDot();
   state.over=false; state.running=true;
   activeWeapon='pistol';
   Object.keys(MAGS).forEach(w=>{
@@ -3006,26 +3013,9 @@ function loop(){
     }
   }
   gun.add(model);
-  // Re-attach the 3D red-dot scope on TOP of the new weapon model.
-  // Rear-slide: the dot sits at the REAR of the slide (z=0.12), directly over
-  // the rear iron sight.
-  if(!scopeGroup.parent) gun.add(scopeGroup);
-  scopeGroup.position.set(0, 0.11, 0.12);
-  // Reset the scope z to the hip (non-ADS) value; lerpAds() will re-lerp it
-  // toward the ADS value each frame.
-  scopeGroup.position.z = adsPos.z;
-  // Reset per-weapon housing height (pistol raised for proper rear-slide geometry).
-  const _sy0 = (SCOPE_Y_OFFSET[activeWeapon] || 0);
-  scopeGroup.position.y = 0.11 + _sy0;
-  // Dot stays at the scope group's local origin (rear slide, independent POA).
-  scopeDot.position.set(0, 0, 0);
-  // Reset per-weapon Z offset (pistol scope is closer to player)
-  const _z0 = (activeWeapon === 'pistol') ? 0.04 : 0;
-  scopeGroup.position.z = adsPos.z + _z0;
-  // Show the 3D scope tube only when the active weapon has a red dot (built
-  // ONCE and reused; everything outside the tube stays fully transparent).
-  const _wantScope = wbGet(activeWeapon).redDot;
-  if(scopeGroup.visible !== _wantScope) scopeGroup.visible = _wantScope;
+  // Optic remains rigidly mounted in gun-local coordinates. ADS only moves gun.
+  // The scope is kept as a child through weapon swaps (never reposition it here).
+  scopeGroup.visible = wbGet(activeWeapon).redDot;
 
   state.seconds += dt;
 
@@ -3469,18 +3459,6 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
