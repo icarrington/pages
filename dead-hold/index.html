@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795028531 -->
+<!-- page-version: 1795028821 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -111,33 +111,34 @@
   }
 
   /* ---------- Workbench menu ---------- */
-  #wbMenu{position:fixed;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 30%,rgba(20,26,30,.7),rgba(6,8,10,.94));backdrop-filter:blur(3px)}
+  #wbMenu{position:fixed;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;padding:clamp(10px,2vw,24px);background:radial-gradient(circle at 50% 30%,rgba(20,26,30,.7),rgba(6,8,10,.94));backdrop-filter:blur(3px);overflow:hidden}
   #wbMenu.hidden{display:none}
-  .wb-card{width:min(520px,100%);background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);padding:30px 28px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
-  .wb-title{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.1em;color:var(--accent);margin:0 0 4px}
-  .wb-sub{font-family:var(--mono);font-size:12px;letter-spacing:.15em;color:var(--dim);margin:0 0 18px}
-  .wb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-  .wb-weapon{font-family:var(--mono);font-size:18px;font-weight:700;color:#eef2f3}
-  .wb-mag{font-family:var(--mono);font-size:12px;color:var(--dim);margin-top:4px}
-  .wb-pts{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)}
-  .wb-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-  .wb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#0e1317;border:1px solid var(--line);cursor:pointer;transition:border-color .12s,background .12s}
+  .wb-card{width:min(520px,90vw);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--accent);padding:clamp(16px,3vw,30px) clamp(14px,3vw,28px);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .wb-title{font-family:var(--mono);font-size:clamp(18px,4vw,26px);font-weight:800;letter-spacing:.1em;color:var(--accent);margin:0 0 4px}
+  .wb-sub{font-family:var(--mono);font-size:clamp(10px,1.8vw,12px);letter-spacing:.15em;color:var(--dim);margin:0 0 clamp(10px,2vw,18px)}
+  .wb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:clamp(10px,2vw,16px);padding-bottom:clamp(8px,1.5vw,14px);border-bottom:1px solid var(--line)}
+  .wb-weapon{font-family:var(--mono);font-size:clamp(14px,2.5vw,18px);font-weight:700;color:#eef2f3}
+  .wb-mag{font-family:var(--mono);font-size:clamp(10px,1.8vw,12px);color:var(--dim);margin-top:4px}
+  .wb-pts{font-family:var(--mono);font-size:clamp(11px,2vw,14px);font-weight:700;color:var(--accent)}
+  .wb-rows{display:flex;flex-direction:column;gap:clamp(6px,1vw,10px);margin-bottom:clamp(12px,2vw,20px)}
+  .wb-row{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.5vw,12px);padding:clamp(8px,1.5vw,12px) clamp(10px,1.5vw,14px);background:#0e1317;border:1px solid var(--line);cursor:pointer;transition:border-color .12s,background .12s}
   .wb-row:hover{border-color:var(--accent);background:rgba(200,255,77,.05)}
   .wb-row.owned{border-color:#2f8f4d;cursor:default;background:rgba(47,143,77,.08)}
   .wb-row.poor{opacity:.6;cursor:not-allowed}
-  .wb-name{font-family:var(--mono);font-size:14px;font-weight:700;color:#eef2f3}
-  .wb-desc{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px}
-  .wb-right{font-family:var(--mono);font-size:13px;font-weight:700;white-space:nowrap}
+  .wb-name{font-family:var(--mono);font-size:clamp(11px,2vw,14px);font-weight:700;color:#eef2f3}
+  .wb-desc{font-family:var(--mono);font-size:clamp(9px,1.5vw,11px);color:var(--dim);margin-top:3px}
+  .wb-right{font-family:var(--mono);font-size:clamp(10px,1.8vw,13px);font-weight:700;white-space:nowrap}
   .wb-cost{color:var(--accent)}
   .wb-check{color:var(--health)}
-  .wb-close{width:100%;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:12px;transition:color .12s,border-color .12s}
+  .wb-close{width:100%;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:clamp(11px,1.8vw,13px);font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:clamp(8px,1.5vw,12px);transition:color .12s,border-color .12s}
   .wb-close:hover{color:var(--accent);border-color:var(--accent)}
 
   #wbHint{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:6}
   #wbHint.show{opacity:1}
   /* ---------- Dev Menu tab ---------- */
-  .wb-tabs{display:flex;gap:8px;margin-bottom:16px}
-  .wb-tab{flex:1;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:10px 8px;transition:color .12s,border-color .12s,background .12s}
+  .wb-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .wb-tabs::-webkit-scrollbar{display:none}
+  .wb-tab{flex:1 1 auto;min-width:80px;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:clamp(10px,1.5vw,12px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:clamp(8px,1.5vw,10px) clamp(6px,1vw,8px);transition:color .12s,border-color .12s,background .12s;white-space:nowrap}
   .wb-tab:hover{color:var(--accent);border-color:var(--accent)}
   .wb-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(200,255,77,.08)}
   .wb-tab.locked{color:var(--dim)}
@@ -202,7 +203,24 @@
   /* Mobile: keep the workbench menu within the safe area and scrollable */
   @media (max-width:700px){
     #wbMenu{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-    #wbMenu .wb-card{max-height:82vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    #wbMenu .wb-card{max-height:88vh;max-width:92vw;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:clamp(10px,2vw,16px)}
+    .wb-tabs{flex-wrap:nowrap;overflow-x:auto}
+    .wb-tab{flex:0 0 auto;min-width:70px;font-size:10px;padding:8px 6px}
+    .wb-dev-grid{grid-template-columns:1fr}
+    .wb-pin-grid{grid-template-columns:repeat(3,1fr);gap:6px}
+    .wb-pin-btn{font-size:16px;padding:10px 0}
+    .wb-pin-display{font-size:22px;padding:10px}
+    .wb-row{padding:8px 10px}
+    .wb-name{font-size:11px}
+    .wb-desc{font-size:9px}
+    .wb-right{font-size:10px}
+  }
+  @media (max-width:480px){
+    #wbMenu .wb-card{max-height:90vh;max-width:95vw;padding:10px}
+    .wb-tab{min-width:60px;font-size:9px;padding:6px 5px}
+    .wb-dev-btn{font-size:11px;padding:10px 6px}
+    .wb-pin-btn{font-size:14px;padding:8px 0}
+    .wb-pin-display{font-size:18px;padding:8px}
   }
   @media (max-width:700px){
     .corner{padding:8px}
@@ -782,7 +800,7 @@ function wbOpenMenu(){
       const levelText = 'Lv.' + level + '/' + def.maxLevel;
       catRows += '<div class="'+cls+'" data-statkey="'+def.key+'"><div class="wb-name">'+def.name+' <span style="color:var(--dim);font-size:11px">'+levelText+'</span></div><div class="wb-desc">'+def.desc+'</div><div class="wb-right">'+right+'</div></div>';
     }
-    statRowsHTML += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:8px;color:var(--accent)">'+cat.name+'</div>' + catRows + '</div>';
+    statRowsHTML += '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">'+cat.name+'</div>' + catRows + '</div>';
   }
   
   const menu = document.getElementById('wbMenu');
@@ -4363,6 +4381,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
