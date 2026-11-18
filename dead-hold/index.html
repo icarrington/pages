@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795013398 -->
+<!-- page-version: 1795013626 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -157,9 +157,10 @@
   #btnFire:active,#btnFire.pressed{background:rgba(255,77,77,.5)}
   #btnJump{right:120px;bottom:150px;width:64px;height:64px;border-radius:50%;font-size:11px}
   #btnReload{right:20px;bottom:272px;width:64px;height:48px;font-size:11px;border-radius:10px}
-  #btnInspect{right:120px;bottom:272px;width:64px;height:48px;font-size:11px;border-radius:10px}
-  #btnWorkbench{right:20px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
-  #btnCycle{right:120px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
+  #btnDash{right:120px;bottom:272px;width:64px;height:48px;font-size:11px;border-radius:10px}
+  #btnScope{right:20px;bottom:330px;width:64px;height:48px;font-size:11px;border-radius:10px}
+  #btnWorkbench{right:120px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
+  #btnCycle{right:200px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
   #tSlots{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
   #tSlots .tslot{width:46px;height:46px;border-radius:10px;font-size:16px;font-weight:800;color:var(--dim);background:rgba(10,14,12,.6);border:1px solid var(--line);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
   #tSlots .tslot.active{color:var(--health);border-color:var(--health);background:rgba(47,143,77,.15);box-shadow:0 0 10px rgba(47,143,77,.5),inset 0 0 8px rgba(47,143,77,.25)}
@@ -178,6 +179,23 @@
     .slots{gap:5px}
     #hud .corner.tr{top:auto;bottom:120px;right:8px}
   }
+  /* Coarse pointer: force touch UI visible even if isTouch JS check missed it */
+  @media (pointer:coarse){
+    #touchUI{display:block !important}
+    #touchUI .tbtn{min-width:44px;min-height:44px}
+  }
+  /* Very small screens: tighten touch button layout */
+  @media (max-width:400px){
+    #btnFire{right:12px;bottom:140px;width:72px;height:72px;font-size:12px}
+    #btnJump{right:96px;bottom:130px;width:52px;height:52px;font-size:10px}
+    #btnReload{right:12px;bottom:230px;width:52px;height:40px;font-size:10px}
+    #btnDash{right:96px;bottom:230px;width:52px;height:40px;font-size:10px}
+    #btnScope{right:12px;bottom:280px;width:52px;height:40px;font-size:10px}
+    #btnWorkbench{right:96px;bottom:280px;width:52px;height:40px;font-size:9px}
+    #btnCycle{right:160px;bottom:280px;width:52px;height:40px;font-size:9px}
+    #joyBase{left:16px;bottom:16px;width:110px;height:110px}
+    #joyThumb{width:48px;height:48px}
+  }
   /* Mobile: kill native scroll/zoom gestures across the whole page */
   #game, #touchUI, body, html{touch-action:none;-webkit-user-select:none;user-select:none}
 </style>
@@ -193,6 +211,8 @@
   <div class="tbtn" id="btnFire">FIRE</div>
   <div class="tbtn" id="btnJump">JUMP</div>
   <div class="tbtn" id="btnReload">RELOAD</div>
+  <div class="tbtn" id="btnDash">DASH</div>
+  <div class="tbtn" id="btnScope">SCOPE</div>
   <div class="tbtn" id="btnWorkbench">WORKBENCH</div>
   <div class="tbtn" id="btnCycle">CYCLE</div>
   <div id="tSlots"></div>
@@ -2009,7 +2029,7 @@ let mouseDown = false;
 let moving = false;
 
 /* ============================ MOBILE TOUCH ============================ */
-const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
 const touchUI = document.getElementById('touchUI');
 const joyBase = document.getElementById('joyBase');
 const joyThumb = document.getElementById('joyThumb');
@@ -2017,7 +2037,6 @@ const lookArea = document.getElementById('lookArea');
 const btnFire = document.getElementById('btnFire');
 const btnJump = document.getElementById('btnJump');
 const btnReload = document.getElementById('btnReload');
-const btnInspect = document.getElementById('btnInspect');
 const btnWorkbench = document.getElementById('btnWorkbench');
 const tSlots = document.getElementById('tSlots');
 let joyVec = {x:0, y:0};
@@ -2053,12 +2072,15 @@ function joyReset(){
   joyThumb.style.transform = 'translate(-50%,-50%)';
 }
 function bindTouch(el, onDown, onUp){
+  if(!el) return;
   el.addEventListener('touchstart', e=>{ e.preventDefault(); onDown(e); }, {passive:false});
   el.addEventListener('touchend', e=>{ e.preventDefault(); onUp && onUp(e); }, {passive:false});
   el.addEventListener('touchcancel', e=>{ e.preventDefault(); onUp && onUp(e); }, {passive:false});
 }
+let _touchInited = false;
 function initTouch(){
-  if(!isTouch) return;
+  if(!isTouch || _touchInited) return;
+  _touchInited = true;
   touchUI.classList.add('active');
   buildTouchSlots();
   // Joystick
@@ -2139,6 +2161,66 @@ function initTouch(){
       btnCycle.classList.add('pressed');
     }, e=>{ e.preventDefault(); btnCycle.classList.remove('pressed'); });
   }
+  // Dash / Sprint (uses stamina, equivalent to Shift)
+  const btnDash = document.getElementById('btnDash');
+  if(btnDash){
+    let dashHeld = false;
+    btnDash.addEventListener('touchstart', e=>{
+      e.preventDefault(); ensureAudio(); dashHeld = true;
+      if(state.running && !wbMenuOpen){
+        // Toggle a sprint flag that isSprinting() can read
+        if(window._touchSprint === undefined) window._touchSprint = false;
+        window._touchSprint = true;
+      }
+      btnDash.classList.add('pressed');
+    }, {passive:false});
+    btnDash.addEventListener('touchend', e=>{
+      e.preventDefault(); dashHeld = false;
+      if(window._touchSprint !== undefined) window._touchSprint = false;
+      btnDash.classList.remove('pressed');
+    }, {passive:false});
+    btnDash.addEventListener('touchcancel', e=>{
+      e.preventDefault(); dashHeld = false;
+      if(window._touchSprint !== undefined) window._touchSprint = false;
+      btnDash.classList.remove('pressed');
+    }, {passive:false});
+  }
+  // Scope / ADS toggle (equivalent to RMB)
+  const btnScope = document.getElementById('btnScope');
+  if(btnScope){
+    bindTouch(btnScope, e=>{
+      e.preventDefault(); ensureAudio();
+      if(state.running && !wbMenuOpen){
+        adsActive = !adsActive;
+      }
+      btnScope.classList.add('pressed');
+    }, e=>{ e.preventDefault(); btnScope.classList.remove('pressed'); });
+  }
+  // Double-tap on look area toggles ADS (alternative to SCOPE button)
+  let lookTapCount = 0, lookTapTimer = null;
+  lookArea.addEventListener('touchend', e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches){ if(t.identifier===lookId) lookId = null; }
+    if(state.running && !wbMenuOpen){
+      lookTapCount++;
+      if(lookTapCount === 1){
+        lookTapTimer = setTimeout(()=>{ lookTapCount = 0; }, 300);
+      } else if(lookTapCount >= 2){
+        clearTimeout(lookTapTimer);
+        lookTapCount = 0;
+        adsActive = !adsActive;
+      }
+    }
+  }, {passive:false});
+  // Touch weapon slots: tap to switch
+  tSlots.addEventListener('touchstart', e=>{
+    const slot = e.target.closest('.tslot');
+    if(!slot || !state.running || wbMenuOpen) return;
+    e.preventDefault();
+    ensureAudio();
+    const w = slot.dataset.weapon;
+    if(w && isOwned(w)) switchWeapon(w);
+  }, {passive:false});
   // Prevent double-tap zoom / scroll on canvas
   canvas.addEventListener('touchstart', e=>{ e.preventDefault(); }, {passive:false});
   canvas.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
@@ -2412,7 +2494,9 @@ const SPRINT_MULT = 1.6;
 const SPRINT_BLEND_SPEED = 1/0.15;
 let sprintBlend = 0; // 0 = normal, 1 = full sprint (drives the gun Y rotation)
 let sprintYaw = 0;   // Y-axis (yaw) rotation applied to the gun while sprinting
+window._touchSprint = false; // set by DASH button on touch devices
 function isSprinting(){
+  if(window._touchSprint) return true;
   return state.running && player.grounded && !!keys['shift'] && !adsActive && (moving || keys['shift']);
 }
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
@@ -3022,6 +3106,7 @@ function resetGame(){
   state.recoil=0; state.muzzleT=0;
   state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
   state.hasDoubleShotgun=false;
+  window._touchSprint = false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   state.spawnShieldT=0;
   clearWeaponDrops();
@@ -3225,7 +3310,7 @@ function loop(){
 
   /* ---- sprint blend (drives gun side-pose + speed boost) ---- */
   {
-    const wantSprint = isSprinting() ? 1 : 0;
+    const wantSprint = (isSprinting() || window._touchSprint) ? 1 : 0;
     const sStep = SPRINT_BLEND_SPEED*dt;
     if(sprintBlend < wantSprint) sprintBlend = Math.min(wantSprint, sprintBlend+sStep);
     else if(sprintBlend > wantSprint) sprintBlend = Math.max(wantSprint, sprintBlend-sStep);
@@ -3634,6 +3719,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
