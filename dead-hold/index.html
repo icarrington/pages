@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794973026 -->
+<!-- page-version: 1795011624 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2317,12 +2317,17 @@ let lastShotTime = 0;
 const ownedWeapons = ['pistol'];
 function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
 function addWeapon(w){
+  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
   if(ownedWeapons.indexOf(w) < 0){
     ownedWeapons.push(w);
-    // Give 10 full magazines of reserve ammo for this weapon
-    const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
-    reserves[w] += cap * 10;
+    // Give full magazine and full reserve ammo for this weapon
     mags[w] = cap;
+    reserves[w] = (w === 'pistol') ? 116 : (MAGS[w] * 10);
+  } else {
+    // Already owned: top off to full mag and full reserve
+    mags[w] = cap;
+    if(w === 'pistol') reserves[w] = Math.max(reserves[w], 116);
+    else reserves[w] = Math.max(reserves[w], MAGS[w] * 10);
   }
 }
 function weaponList(){
@@ -3010,7 +3015,8 @@ function resetGame(){
   activeWeapon='pistol';
   Object.keys(MAGS).forEach(w=>{
     mags[w]=MAGS[w] + getMagSizeBonus();
-    reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
+    if(w === 'pistol') reserves[w] = 116 + (getStartAmmoBonus() * MAGS[w]);
+    else reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
   });
   updateWeaponSlots();
   // 3-second countdown before Wave 1
@@ -3603,6 +3609,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
