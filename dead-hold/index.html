@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794964348 -->
+<!-- page-version: 1794964946 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -851,18 +851,18 @@ function buildPistol(){
   // of the optic window. The red dot emitter floats in the CENTER of the glass.
   // The housing is raised so the dot is clearly above the iron sight line.
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.028,0.045), gunDark);
-  rdHousing.position.set(0,0.145,-0.05); g.add(rdHousing);
+  rdHousing.position.set(0,0.090,-0.02); g.add(rdHousing);
   // Housing top cap (slightly lighter)
   const rdCap = new THREE.Mesh(new THREE.BoxGeometry(0.033,0.004,0.043), gunMetal);
-  rdCap.position.set(0,0.161,-0.05); g.add(rdCap);
+  rdCap.position.set(0,0.106,-0.02); g.add(rdCap);
   // Red dot emitter (small emissive sphere centered in the housing — floats in the
   // CENTER of the optic glass, well above the iron sight line)
   const rdEmitter = new THREE.Mesh(new THREE.SphereGeometry(0.004,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
-  rdEmitter.position.set(0,0.155,-0.05); g.add(rdEmitter);
+  rdEmitter.position.set(0,0.098,-0.02); g.add(rdEmitter);
   // Small aperture ring around the emitter
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
-  rdRing.position.set(0,0.155,-0.11); g.add(rdRing);
+  rdRing.position.set(0,0.098,-0.08); g.add(rdRing);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -3487,6 +3487,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
