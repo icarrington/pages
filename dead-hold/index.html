@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795026076 -->
+<!-- page-version: 1795026584 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2900,12 +2900,13 @@ function removeZombie(z){
 /* ---- boss spawn / removal ---- */
 function spawnBoss(wave){
   const b = makeBoss();
-  const hp = Math.round((150 + 100*(wave/5)) * 1.5);
+  const hp = Math.round((150 + 100*(wave/5)) * 12.0); // Doubled from 6.0x to 12.0x for much tankier boss
   b.group.position.set(0, 0, -40);
   b.hp = hp; b.maxHp = hp;
   b.alive = true; b.dying = false; b.deathT = 0;
   b.flash = 0; b.attackCd = 0; b.windup = 0; b.bobPhase = 0;
   b.speed = 0.7 * 1.25;
+  b.lightningCd = 3.0; // Initial cooldown for lightning attack
   scene.add(b.group);
   state.boss = b;
   updateBossBar(true);
@@ -2964,6 +2965,74 @@ function updateParticles(dt){
   }
 }
 
+/* ---- Lightning projectile system ---- */
+const lightningProjectiles = [];
+const lightningGeo = new THREE.SphereGeometry(0.15, 12, 12);
+const lightningMat = new THREE.MeshBasicMaterial({color: 0xffff00, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false});
+const lightningTrailMat = new THREE.MeshBasicMaterial({color: 0xffffaa, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false});
+
+function spawnLightningProjectile(fromPos, toPos){
+  // Create projectile with trail
+  const proj = new THREE.Group();
+  
+  // Main orb
+  const orb = new THREE.Mesh(lightningGeo, lightningMat);
+  proj.add(orb);
+  
+  // Trail (elongated sphere)
+  const trail = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), lightningTrailMat);
+  trail.scale.set(1, 1, 3);
+  proj.add(trail);
+  
+  // Position and direction
+  proj.position.copy(fromPos);
+  proj.position.y += 1.0; // Start at boss height
+  
+  // Calculate direction to player (slow-moving, so player can dodge)
+  const dir = new THREE.Vector3().subVectors(toPos, fromPos).normalize();
+  const speed = 8.0; // Slow enough to dodge
+  
+  proj.userData = {
+    vel: dir.multiplyScalar(speed),
+    life: 5.0, // 5 second lifetime
+    damage: 25
+  };
+  
+  scene.add(proj);
+  lightningProjectiles.push(proj);
+}
+
+function updateLightningProjectiles(dt){
+  for(let i = lightningProjectiles.length - 1; i >= 0; i--){
+    const p = lightningProjectiles[i];
+    p.userData.life -= dt;
+    
+    if(p.userData.life <= 0){
+      scene.remove(p);
+      lightningProjectiles.splice(i, 1);
+      continue;
+    }
+    
+    // Move projectile
+    p.position.addScaledVector(p.userData.vel, dt);
+    
+    // Check collision with player
+    const distToPlayer = p.position.distanceTo(player.pos);
+    if(distToPlayer < 1.2){
+      damagePlayer(p.userData.damage);
+      scene.remove(p);
+      lightningProjectiles.splice(i, 1);
+      continue;
+    }
+    
+    // Remove if out of bounds
+    if(Math.abs(p.position.x) > 60 || Math.abs(p.position.z) > 60 || p.position.y < 0 || p.position.y > 30){
+      scene.remove(p);
+      lightningProjectiles.splice(i, 1);
+    }
+  }
+}
+
 /* ---- boss update ---- */
 function updateBoss(dt){
   const b = state.boss;
@@ -3006,6 +3075,10 @@ function updateBoss(dt){
   } else {
     b.aR.rotation.x = -0.4 + Math.sin(b.bobPhase)*0.15;
     b.aL.rotation.x = -0.4 - Math.sin(b.bobPhase)*0.15;
+    
+    // Lightning attack cooldown
+    if(b.lightningCd > 0) b.lightningCd -= dt;
+    
     if(dist > 2.5){
       // Boss obstacle-avoidance + stuck detection (same scheme as zombies)
       if(b.lastX==null){ b.lastX=b.group.position.x; b.lastZ=b.group.position.z; b.movedDist=0; b.stuckTimer=0; b.detourTimer=0; b.detourDir=1; }
@@ -3044,6 +3117,14 @@ function updateBoss(dt){
       if(b.group.position.z < -_B) b.group.position.z = -_B; else if(b.group.position.z > _B) b.group.position.z = _B;
       b.bobPhase += dt*3;
       b.group.position.y = Math.abs(Math.sin(b.bobPhase))*0.08;
+      
+      // Throw lightning if in range and cooldown ready
+      if(b.lightningCd <= 0 && dist < 25){
+        const fromPos = b.group.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+        const toPos = player.pos.clone();
+        spawnLightningProjectile(fromPos, toPos);
+        b.lightningCd = 3.0 + Math.random() * 2.0; // 3-5 second cooldown
+      }
     } else {
       b.attackCd -= dt;
       if(b.attackCd<=0){
@@ -3109,7 +3190,14 @@ function resetGame(){
   window._touchSprint = false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   state.spawnShieldT=0;
+  // Clean up lightning projectiles
+  for(const p of lightningProjectiles){
+    scene.remove(p);
+  }
+  lightningProjectiles.length = 0;
   clearWeaponDrops();
+  // Reset boss lightning cooldown
+  if(state.boss) state.boss.lightningCd = 3.0;
   ownedWeapons.length = 0; ownedWeapons.push('pistol'); // start with pistol only
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
@@ -3631,6 +3719,9 @@ function loop(){
   /* ---- boss ---- */
   updateBoss(dt);
 
+  /* ---- lightning projectiles ---- */
+  updateLightningProjectiles(dt);
+
   /* ---- zombie beacon: show tall glowing beam above each zombie when fewer than 3 remain,
      OR when no zombie has been killed for 120 seconds (2 minutes) ---- */
   {
@@ -3719,6 +3810,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
