@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794970858 -->
+<!-- page-version: 1794971290 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -621,6 +621,16 @@ const WB_ATTACH_DEFS = [
   {key:'suppressor', name:'Suppressor', cost:100, desc:'Smaller muzzle flash, quieter'},
   {key:'vGrip', name:'Vertical Grip', cost:125, desc:'-30% recoil spread'}
 ];
+
+// Player stat upgrades (multi-level)
+const WB_STAT_UPGRADES = [
+  {key:'defense', name:'Defense Plating', baseCost:80, costMult:1.5, maxLevel:5, desc:'-10% damage taken per level'},
+  {key:'speed', name:'Speed Boost', baseCost:100, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'}
+];
+const statUpgrades = {defense:0, speed:0};
+function getUpgradeCost(def, level){ return Math.floor(def.baseCost * Math.pow(def.costMult, level)); }
+function getDefenseReduction(){ return statUpgrades.defense * 0.10; }
+function getSpeedMultiplier(){ return 1 + statUpgrades.speed * 0.08; }
 function wbToggleMenu(){
   if(!state.running) return;
   if(wbMenuOpen){ wbCloseMenu(); }
@@ -640,14 +650,44 @@ function wbOpenMenu(){
     const right = owned ? '<span class="wb-check">EQUIPPED ✓</span>' : (canBuy ? '<span class="wb-cost">'+d.cost+' pts</span>' : '<span class="wb-cost">Need '+(d.cost-state.points)+' more pts</span>');
     return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
   }).join('');
+  
+  // Stat upgrade rows
+  const statRows = WB_STAT_UPGRADES.map(def=>{
+    const level = statUpgrades[def.key];
+    const maxed = level >= def.maxLevel;
+    const cost = maxed ? 0 : getUpgradeCost(def, level);
+    const canBuy = !maxed && state.points >= cost;
+    const cls = maxed ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
+    const right = maxed ? '<span class="wb-check">MAXED ✓</span>' : (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
+    const levelText = 'Lv.' + level + '/' + def.maxLevel;
+    return '<div class="'+cls+'" data-statkey="'+def.key+'"><div class="wb-name">'+def.name+' <span style="color:var(--dim);font-size:11px">'+levelText+'</span></div><div class="wb-desc">'+def.desc+'</div><div class="wb-right">'+right+'</div></div>';
+  }).join('');
+  
   const menu = document.getElementById('wbMenu');
   menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
   menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
-  menu.querySelector('.wb-rows').innerHTML = rows;
+  menu.querySelector('.wb-rows').innerHTML = rows + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:8px;color:var(--accent)">PLAYER UPGRADES</div>' + statRows + '</div>';
   menu.querySelectorAll('.wb-row').forEach(r=>{
     r.addEventListener('click', ()=>{
       const key = r.dataset.key;
+      const statKey = r.dataset.statkey;
+      if(statKey){
+        // Stat upgrade purchase
+        const def = WB_STAT_UPGRADES.find(d=>d.key===statKey);
+        if(!def) return;
+        const level = statUpgrades[statKey];
+        if(level >= def.maxLevel) return;
+        const cost = getUpgradeCost(def, level);
+        if(state.points < cost) return;
+        state.points -= cost;
+        statUpgrades[statKey]++;
+        ensureAudio();
+        if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(500,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+        wbOpenMenu(); // refresh
+        updateHUD();
+        return;
+      }
       const def = WB_ATTACH_DEFS.find(d=>d.key===key);
       if(!def) return;
       const a = wbGet(w);
@@ -2841,7 +2881,10 @@ function playThud(){
 
 /* ============================ DAMAGE / REGEN ============================ */
 function damagePlayer(amount){
-  state.health -= amount;
+  // Apply defense reduction
+  const reduction = getDefenseReduction();
+  const finalDamage = amount * (1 - reduction);
+  state.health -= finalDamage;
   state.lastHitTime = state.seconds;
   state.damageFlash = 1;
   playHurt();
@@ -3094,7 +3137,7 @@ function loop(){
   if(moving) move.normalize();
 
   // Base walk speed; sprint (Shift) boosts it and drains stamina.
-  let speed = 4.2;
+  let speed = 4.2 * getSpeedMultiplier();
   if(adsActive) speed *= ADS_SPEED;
   if(isSprinting()) speed *= SPRINT_MULT;
   // Sprint drains stamina; when exhausted, sprint stops
@@ -3459,6 +3502,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
