@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794971608 -->
+<!-- page-version: 1794971999 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -630,12 +630,54 @@ const WB_ATTACH_DEFS = [
 // Player stat upgrades (multi-level)
 const WB_STAT_UPGRADES = [
   {key:'defense', name:'Defense Plating', baseCost:80, costMult:1.5, maxLevel:5, desc:'-10% damage taken per level'},
-  {key:'speed', name:'Speed Boost', baseCost:100, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'}
+  {key:'speed', name:'Speed Boost', baseCost:100, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'},
+  {key:'damage', name:'Damage Boost', baseCost:120, costMult:1.6, maxLevel:5, desc:'+15% weapon damage per level'},
+  {key:'fireRate', name:'Fire Rate', baseCost:100, costMult:1.6, maxLevel:5, desc:'+12% trigger speed per level'},
+  {key:'magSize', name:'Mag Size', baseCost:90, costMult:1.5, maxLevel:5, desc:'+2 rounds per level'},
+  {key:'reloadSpeed', name:'Reload Speed', baseCost:80, costMult:1.5, maxLevel:5, desc:'-12% reload time per level'},
+  {key:'headshot', name:'Headshot Bonus', baseCost:150, costMult:1.7, maxLevel:5, desc:'+1x headshot multiplier per level (base 2x)'},
+  {key:'critChance', name:'Crit Chance', baseCost:130, costMult:1.6, maxLevel:5, desc:'+8% crit chance per level (2x damage)'},
+  {key:'maxHealth', name:'Max Health', baseCost:100, costMult:1.5, maxLevel:5, desc:'+20 max HP per level'},
+  {key:'regen', name:'Regen', baseCost:90, costMult:1.5, maxLevel:5, desc:'+4 HP/s regen per level'},
+  {key:'armor', name:'Armor', baseCost:110, costMult:1.6, maxLevel:5, desc:'-3 flat damage per level'},
+  {key:'staminaPool', name:'Stamina Pool', baseCost:80, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
+  {key:'staminaRegen', name:'Stamina Regen', baseCost:70, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
+  {key:'pointMult', name:'Point Multiplier', baseCost:140, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
+  {key:'lootChance', name:'Loot Chance', baseCost:120, costMult:1.6, maxLevel:5, desc:'+10% extra loot drop per level'},
+  {key:'discount', name:'Workbench Discount', baseCost:200, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
+  {key:'startAmmo', name:'Starting Ammo', baseCost:100, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
+  {key:'zombieSlow', name:'Zombie Slow', baseCost:130, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
+  {key:'grenade', name:'Grenade Count', baseCost:160, costMult:1.7, maxLevel:5, desc:'+1 grenade per wave per level'},
+  {key:'medkit', name:'Medkit Count', baseCost:150, costMult:1.7, maxLevel:5, desc:'+1 medkit per wave per level'},
+  {key:'spawnShield', name:'Spawn Shield', baseCost:180, costMult:1.8, maxLevel:5, desc:'+0.5s invulnerability after hit per level'}
 ];
-const statUpgrades = {defense:0, speed:0};
-function getUpgradeCost(def, level){ return Math.floor(def.baseCost * Math.pow(def.costMult, level)); }
+const statUpgrades = {defense:0, speed:0, damage:0, fireRate:0, magSize:0, reloadSpeed:0, headshot:0, critChance:0, maxHealth:0, regen:0, armor:0, staminaPool:0, staminaRegen:0, pointMult:0, lootChance:0, discount:0, startAmmo:0, zombieSlow:0, grenade:0, medkit:0, spawnShield:0};
+function getUpgradeCost(def, level){
+  let cost = Math.floor(def.baseCost * Math.pow(def.costMult, level));
+  const disc = statUpgrades.discount * 0.10;
+  cost = Math.floor(cost * (1 - disc));
+  return Math.max(1, cost);
+}
 function getDefenseReduction(){ return statUpgrades.defense * 0.10; }
 function getSpeedMultiplier(){ return 1 + statUpgrades.speed * 0.08; }
+function getDamageMultiplier(){ return 1 + statUpgrades.damage * 0.15; }
+function getFireRateMultiplier(){ return 1 + statUpgrades.fireRate * 0.12; }
+function getMagSizeBonus(){ return statUpgrades.magSize * 2; }
+function getReloadSpeedMultiplier(){ return Math.max(0.2, 1 - statUpgrades.reloadSpeed * 0.12); }
+function getHeadshotMultiplier(){ return 2 + statUpgrades.headshot; }
+function getCritChance(){ return statUpgrades.critChance * 0.08; }
+function getMaxHealth(){ return 100 + statUpgrades.maxHealth * 20; }
+function getRegenRate(){ return 10 + statUpgrades.regen * 4; }
+function getArmorReduction(){ return statUpgrades.armor * 3; }
+function getMaxStamina(){ return 100 + statUpgrades.staminaPool * 20; }
+function getStaminaRegenRate(){ return 15 + statUpgrades.staminaRegen * 5; }
+function getPointMultiplier(){ return 1 + statUpgrades.pointMult * 0.20; }
+function getLootChance(){ return statUpgrades.lootChance * 0.10; }
+function getZombieSlowMultiplier(){ return Math.max(0.2, 1 - statUpgrades.zombieSlow * 0.10); }
+function getGrenadeCount(){ return statUpgrades.grenade; }
+function getMedkitCount(){ return statUpgrades.medkit; }
+function getSpawnShieldDuration(){ return statUpgrades.spawnShield * 0.5; }
+function getStartAmmoBonus(){ return statUpgrades.startAmmo; }
 function wbToggleMenu(){
   if(!state.running) return;
   if(wbMenuOpen){ wbCloseMenu(); }
@@ -656,23 +698,37 @@ function wbOpenMenu(){
     return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
   }).join('');
   
-  // Stat upgrade rows
-  const statRows = WB_STAT_UPGRADES.map(def=>{
-    const level = statUpgrades[def.key];
-    const maxed = level >= def.maxLevel;
-    const cost = maxed ? 0 : getUpgradeCost(def, level);
-    const canBuy = !maxed && state.points >= cost;
-    const cls = maxed ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
-    const right = maxed ? '<span class="wb-check">MAXED ✓</span>' : (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
-    const levelText = 'Lv.' + level + '/' + def.maxLevel;
-    return '<div class="'+cls+'" data-statkey="'+def.key+'"><div class="wb-name">'+def.name+' <span style="color:var(--dim);font-size:11px">'+levelText+'</span></div><div class="wb-desc">'+def.desc+'</div><div class="wb-right">'+right+'</div></div>';
-  }).join('');
+  // Stat upgrade rows grouped by category
+  const categories = [
+    {name:'COMBAT', keys:['damage','fireRate','magSize','reloadSpeed','headshot','critChance']},
+    {name:'SURVIVAL', keys:['maxHealth','regen','armor','staminaPool','staminaRegen']},
+    {name:'ECONOMY / META', keys:['pointMult','lootChance','discount','startAmmo']},
+    {name:'WILDCARD', keys:['zombieSlow','grenade','medkit','spawnShield']}
+  ];
+  
+  let statRowsHTML = '';
+  for(const cat of categories){
+    let catRows = '';
+    for(const key of cat.keys){
+      const def = WB_STAT_UPGRADES.find(d=>d.key===key);
+      if(!def) continue;
+      const level = statUpgrades[def.key];
+      const maxed = level >= def.maxLevel;
+      const cost = maxed ? 0 : getUpgradeCost(def, level);
+      const canBuy = !maxed && state.points >= cost;
+      const cls = maxed ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
+      const right = maxed ? '<span class="wb-check">MAXED ✓</span>' : (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
+      const levelText = 'Lv.' + level + '/' + def.maxLevel;
+      catRows += '<div class="'+cls+'" data-statkey="'+def.key+'"><div class="wb-name">'+def.name+' <span style="color:var(--dim);font-size:11px">'+levelText+'</span></div><div class="wb-desc">'+def.desc+'</div><div class="wb-right">'+right+'</div></div>';
+    }
+    statRowsHTML += '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:8px;color:var(--accent)">'+cat.name+'</div>' + catRows + '</div>';
+  }
   
   const menu = document.getElementById('wbMenu');
   menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
   menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
-  menu.querySelector('.wb-rows').innerHTML = rows + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:8px;color:var(--accent)">PLAYER UPGRADES</div>' + statRows + '</div>';
+  menu.querySelector('.wb-rows').innerHTML = rows + statRowsHTML;
   menu.querySelectorAll('.wb-row').forEach(r=>{
     r.addEventListener('click', ()=>{
       const key = r.dataset.key;
@@ -1795,7 +1851,8 @@ const state = {
   boss:null,
   bossWarnT:0,
   bossSpawnT:0,
-  bossPending:false
+  bossPending:false,
+  spawnShieldT:0
 };
 
 /* finite magazine sizes; reserve is finite (10 full mags per weapon) */
@@ -1804,7 +1861,7 @@ const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun
 const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200 };
 const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20, uzi:320, m4a1:300, awp:50, deagle:60, minigun:2000 };
 function refillMag(w){
-  const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w];
+  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
   const need = cap - mags[w];
   const take = Math.min(need, reserves[w]);
   mags[w] += take;
@@ -1817,7 +1874,7 @@ function startReload(){
   if(reserves[w] <= 0) return;
   state.reloading = true;
   state.reloadT = 0;
-  state.reloadDur = RELOAD_TIME[w];
+  state.reloadDur = RELOAD_TIME[w] * getReloadSpeedMultiplier();
   playReload();
 }
 
@@ -2144,12 +2201,8 @@ function switchWeapon(w){
 }
 function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || activeWeapon==='uzi' || activeWeapon==='m4a1' || activeWeapon==='minigun'; }
 function fireRate(){
-  if(activeWeapon==='smg') return 12;
-  if(activeWeapon==='rifle') return 8;
-  if(activeWeapon==='uzi') return 18;
-  if(activeWeapon==='m4a1') return 10;
-  if(activeWeapon==='minigun') return 25;
-  return 8;
+  const base = {smg:12, rifle:8, uzi:18, m4a1:10, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8};
+  return (base[activeWeapon] || 8) * getFireRateMultiplier();
 }
 function cycleWeapon(){
   const list = weaponList();
@@ -2476,8 +2529,8 @@ function shoot(){
           anyHit = true;
           const isHead = (hit.object === z.head);
           showHitmarker(isHead);
-          let dmg = isHead ? 60 : 60;
-          if(z.boss) dmg = isHead ? 60 : 30;
+          let dmg = (isHead ? 60 : 60) * getDamageMultiplier();
+          if(z.boss) dmg = (isHead ? 60 : 30) * getDamageMultiplier();
           z.hp -= dmg;
           z.flash = 0.08;
           state.points += 10;
@@ -2520,6 +2573,26 @@ function shoot(){
     minigun: {body:6, head:12}
   };
   const dmgSpec = dmgTable[activeWeapon] || {body:15, head:30};
+  for(const hit of hits){
+    const z = findZombie(hit.object);
+    if(z && z.alive){
+      const isHead = (hit.object === z.head);
+      let dmg = (isHead ? dmgSpec.head : dmgSpec.body) * getDamageMultiplier();
+      if(isHead) dmg *= getHeadshotMultiplier();
+      if(Math.random() < getCritChance()) dmg *= 2;
+      z.hp -= dmg;
+      z.flash = 0.08;
+      showHitmarker(isHead);
+      playHit();
+      if(z.hp<=0) killZombie(z, isHead);
+    }
+  }
+  if(state.boss && state.boss.alive) updateBossBar(true);
+  updateHUD();
+  return;
+}
+
+function _unusedShootTail(){
   for(const hit of hits){
     const z = findZombie(hit.object);
     if(z && z.alive){
@@ -2618,8 +2691,13 @@ function killZombie(z, isHead){
   z.alive = false;
   z.dying = true; z.deathT = 0;
   state.kills++;
-  state.points += 60;
-  if(isHead){ state.headshots++; state.points += 100; }
+  const pointMult = getPointMultiplier() * getDamageMultiplier();
+  state.points += Math.floor(60 * pointMult);
+  if(isHead){ state.headshots++; state.points += Math.floor(100 * pointMult * getHeadshotMultiplier()); }
+  // Loot chance: extra ammo drop
+  if(Math.random() < getLootChance()){
+    spawnWeaponDrop(z.group.position.x, z.group.position.z, 'pistol');
+  }
   state.lastKillTime = state.seconds; // reset the 2-minute no-kill beacon timer
   if(z.boss){
     state.points += 500 + 25*(state.wave/5);
@@ -2641,7 +2719,7 @@ function killZombie(z, isHead){
 function startWave(n){
   state.wave = n;
   const count = 5 + n * 3;
-  const speed = 2.4 + n * 0.30; // Faster base so zombies visibly walk/run toward the player
+  const speed = (2.4 + n * 0.30) * getZombieSlowMultiplier(); // Faster base so zombies visibly walk/run toward the player, slowed by upgrade
   const playerX = player.pos.x;
   const playerZ = player.pos.z;
   for(let i=0;i<count;i++){
@@ -2886,12 +2964,18 @@ function playThud(){
 
 /* ============================ DAMAGE / REGEN ============================ */
 function damagePlayer(amount){
+  // Spawn shield: brief invulnerability after taking a hit
+  if(state.spawnShieldT > 0) return;
   // Apply defense reduction
   const reduction = getDefenseReduction();
-  const finalDamage = amount * (1 - reduction);
+  let finalDamage = amount * (1 - reduction);
+  // Apply armor (flat reduction)
+  finalDamage = Math.max(1, finalDamage - getArmorReduction());
   state.health -= finalDamage;
   state.lastHitTime = state.seconds;
   state.damageFlash = 1;
+  // Activate spawn shield
+  state.spawnShieldT = getSpawnShieldDuration();
   playHurt();
   if(state.health<=0){ state.health=0; endGame(); }
   updateHUD();
@@ -2904,7 +2988,7 @@ function resetGame(){
   zombies.length = 0;
   if(state.boss) scene.remove(state.boss.group);
   spawnQueue.length = 0;
-  state.health=100; state.stamina=100;
+  state.health=getMaxHealth(); state.stamina=getMaxStamina();
   state.wave=1; state.points=0; state.kills=0; state.headshots=0;
   state.shotsFired=0; state.shotsHit=0;
   state.seconds=0; state.lastHitTime=-99; state.lastKillTime=0;
@@ -2913,6 +2997,7 @@ function resetGame(){
   state.groanTimer=0; state.damageFlash=0; state.waveGap=0;
   state.hasDoubleShotgun=false;
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
+  state.spawnShieldT=0;
   clearWeaponDrops();
   ownedWeapons.length = 0; ownedWeapons.push('pistol'); // start with pistol only
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
@@ -2924,8 +3009,8 @@ function resetGame(){
   state.over=false; state.running=true;
   activeWeapon='pistol';
   Object.keys(MAGS).forEach(w=>{
-    mags[w]=MAGS[w];
-    reserves[w]=MAGS[w]*10; // 10 full magazines of reserve
+    mags[w]=MAGS[w] + getMagSizeBonus();
+    reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
   });
   updateWeaponSlots();
   // 3-second countdown before Wave 1
@@ -3239,8 +3324,8 @@ function loop(){
   }
 
   /* ---- health regen ---- */
-  if(state.seconds - state.lastHitTime > 4 && state.health<100){
-    state.health = Math.min(100, state.health + 10*dt);
+  if(state.seconds - state.lastHitTime > 4 && state.health<getMaxHealth()){
+    state.health = Math.min(getMaxHealth(), state.health + getRegenRate()*dt);
     updateHUD();
   }
 
@@ -3518,6 +3603,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
