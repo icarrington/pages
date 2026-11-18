@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795041991 -->
+<!-- page-version: 1795043140 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -819,176 +819,206 @@ function wbOpenMenu(){
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
   menu.querySelector('.wb-rows').innerHTML = rows + statRowsHTML;
   
-  // Dev Menu tab and panel - use a persistent state object to avoid stacking
+  // Dev Menu tab and panel - create ONCE and persist across menu opens
   if(!window._devMenuState) window._devMenuState = { unlocked: false, pinInput: '' };
   const devState = window._devMenuState;
   
-  let devTabHTML = '<div class="wb-tabs"><button class="wb-tab ' + (devState.unlocked ? 'unlocked' : 'locked') + '" id="devTab"><span class="lock-ico">' + (devState.unlocked ? '🔓' : '🔒') + '</span><span style="font-size:9px;background:var(--accent);color:#000;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:800">DEV</span>Dev Menu</button></div>';
-  let devPanelHTML = '<div class="wb-panel" id="devPanel" style="display:none"><div class="wb-pin" id="pinPad" style="display:none"><div class="wb-pin-display" id="pinDisplay"></div><div class="wb-pin-grid"><button class="wb-pin-btn" data-pin="1">1</button><button class="wb-pin-btn" data-pin="2">2</button><button class="wb-pin-btn" data-pin="3">3</button><button class="wb-pin-btn" data-pin="4">4</button><button class="wb-pin-btn" data-pin="5">5</button><button class="wb-pin-btn" data-pin="6">6</button><button class="wb-pin-btn" data-pin="7">7</button><button class="wb-pin-btn" data-pin="8">8</button><button class="wb-pin-btn" data-pin="9">9</button><button class="wb-pin-btn" data-pin="back">⌫</button><button class="wb-pin-btn" data-pin="0">0</button><button class="wb-pin-btn" data-pin="submit">OK</button></div><div class="wb-pin-msg" id="pinMsg"></div></div><div class="wb-dev-grid" id="devBtns" style="display:none"><button class="wb-dev-btn" data-dev="allWeapons">Give All Weapons</button><button class="wb-dev-btn" data-dev="pistol">Give Pistol</button><button class="wb-dev-btn" data-dev="smg">Give SMG</button><button class="wb-dev-btn" data-dev="m4a1">Give M4</button><button class="wb-dev-btn" data-dev="awp">Give Sniper</button><button class="wb-dev-btn" data-dev="rpg">Give RPG-7</button><button class="wb-dev-btn" data-dev="maxAmmo">Max Ammo</button><button class="wb-dev-btn" data-dev="fullHealth">Full Health</button><button class="wb-dev-btn" data-dev="spawn5">Spawn 5 Enemies</button><button class="wb-dev-btn" data-dev="spawnBoss">Spawn Boss</button><button class="wb-dev-btn" data-dev="nextWave">Start Next Wave</button><button class="wb-dev-btn" data-dev="give1000">Give 1000 Credits</button><button class="wb-dev-btn" data-dev="resetWave">Reset Wave</button><button class="wb-dev-btn" data-dev="teleportWB">Teleport to Workbench</button><button class="wb-dev-btn danger" data-dev="resetDev">Reset Dev</button><button class="wb-dev-btn" data-dev="godMode">God Mode Toggle</button></div><div class="wb-dev-msg" id="devMsg"></div></div>';
-  
-  // Insert dev tab and panel before the close button
-  const closeBtn = menu.querySelector('.wb-close');
-  if(closeBtn){
-    closeBtn.insertAdjacentHTML('beforebegin', devTabHTML + devPanelHTML);
+  // Only create the dev menu DOM if it doesn't already exist
+  if(!document.getElementById('devTab')){
+    // Clear any previous dev action queue to prevent stacking
+    if(window._devActionQueue) window._devActionQueue.length = 0;
+    let devTabHTML = '<div class="wb-tabs"><button class="wb-tab ' + (devState.unlocked ? 'unlocked' : 'locked') + '" id="devTab"><span class="lock-ico">' + (devState.unlocked ? '🔓' : '🔒') + '</span><span style="font-size:9px;background:var(--accent);color:#000;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:800">DEV</span>Dev Menu</button></div>';
+    let devPanelHTML = '<div class="wb-panel" id="devPanel" style="display:none"><div class="wb-pin" id="pinPad" style="display:none"><div class="wb-pin-display" id="pinDisplay"></div><div class="wb-pin-grid"><button class="wb-pin-btn" data-pin="1">1</button><button class="wb-pin-btn" data-pin="2">2</button><button class="wb-pin-btn" data-pin="3">3</button><button class="wb-pin-btn" data-pin="4">4</button><button class="wb-pin-btn" data-pin="5">5</button><button class="wb-pin-btn" data-pin="6">6</button><button class="wb-pin-btn" data-pin="7">7</button><button class="wb-pin-btn" data-pin="8">8</button><button class="wb-pin-btn" data-pin="9">9</button><button class="wb-pin-btn" data-pin="back">⌫</button><button class="wb-pin-btn" data-pin="0">0</button><button class="wb-pin-btn" data-pin="submit">OK</button></div><div class="wb-pin-msg" id="pinMsg"></div></div><div class="wb-dev-grid" id="devBtns" style="display:none"><button class="wb-dev-btn" data-dev="allWeapons">Give All Weapons</button><button class="wb-dev-btn" data-dev="pistol">Give Pistol</button><button class="wb-dev-btn" data-dev="smg">Give SMG</button><button class="wb-dev-btn" data-dev="m4a1">Give M4</button><button class="wb-dev-btn" data-dev="awp">Give Sniper</button><button class="wb-dev-btn" data-dev="rpg">Give RPG-7</button><button class="wb-dev-btn" data-dev="maxAmmo">Max Ammo</button><button class="wb-dev-btn" data-dev="fullHealth">Full Health</button><button class="wb-dev-btn" data-dev="spawn5">Spawn 5 Enemies</button><button class="wb-dev-btn" data-dev="spawnBoss">Spawn Boss</button><button class="wb-dev-btn" data-dev="nextWave">Start Next Wave</button><button class="wb-dev-btn" data-dev="give1000">Give 1000 Credits</button><button class="wb-dev-btn" data-dev="resetWave">Reset Wave</button><button class="wb-dev-btn" data-dev="teleportWB">Teleport to Workbench</button><button class="wb-dev-btn danger" data-dev="resetDev">Reset Dev</button><button class="wb-dev-btn" data-dev="godMode">God Mode Toggle</button></div><div class="wb-dev-msg" id="devMsg"></div></div>';
+    
+    // Insert dev tab and panel before the close button (only on first creation)
+    const closeBtn = menu.querySelector('.wb-close');
+    if(closeBtn){
+      closeBtn.insertAdjacentHTML('beforebegin', devTabHTML + devPanelHTML);
+    }
   }
   
   // Dev Menu logic
   const devTab = document.getElementById('devTab');
-  const devPanel = document.getElementById('devPanel');
   const pinPad = document.getElementById('pinPad');
   const pinDisplay = document.getElementById('pinDisplay');
   const pinMsg = document.getElementById('pinMsg');
   const devBtns = document.getElementById('devBtns');
   const devMsg = document.getElementById('devMsg');
   
-  devTab.addEventListener('click', ()=>{
-    devPanel.style.display = 'block';
-    if(!devState.unlocked){
-      pinPad.style.display = 'block';
-      devBtns.style.display = 'none';
-      devState.pinInput = '';
-      pinDisplay.textContent = '';
-      pinMsg.textContent = '';
-      pinMsg.className = 'wb-pin-msg';
-    } else {
-      pinPad.style.display = 'none';
-      devBtns.style.display = 'grid';
-    }
-  });
-  
-  document.querySelectorAll('.wb-pin-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const val = btn.dataset.pin;
-      if(val === 'back'){
-        devState.pinInput = devState.pinInput.slice(0, -1);
-        pinDisplay.textContent = devState.pinInput;
-      } else if(val === 'submit'){
-        if(devState.pinInput === '1234'){
-          devState.unlocked = true;
-          devTab.classList.add('unlocked');
-          devTab.querySelector('.lock-ico').textContent = '🔓';
-          pinPad.style.display = 'none';
-          devBtns.style.display = 'grid';
-          pinMsg.textContent = 'Unlocked!';
-          pinMsg.className = 'wb-pin-msg ok';
-          setTimeout(()=>{ pinMsg.textContent = ''; }, 1500);
-        } else {
-          pinPad.classList.add('shake');
-          setTimeout(()=>pinPad.classList.remove('shake'), 400);
-          pinMsg.textContent = 'Wrong PIN';
-          pinMsg.className = 'wb-pin-msg err';
-          devState.pinInput = '';
-          pinDisplay.textContent = '';
-        }
-      } else {
-        devState.pinInput += val;
-        pinDisplay.textContent = devState.pinInput;
-      }
-    });
-  });
-  
-  document.querySelectorAll('.wb-dev-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const action = btn.dataset.dev;
-      devMsg.textContent = '';
-      devMsg.className = 'wb-dev-msg';
-      
-      if(action === 'allWeapons'){
-        ['pistol','smg','m4a1','awp','rpg'].forEach(w=>{
-          addWeapon(w);
-        });
-        devMsg.textContent = 'All weapons granted!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'pistol' || action === 'smg' || action === 'm4a1' || action === 'awp'){
-        addWeapon(action);
-        devMsg.textContent = action.toUpperCase() + ' granted!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'rpg'){
-        addWeapon('rpg');
-        // Ensure full mag and reasonable reserve
-        mags['rpg'] = 3;
-        reserves['rpg'] = Math.max(reserves['rpg'], 6);
-        // Switch to RPG immediately
-        switchWeapon('rpg');
-        devMsg.textContent = 'RPG-7 granted!';
-        devMsg.className = 'wb-dev-msg ok';
-        showToast('RPG-7 granted', 2000);
-      } else if(action === 'maxAmmo'){
-        ownedWeapons.forEach(w=>{
-          const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
-          mags[w] = cap;
-          reserves[w] = MAGS[w] * 10;
-        });
-        devMsg.textContent = 'Ammo maxed!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'fullHealth'){
-        state.health = getMaxHealth();
-        devMsg.textContent = 'Health restored!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'spawn5'){
-        for(let i=0;i<5;i++){
-          const angle = Math.random() * Math.PI * 2;
-          const dist = 15 + Math.random() * 10;
-          const x = Math.cos(angle) * dist;
-          const z = Math.sin(angle) * dist;
-          spawnZombie({x, z, type:'normal'});
-        }
-        devMsg.textContent = '5 enemies spawned!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'spawnBoss'){
-        if(!state.boss || !state.boss.alive){
-          spawnBoss(state.wave);
-          devMsg.textContent = 'Boss spawned!';
-          devMsg.className = 'wb-dev-msg ok';
-        } else {
-          devMsg.textContent = 'Boss already active';
-          devMsg.className = 'wb-dev-msg err';
-        }
-      } else if(action === 'nextWave'){
-        state.waveGap = 0;
-        startWave(state.wave + 1);
-        devMsg.textContent = 'Wave ' + (state.wave + 1) + ' started!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'give1000'){
-        state.points += 1000;
-        devMsg.textContent = '+1000 credits!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'resetWave'){
-        for(const z of zombies) scene.remove(z.group);
-        zombies.length = 0;
-        spawnQueue.length = 0;
-        if(state.boss) removeBoss();
-        state.waveGap = 3.0;
-        state.wave = Math.max(0, state.wave - 1);
-        devMsg.textContent = 'Wave reset!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'teleportWB'){
-        player.pos.set(0, 1.7, 0);
-        player.vel.set(0,0,0);
-        player.yaw = 0; player.pitch = 0;
-        camera.position.set(0, 1.7, 0);
-        devMsg.textContent = 'Teleported to workbench!';
-        devMsg.className = 'wb-dev-msg ok';
-      } else if(action === 'resetDev'){
-        devState.unlocked = false;
-        devTab.classList.remove('unlocked');
-        devTab.querySelector('.lock-ico').textContent = '🔒';
+  // Attach event listeners ONLY ONCE (guard against duplicate listeners)
+  if(!devTab._listenersAttached){
+    devTab._listenersAttached = true;
+    
+    devTab.addEventListener('click', ()=>{
+      devPanel.style.display = 'block';
+      if(!devState.unlocked){
         pinPad.style.display = 'block';
         devBtns.style.display = 'none';
         devState.pinInput = '';
         pinDisplay.textContent = '';
-        pinMsg.textContent = 'Dev menu locked';
+        pinMsg.textContent = '';
         pinMsg.className = 'wb-pin-msg';
-      } else if(action === 'godMode'){
-        state.godMode = !state.godMode;
-        btn.classList.toggle('on', state.godMode);
-        devMsg.textContent = 'God Mode ' + (state.godMode ? 'ON' : 'OFF');
-        devMsg.className = 'wb-dev-msg ok';
+      } else {
+        pinPad.style.display = 'none';
+        devBtns.style.display = 'grid';
       }
-      
-      updateHUD();
     });
-  });
+    
+    document.querySelectorAll('.wb-pin-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const val = btn.dataset.pin;
+        if(val === 'back'){
+          devState.pinInput = devState.pinInput.slice(0, -1);
+          pinDisplay.textContent = devState.pinInput;
+        } else if(val === 'submit'){
+          if(devState.pinInput === '1234'){
+            devState.unlocked = true;
+            devTab.classList.add('unlocked');
+            devTab.querySelector('.lock-ico').textContent = '🔓';
+            pinPad.style.display = 'none';
+            devBtns.style.display = 'grid';
+            pinMsg.textContent = 'Unlocked!';
+            pinMsg.className = 'wb-pin-msg ok';
+            setTimeout(()=>{ pinMsg.textContent = ''; }, 1500);
+          } else {
+            pinPad.classList.add('shake');
+            setTimeout(()=>pinPad.classList.remove('shake'), 400);
+            pinMsg.textContent = 'Wrong PIN';
+            pinMsg.className = 'wb-pin-msg err';
+            devState.pinInput = '';
+            pinDisplay.textContent = '';
+          }
+        } else {
+          devState.pinInput += val;
+          pinDisplay.textContent = devState.pinInput;
+        }
+      });
+    });
+    
+    document.querySelectorAll('.wb-dev-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        // Guard: each action fires exactly once per click
+        if(btn._alreadyApplied) return;
+        btn._alreadyApplied = true;
+        
+        const action = btn.dataset.dev;
+        devMsg.textContent = '';
+        devMsg.className = 'wb-dev-msg';
+        
+        if(action === 'allWeapons'){
+          // Clear any existing weapons to prevent duplicates
+          ownedWeapons.length = 0;
+          ['pistol','smg','m4a1','awp','rpg'].forEach(w=>{
+            addWeapon(w);
+          });
+          devMsg.textContent = 'All weapons granted!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'pistol' || action === 'smg' || action === 'm4a1' || action === 'awp'){
+          // Check if already owned to prevent duplicates
+          if(!isOwned(action)){
+            addWeapon(action);
+          }
+          devMsg.textContent = action.toUpperCase() + ' granted!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'rpg'){
+          // Check if already owned to prevent duplicates
+          if(!isOwned('rpg')){
+            addWeapon('rpg');
+          }
+          // Ensure full mag and reasonable reserve (set, not add)
+          mags['rpg'] = 3;
+          reserves['rpg'] = Math.max(reserves['rpg'], 6);
+          // Switch to RPG immediately
+          switchWeapon('rpg');
+          devMsg.textContent = 'RPG-7 granted!';
+          devMsg.className = 'wb-dev-msg ok';
+          showToast('RPG-7 granted', 2000);
+        } else if(action === 'maxAmmo'){
+          ownedWeapons.forEach(w=>{
+            const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
+            mags[w] = cap;
+            reserves[w] = MAGS[w] * 10;
+          });
+          devMsg.textContent = 'Ammo maxed!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'fullHealth'){
+          state.health = getMaxHealth();
+          devMsg.textContent = 'Health restored!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'spawn5'){
+          for(let i=0;i<5;i++){
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 15 + Math.random() * 10;
+            const x = Math.cos(angle) * dist;
+            const z = Math.sin(angle) * dist;
+            spawnZombie({x, z, type:'normal'});
+          }
+          devMsg.textContent = '5 enemies spawned!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'spawnBoss'){
+          if(!state.boss || !state.boss.alive){
+            spawnBoss(state.wave);
+            devMsg.textContent = 'Boss spawned!';
+            devMsg.className = 'wb-dev-msg ok';
+          } else {
+            devMsg.textContent = 'Boss already active';
+            devMsg.className = 'wb-dev-msg err';
+          }
+        } else if(action === 'nextWave'){
+          state.waveGap = 0;
+          startWave(state.wave + 1);
+          devMsg.textContent = 'Wave ' + (state.wave + 1) + ' started!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'give1000'){
+          state.points += 1000;
+          devMsg.textContent = '+1000 credits!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'resetWave'){
+          for(const z of zombies) scene.remove(z.group);
+          zombies.length = 0;
+          spawnQueue.length = 0;
+          if(state.boss) removeBoss();
+          state.waveGap = 3.0;
+          state.wave = Math.max(0, state.wave - 1);
+          devMsg.textContent = 'Wave reset!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'teleportWB'){
+          player.pos.set(0, 1.7, 0);
+          player.vel.set(0,0,0);
+          player.yaw = 0; player.pitch = 0;
+          camera.position.set(0, 1.7, 0);
+          devMsg.textContent = 'Teleported to workbench!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else if(action === 'resetDev'){
+          devState.unlocked = false;
+          devTab.classList.remove('unlocked');
+          devTab.querySelector('.lock-ico').textContent = '🔒';
+          pinPad.style.display = 'block';
+          devBtns.style.display = 'none';
+          devState.pinInput = '';
+          pinDisplay.textContent = '';
+          pinMsg.textContent = 'Dev menu locked';
+          pinMsg.className = 'wb-pin-msg';
+        } else if(action === 'godMode'){
+          state.godMode = !state.godMode;
+          btn.classList.toggle('on', state.godMode);
+          devMsg.textContent = 'God Mode ' + (state.godMode ? 'ON' : 'OFF');
+          devMsg.className = 'wb-dev-msg ok';
+        }
+        
+        updateHUD();
+        
+        // Reset the guard so the button can be clicked again
+        setTimeout(()=>{ btn._alreadyApplied = false; }, 100);
+      });
+    });
+  }
+  
+  // Ensure dev menu panel is not re-appended on subsequent opens
+  const _devPanel = document.getElementById('devPanel');
+  if(_devPanel && _devPanel.parentNode !== menu){
+    menu.appendChild(_devPanel);
+  }
   menu.querySelectorAll('.wb-row').forEach(r=>{
     r.addEventListener('click', ()=>{
       const key = r.dataset.key;
@@ -3820,6 +3850,9 @@ function resetGame(){
     else reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
   });
   
+  // Clear any pending dev actions to prevent stacking on wave reset
+  if(window._devActionQueue) window._devActionQueue.length = 0;
+  
   player.pos.set(0,1.7,0); player.vel.set(0,0,0);
   player.yaw=0; player.pitch=0; player.bob=0;
   player.grounded=true;
@@ -4511,6 +4544,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
