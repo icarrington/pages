@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795027690 -->
+<!-- page-version: 1795028008 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -138,7 +138,7 @@
   #waveCountdown.show{opacity:1}
   #waveCountdown .cd-label{font-size:clamp(14px,3vw,22px);letter-spacing:.25em;color:var(--dim);margin-bottom:8px;text-transform:uppercase}
   #waveCountdown .cd-num{font-size:clamp(48px,12vw,100px);color:#fff;text-shadow:0 0 20px rgba(200,255,77,.8),0 0 40px rgba(200,255,77,.4)}
-  #scopeCrosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;pointer-events:none;opacity:0;transition:opacity .1s ease;z-index:55}
+  #scopeCrosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;pointer-events:none;opacity:0;transition:opacity .1s ease;z-index:55;margin:0;padding:0}
   #scopeCrosshair.show{opacity:1}
   #scopeCrosshair::before,#scopeCrosshair::after{content:"";position:absolute;background:#ff2a1e;box-shadow:0 0 6px rgba(255,42,30,.8),0 0 2px rgba(0,0,0,.9)}
   #scopeCrosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
@@ -3923,6 +3923,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
