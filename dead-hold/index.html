@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795043600 -->
+<!-- page-version: 1795043758 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3262,10 +3262,10 @@ function rpgExplode(pos, firedByPlayer){
 
       // Knockback: strong vertical, soft radial
       const dirToPlayer = toPlayer.clone().normalize();
-      // Vertical impulse: 1.5x boosted
-      const verticalImpulse = 12.0 * 1.5 * falloff;
-      // Radial impulse: reduced
-      const radialImpulse = 3.0 * falloff;
+      // Vertical impulse: 1.5x boosted (10x for dramatic rocket-jump)
+      const verticalImpulse = 12.0 * 1.5 * 10 * falloff;
+      // Radial impulse: reduced (10x for dramatic rocket-jump)
+      const radialImpulse = 3.0 * 10 * falloff;
 
       // Apply vertical
       player.vel.y += verticalImpulse;
@@ -4622,6 +4622,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
