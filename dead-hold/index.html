@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795028320 -->
+<!-- page-version: 1795028531 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -132,8 +132,42 @@
   .wb-check{color:var(--health)}
   .wb-close{width:100%;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:12px;transition:color .12s,border-color .12s}
   .wb-close:hover{color:var(--accent);border-color:var(--accent)}
+
   #wbHint{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:6}
   #wbHint.show{opacity:1}
+  /* ---------- Dev Menu tab ---------- */
+  .wb-tabs{display:flex;gap:8px;margin-bottom:16px}
+  .wb-tab{flex:1;pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid var(--line);padding:10px 8px;transition:color .12s,border-color .12s,background .12s}
+  .wb-tab:hover{color:var(--accent);border-color:var(--accent)}
+  .wb-tab.active{color:var(--accent);border-color:var(--accent);background:rgba(200,255,77,.08)}
+  .wb-tab.locked{color:var(--dim)}
+  .wb-tab.locked.unlocked{color:var(--health);border-color:var(--health);background:rgba(47,143,77,.10)}
+  .wb-tab .lock-ico{margin-right:6px}
+  .wb-panel{display:none}
+  .wb-panel.active{display:block}
+  .wb-dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+  .wb-dev-btn{pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#eef2f3;background:#0e1317;border:1px solid var(--line);padding:12px 8px;transition:border-color .12s,background .12s,color .12s;text-align:center}
+  .wb-dev-btn:hover{border-color:var(--accent);background:rgba(200,255,77,.06);color:var(--accent)}
+  .wb-dev-btn.on{border-color:var(--health);color:var(--health);background:rgba(47,143,77,.12)}
+  .wb-dev-btn.danger:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,77,77,.08)}
+  .wb-dev-msg{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-align:center;margin:10px 0 4px;min-height:16px}
+  .wb-dev-msg.ok{color:var(--health)}
+  .wb-dev-msg.err{color:var(--danger)}
+  /* PIN pad */
+  .wb-pin{margin-bottom:16px}
+  .wb-pin-display{font-family:var(--mono);font-size:28px;font-weight:800;letter-spacing:.4em;text-align:center;color:#eef2f3;background:#0e1317;border:1px solid var(--line);padding:14px;margin-bottom:12px;min-height:16px}
+  .wb-pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .wb-pin-btn{pointer-events:auto;cursor:pointer;font-family:var(--mono);font-size:18px;font-weight:800;color:#eef2f3;background:#0e1317;border:1px solid var(--line);padding:14px 0;transition:border-color .12s,background .12s}
+  .wb-pin-btn:hover{border-color:var(--accent);background:rgba(200,255,77,.06)}
+  .wb-pin-btn:active{background:rgba(200,255,77,.14)}
+  .wb-pin-msg{text-align:center;font-family:var(--mono);font-size:12px;letter-spacing:.1em;min-height:16px;margin-bottom:8px}
+  .wb-pin-msg.err{color:var(--danger)}
+  .wb-pin-msg.ok{color:var(--health)}
+  .wb-pin.shake{animation:pinShake .4s ease}
+  @keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  @media (max-width:480px){
+    .wb-dev-grid{grid-template-columns:1fr}
+  }
   #waveCountdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--mono);font-size:clamp(36px,8vw,72px);font-weight:800;letter-spacing:.12em;color:var(--accent);text-shadow:0 0 30px rgba(200,255,77,.6),0 0 60px rgba(200,255,77,.3);pointer-events:none;opacity:0;transition:opacity .3s ease;z-index:8;text-align:center;line-height:1.2}
   #waveCountdown.show{opacity:1}
   #waveCountdown .cd-label{font-size:clamp(14px,3vw,22px);letter-spacing:.25em;color:var(--dim);margin-bottom:8px;text-transform:uppercase}
@@ -756,6 +790,147 @@ function wbOpenMenu(){
   menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
   menu.querySelector('.wb-rows').innerHTML = rows + statRowsHTML;
+  
+  // Dev Menu tab and panel
+  let devTabHTML = '<div class="wb-tabs"><button class="wb-tab locked" id="devTab"><span class="lock-ico">🔒</span>Dev Menu</button></div>';
+  let devPanelHTML = '<div class="wb-panel" id="devPanel"><div class="wb-pin" id="pinPad"><div class="wb-pin-display" id="pinDisplay"></div><div class="wb-pin-grid"><button class="wb-pin-btn" data-pin="1">1</button><button class="wb-pin-btn" data-pin="2">2</button><button class="wb-pin-btn" data-pin="3">3</button><button class="wb-pin-btn" data-pin="4">4</button><button class="wb-pin-btn" data-pin="5">5</button><button class="wb-pin-btn" data-pin="6">6</button><button class="wb-pin-btn" data-pin="7">7</button><button class="wb-pin-btn" data-pin="8">8</button><button class="wb-pin-btn" data-pin="9">9</button><button class="wb-pin-btn" data-pin="back">⌫</button><button class="wb-pin-btn" data-pin="0">0</button><button class="wb-pin-btn" data-pin="submit">OK</button></div><div class="wb-pin-msg" id="pinMsg"></div></div><div class="wb-dev-grid" id="devBtns" style="display:none"><button class="wb-dev-btn" data-dev="allWeapons">Give All Weapons</button><button class="wb-dev-btn" data-dev="pistol">Give Pistol</button><button class="wb-dev-btn" data-dev="smg">Give SMG</button><button class="wb-dev-btn" data-dev="m4a1">Give M4</button><button class="wb-dev-btn" data-dev="awp">Give Sniper</button><button class="wb-dev-btn" data-dev="rpg">Give RPG</button><button class="wb-dev-btn" data-dev="maxAmmo">Max Ammo</button><button class="wb-dev-btn" data-dev="fullHealth">Full Health</button><button class="wb-dev-btn" data-dev="spawn5">Spawn 5 Enemies</button><button class="wb-dev-btn" data-dev="spawnBoss">Spawn Boss</button><button class="wb-dev-btn" data-dev="nextWave">Start Next Wave</button><button class="wb-dev-btn" data-dev="give500">Give 500 Credits</button><button class="wb-dev-btn danger" data-dev="resetDev">Reset Dev</button><button class="wb-dev-btn" data-dev="godMode">God Mode Toggle</button></div><div class="wb-dev-msg" id="devMsg"></div></div>';
+  
+  // Insert dev tab and panel before the close button
+  const closeBtn = menu.querySelector('.wb-close');
+  if(closeBtn){
+    closeBtn.insertAdjacentHTML('beforebegin', devTabHTML + devPanelHTML);
+  }
+  
+  // Dev Menu logic
+  let devUnlocked = false;
+  let pinInput = '';
+  const devTab = document.getElementById('devTab');
+  const devPanel = document.getElementById('devPanel');
+  const pinPad = document.getElementById('pinPad');
+  const pinDisplay = document.getElementById('pinDisplay');
+  const pinMsg = document.getElementById('pinMsg');
+  const devBtns = document.getElementById('devBtns');
+  const devMsg = document.getElementById('devMsg');
+  
+  devTab.addEventListener('click', ()=>{
+    if(!devUnlocked){
+      pinPad.style.display = 'block';
+      devBtns.style.display = 'none';
+      pinInput = '';
+      pinDisplay.textContent = '';
+      pinMsg.textContent = '';
+      pinMsg.className = 'wb-pin-msg';
+    } else {
+      pinPad.style.display = 'none';
+      devBtns.style.display = 'grid';
+    }
+  });
+  
+  document.querySelectorAll('.wb-pin-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.dataset.pin;
+      if(val === 'back'){
+        pinInput = pinInput.slice(0, -1);
+        pinDisplay.textContent = pinInput;
+      } else if(val === 'submit'){
+        if(pinInput === '1234'){
+          devUnlocked = true;
+          devTab.classList.add('unlocked');
+          devTab.querySelector('.lock-ico').textContent = '🔓';
+          pinPad.style.display = 'none';
+          devBtns.style.display = 'grid';
+          pinMsg.textContent = 'Unlocked!';
+          pinMsg.className = 'wb-pin-msg ok';
+          setTimeout(()=>{ pinMsg.textContent = ''; }, 1500);
+        } else {
+          pinPad.classList.add('shake');
+          setTimeout(()=>pinPad.classList.remove('shake'), 400);
+          pinMsg.textContent = 'Wrong PIN';
+          pinMsg.className = 'wb-pin-msg err';
+          pinInput = '';
+          pinDisplay.textContent = '';
+        }
+      } else {
+        pinInput += val;
+        pinDisplay.textContent = pinInput;
+      }
+    });
+  });
+  
+  document.querySelectorAll('.wb-dev-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const action = btn.dataset.dev;
+      devMsg.textContent = '';
+      devMsg.className = 'wb-dev-msg';
+      
+      if(action === 'allWeapons'){
+        ['pistol','smg','m4a1','awp','rpg'].forEach(w=>addWeapon(w));
+        devMsg.textContent = 'All weapons granted!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'pistol' || action === 'smg' || action === 'm4a1' || action === 'awp' || action === 'rpg'){
+        addWeapon(action);
+        devMsg.textContent = action.toUpperCase() + ' granted!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'maxAmmo'){
+        ownedWeapons.forEach(w=>{
+          const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
+          mags[w] = cap;
+          reserves[w] = MAGS[w] * 10;
+        });
+        devMsg.textContent = 'Ammo maxed!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'fullHealth'){
+        state.health = getMaxHealth();
+        devMsg.textContent = 'Health restored!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'spawn5'){
+        for(let i=0;i<5;i++){
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 15 + Math.random() * 10;
+          const x = Math.cos(angle) * dist;
+          const z = Math.sin(angle) * dist;
+          spawnZombie({x, z, type:'normal'});
+        }
+        devMsg.textContent = '5 enemies spawned!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'spawnBoss'){
+        if(!state.boss || !state.boss.alive){
+          spawnBoss(state.wave);
+          devMsg.textContent = 'Boss spawned!';
+          devMsg.className = 'wb-dev-msg ok';
+        } else {
+          devMsg.textContent = 'Boss already active';
+          devMsg.className = 'wb-dev-msg err';
+        }
+      } else if(action === 'nextWave'){
+        state.waveGap = 0;
+        startWave(state.wave + 1);
+        devMsg.textContent = 'Wave ' + (state.wave + 1) + ' started!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'give500'){
+        state.points += 500;
+        devMsg.textContent = '+500 credits!';
+        devMsg.className = 'wb-dev-msg ok';
+      } else if(action === 'resetDev'){
+        devUnlocked = false;
+        devTab.classList.remove('unlocked');
+        devTab.querySelector('.lock-ico').textContent = '🔒';
+        pinPad.style.display = 'block';
+        devBtns.style.display = 'none';
+        pinInput = '';
+        pinDisplay.textContent = '';
+        pinMsg.textContent = 'Dev menu locked';
+        pinMsg.className = 'wb-pin-msg';
+      } else if(action === 'godMode'){
+        state.godMode = !state.godMode;
+        btn.classList.toggle('on', state.godMode);
+        devMsg.textContent = 'God Mode ' + (state.godMode ? 'ON' : 'OFF');
+        devMsg.className = 'wb-dev-msg ok';
+      }
+      
+      updateHUD();
+    });
+  });
   menu.querySelectorAll('.wb-row').forEach(r=>{
     r.addEventListener('click', ()=>{
       const key = r.dataset.key;
@@ -4188,6 +4363,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
