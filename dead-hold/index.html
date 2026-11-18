@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794966539 -->
+<!-- page-version: 1794966821 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -845,9 +845,9 @@ function buildPistol(){
   const fsWingR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.018,0.010), gunDark);
   fsWingR.position.set(0.012,0.092,-0.16); g.add(fsWingR);
 
-  // === RED DOT SIGHT HOUSING (mounted on top of the slide, at the REAR IRON SIGHT position) ===
-  // The housing sits at the REAR of the slide, where the rear iron sight block is (z=0.12).
-  // Positioned to sit on top of the slide (y=0.100).
+  // === RED DOT SIGHT #1 (slide-mounted, at the REAR IRON SIGHT position z=0.12) ===
+  // Stacked ABOVE the rear iron sight ears (which sit at y≈0.088-0.100).
+  // Housing base sits on top of the slide (y=0.075) and rises above the rear sight.
   const rdHousing = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.028,0.045), gunDark);
   rdHousing.position.set(0,0.100,0.12); g.add(rdHousing);
   // Housing top cap (slightly lighter)
@@ -860,6 +860,22 @@ function buildPistol(){
   const rdRing = new THREE.Mesh(new THREE.TorusGeometry(0.008,0.002,8,16), gunMetal);
   rdRing.rotation.x = Math.PI/2;
   rdRing.position.set(0,0.108,0.12); g.add(rdRing);
+
+  // === RED DOT SIGHT #2 (barrel-mounted, also at the REAR IRON SIGHT position z=0.12) ===
+  // Offset to the RIGHT side (x=+0.025) so it sits side-by-side with sight #1.
+  // Slightly lower than sight #1 to read as a separate barrel-mounted optic.
+  const rd2Housing = new THREE.Mesh(new THREE.BoxGeometry(0.030,0.024,0.040), gunDark);
+  rd2Housing.position.set(0.025,0.092,0.12); g.add(rd2Housing);
+  // Housing top cap
+  const rd2Cap = new THREE.Mesh(new THREE.BoxGeometry(0.028,0.004,0.038), gunMetal);
+  rd2Cap.position.set(0.025,0.106,0.12); g.add(rd2Cap);
+  // Red dot emitter (slightly smaller than sight #1)
+  const rd2Emitter = new THREE.Mesh(new THREE.SphereGeometry(0.0035,8,8), new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:1.0, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false}));
+  rd2Emitter.position.set(0.025,0.100,0.12); g.add(rd2Emitter);
+  // Small aperture ring
+  const rd2Ring = new THREE.Mesh(new THREE.TorusGeometry(0.007,0.002,8,16), gunMetal);
+  rd2Ring.rotation.x = Math.PI/2;
+  rd2Ring.position.set(0.025,0.100,0.12); g.add(rd2Ring);
 
   // === REAR IRON SIGHT: two ears with a center notch gap ===
   // Left ear
@@ -3483,6 +3499,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
