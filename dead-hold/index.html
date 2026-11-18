@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795028008 -->
+<!-- page-version: 1795028320 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1697,6 +1697,35 @@ function buildMinigun(){
   return g;
 }
 
+function buildRPG(){
+  const g = new THREE.Group();
+  // Long dark tube (main body)
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.9,16), gunDark);
+  tube.rotation.x = Math.PI/2; tube.position.set(0,0.02,0); g.add(tube);
+  // Muzzle ring (front)
+  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,0.05,16), gunMetal);
+  muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.02,-0.46); g.add(muzzle);
+  // Rocket visible in the tube (slightly smaller, lighter, near front)
+  const rocket = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.55,12), gunLight);
+  rocket.rotation.x = Math.PI/2; rocket.position.set(0,0.02,-0.12); g.add(rocket);
+  const rocketTip = new THREE.Mesh(new THREE.ConeGeometry(0.045,0.12,12), gunMetal);
+  rocketTip.rotation.x = Math.PI/2; rocketTip.position.set(0,0.02,-0.44); g.add(rocketTip);
+  // Wooden stock at the back
+  const stock = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.12,0.28), gunWood);
+  stock.position.set(0,-0.02,0.32); g.add(stock);
+  const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.13,0.04), gunDark);
+  stockPad.position.set(0,-0.02,0.46); g.add(stockPad);
+  // Grip (angled)
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.16,0.09), gunDark);
+  grip.position.set(0,-0.13,0.16); grip.rotation.x = 0.3; g.add(grip);
+  // Trigger guard
+  const tg = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.02,0.03), gunDark);
+  tg.position.set(0,-0.07,0.05); g.add(tg);
+  // Side rail / strap detail
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.5), gunMetal);
+  rail.position.set(0,0.075,0); g.add(rail);
+  return g;
+}
 const weaponModels = {
   pistol: buildPistol(),
   smg: buildSMG(),
@@ -1707,7 +1736,8 @@ const weaponModels = {
   m4a1: buildM4A1(),
   awp: buildAWP(),
   deagle: buildDeagle(),
-  minigun: buildMinigun()
+  minigun: buildMinigun(),
+  rpg: buildRPG()
 };
 
 // Scale weapon models for first-person view
@@ -1915,9 +1945,9 @@ const state = {
 
 /* finite magazine sizes; reserve is finite (10 full mags per weapon) */
 const MAGS = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200 };
-const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun:1.2, uzi:1.2, m4a1:1.5, awp:2.0, deagle:1.3, minigun:3.0 };
-const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200 };
-const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20, uzi:320, m4a1:300, awp:50, deagle:60, minigun:2000 };
+const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun:1.2, uzi:1.2, m4a1:1.5, awp:2.0, deagle:1.3, minigun:3.0, rpg:3.0 };
+const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200, rpg:3 };
+const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20, uzi:320, m4a1:300, awp:50, deagle:60, minigun:2000, rpg:12 };
 function refillMag(w){
   const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
   const need = cap - mags[w];
@@ -2452,12 +2482,19 @@ function addWeapon(w){
   }
 }
 function weaponList(){
-  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+  const list = ['pistol','smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg'];
   if(state.hasDoubleShotgun) list.push('doubleShotgun');
   return list.filter(w => isOwned(w) && (mags[w] > 0 || reserves[w] > 0));
 }
-/* ---- Weapon drop pool (the 8 non-pistol weapons) ---- */
-const DROP_POOL = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun'];
+
+// Ensure RPG is available from the start
+function initRPG(){
+  if(!isOwned('rpg')){
+    addWeapon('rpg');
+  }
+}
+/* ---- Weapon drop pool (the 9 non-pistol weapons) ---- */
+const DROP_POOL = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg'];
 const weaponDrops = [];
 const _dropMat = new THREE.MeshLambertMaterial({color:0x1a2a1a, emissive:0x66ff33, emissiveIntensity:0.6});
 function spawnWeaponDrop(x, z, w){
@@ -2638,6 +2675,17 @@ function shoot(){
     return;
   }
 
+  // RPG: fire a rocket projectile
+  if(activeWeapon === 'rpg'){
+    mags[activeWeapon]--;
+    state.shotsFired++;
+    state.recoil = 2.0; state.muzzleT = 0.1;
+    playRPGShot();
+    spawnRPGRocket();
+    updateHUD();
+    return;
+  }
+
   if(state.hasDoubleShotgun && activeWeapon === 'doubleShotgun'){
     if(mags[activeWeapon] <= 0){
       if(reserves[activeWeapon] <= 0){
@@ -2742,6 +2790,217 @@ function shoot(){
   if(state.boss && state.boss.alive) updateBossBar(true);
   updateHUD();
   return;
+}
+
+/* ============================ RPG ROCKET SYSTEM ============================ */
+const rpgRockets = [];
+const rpgRocketGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.35, 10);
+const rpgRocketMat = new THREE.MeshLambertMaterial({color: 0x8899aa, emissive: 0x223344, emissiveIntensity: 0.3});
+const rpgRocketTipGeo = new THREE.ConeGeometry(0.06, 0.15, 10);
+const rpgRocketTipMat = new THREE.MeshLambertMaterial({color: 0xaabbcc});
+const rpgExhaustGeo = new THREE.SphereGeometry(0.08, 8, 8);
+const rpgExhaustMat = new THREE.MeshBasicMaterial({color: 0xffaa33, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false});
+const rpgExplosionGeo = new THREE.SphereGeometry(1, 16, 16);
+const rpgExplosionMat = new THREE.MeshBasicMaterial({color: 0xffcc44, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false});
+const rpgExplosionGlowGeo = new THREE.SphereGeometry(1.5, 16, 16);
+const rpgExplosionGlowMat = new THREE.MeshBasicMaterial({color: 0xff6611, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false});
+
+function spawnRPGRocket(){
+  const origin = new THREE.Vector3(0, 0, 0).applyMatrix4(camera.matrixWorld);
+  const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+
+  const rocket = new THREE.Group();
+  const body = new THREE.Mesh(rpgRocketGeo, rpgRocketMat);
+  body.rotation.x = Math.PI / 2;
+  rocket.add(body);
+  const tip = new THREE.Mesh(rpgRocketTipGeo, rpgRocketTipMat);
+  tip.rotation.x = Math.PI / 2;
+  tip.position.z = -0.25;
+  rocket.add(tip);
+  const exhaust = new THREE.Mesh(rpgExhaustGeo, rpgExhaustMat);
+  exhaust.position.z = 0.25;
+  rocket.add(exhaust);
+
+  rocket.position.copy(origin).addScaledVector(dir, 0.5);
+  scene.add(rocket);
+
+  rpgRockets.push({
+    group: rocket,
+    pos: rocket.position.clone(),
+    vel: dir.clone().multiplyScalar(25),
+    alive: true,
+    age: 0
+  });
+}
+
+function playRPGShot(){
+  ensureAudio();
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+  // Whoosh: filtered noise burst
+  const bufLen = audioCtx.sampleRate * 0.4;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.setValueAtTime(800, t);
+  filt.frequency.exponentialRampToValueAtTime(200, t + 0.4);
+  filt.Q.value = 2;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.35, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  src.connect(filt); filt.connect(gain); gain.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 0.4);
+}
+
+function playRPGExplosion(){
+  ensureAudio();
+  if(!audioCtx) return;
+  const t = audioCtx.currentTime;
+  // Low boom
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(80, t);
+  osc.frequency.exponentialRampToValueAtTime(30, t + 0.6);
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.6, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(t); osc.stop(t + 0.8);
+  // Noise crack
+  const bufLen = audioCtx.sampleRate * 0.3;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'lowpass';
+  filt.frequency.value = 600;
+  const gain2 = audioCtx.createGain();
+  gain2.gain.setValueAtTime(0.4, t);
+  gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  src.connect(filt); filt.connect(gain2); gain2.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 0.3);
+}
+
+function rpgExplode(pos){
+  playRPGExplosion();
+  // Screen shake
+  state.recoil = Math.max(state.recoil, 3.0);
+  // Explosion visual
+  const exp = new THREE.Mesh(rpgExplosionGeo, rpgExplosionMat.clone());
+  exp.position.copy(pos);
+  scene.add(exp);
+  const glow = new THREE.Mesh(rpgExplosionGlowGeo, rpgExplosionGlowMat.clone());
+  glow.position.copy(pos);
+  scene.add(glow);
+  const light = new THREE.PointLight(0xffaa33, 3, 12);
+  light.position.copy(pos);
+  scene.add(light);
+  const expObj = {mesh: exp, glow, light, age: 0, maxAge: 0.5};
+  rpgExplosions.push(expObj);
+
+  // Area damage to zombies
+  const RADIUS = 4;
+  const BASE_DMG = 150;
+  for(const z of zombies){
+    if(!z.alive) continue;
+    const dz = z.group.position.clone().sub(pos);
+    const dist = dz.length();
+    if(dist < RADIUS){
+      const falloff = 1 - (dist / RADIUS) * 0.5; // 1.0 at center, 0.5 at edge
+      const dmg = BASE_DMG * falloff * getDamageMultiplier();
+      z.hp -= dmg;
+      z.flash = 0.15;
+      showHitmarker(false);
+      playHit();
+      if(z.hp <= 0) killZombie(z, false);
+    }
+  }
+  // Boss damage
+  if(state.boss && state.boss.alive){
+    const db = state.boss.group.position.clone().sub(pos);
+    const dist = db.length();
+    if(dist < RADIUS){
+      const falloff = 1 - (dist / RADIUS) * 0.5;
+      const dmg = BASE_DMG * falloff * getDamageMultiplier();
+      state.boss.hp -= dmg;
+      state.boss.flash = 0.15;
+      updateBossBar(true);
+      if(state.boss.hp <= 0) killZombie(state.boss, false);
+    }
+  }
+}
+
+const rpgExplosions = [];
+
+function updateRPGRockets(dt){
+  // Update rockets
+  for(let i = rpgRockets.length - 1; i >= 0; i--){
+    const r = rpgRockets[i];
+    if(!r.alive) continue;
+    r.age += dt;
+    r.pos.addScaledVector(r.vel, dt);
+    r.group.position.copy(r.pos);
+
+    // Check collision with zombies
+    let hit = false;
+    for(const z of zombies){
+      if(!z.alive) continue;
+      const d = r.pos.distanceTo(z.group.position);
+      if(d < 0.8){
+        rpgExplode(r.pos.clone());
+        hit = true;
+        break;
+      }
+    }
+    // Check collision with boss
+    if(!hit && state.boss && state.boss.alive){
+      const d = r.pos.distanceTo(state.boss.group.position);
+      if(d < 1.2){
+        rpgExplode(r.pos.clone());
+        hit = true;
+      }
+    }
+    // Check ground / world bounds
+    if(!hit){
+      if(r.pos.y < 0.1 || Math.abs(r.pos.x) > 50 || Math.abs(r.pos.z) > 50 || r.age > 5){
+        rpgExplode(r.pos.clone());
+        hit = true;
+      }
+    }
+    if(hit){
+      scene.remove(r.group);
+      rpgRockets.splice(i, 1);
+    }
+  }
+  // Update explosions
+  for(let i = rpgExplosions.length - 1; i >= 0; i--){
+    const e = rpgExplosions[i];
+    e.age += dt;
+    const t = e.age / e.maxAge;
+    if(t >= 1){
+      scene.remove(e.mesh);
+      scene.remove(e.glow);
+      scene.remove(e.light);
+      e.mesh.geometry.dispose();
+      e.mesh.material.dispose();
+      e.glow.geometry.dispose();
+      e.glow.material.dispose();
+      rpgExplosions.splice(i, 1);
+      continue;
+    }
+    const scale = 1 + t * 3;
+    e.mesh.scale.setScalar(scale);
+    e.glow.scale.setScalar(scale * 1.2);
+    e.mesh.material.opacity = 0.9 * (1 - t);
+    e.glow.material.opacity = 0.5 * (1 - t);
+    e.light.intensity = 3 * (1 - t);
+  }
 }
 
 function _unusedShootTail(){
@@ -3814,6 +4073,9 @@ function loop(){
   /* ---- weapon drops (pickup / bounce) ---- */
   updateWeaponDrops(dt);
 
+  /* ---- RPG rockets & explosions ---- */
+  updateRPGRockets(dt);
+
   /* ---- death particles ---- */
   updateParticles(dt);
 
@@ -3904,6 +4166,9 @@ function loop(){
     cdEl.classList.remove('show');
   }
 
+  /* ---- Update RPG rockets ---- */
+  updateRPGRockets(dt);
+
   renderer.render(scene, camera);
 }
 
@@ -3923,6 +4188,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
