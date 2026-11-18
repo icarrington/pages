@@ -2258,7 +2258,7 @@ function updateRedDot(){
 }
 
 /* ---- ADS (Aim Down Sights) state ---- */
-const ADS_FOV = 47;
+const ADS_FOV = 60;
 const ADS_SENS = 0.5;
 const ADS_SPEED = 0.6;
 let adsActive = false;
@@ -2276,7 +2276,7 @@ function isSprinting(){
 const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
-const adsPos = new THREE.Vector3(0,-0.16,-0.10); // lowered (y) so the weapon/iron sights/red dot sit lower in the FOV and don't float high on screen during ADS
+const adsPos = new THREE.Vector3(0,-0.22,-0.10); // lowered (y) so the weapon/iron sights/red dot sit lower in the FOV and don't float high on screen during ADS
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
@@ -3419,6 +3419,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
