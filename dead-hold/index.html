@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795043140 -->
+<!-- page-version: 1795043334 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3099,7 +3099,8 @@ function spawnRPGRocket(){
     pos: rocket.position.clone(),
     vel: dir.clone().multiplyScalar(25),
     alive: true,
-    age: 0
+    age: 0,
+    firedByPlayer: true
   });
 }
 
@@ -3157,7 +3158,7 @@ function playRPGExplosion(){
   src.start(t); src.stop(t + 0.3);
 }
 
-function rpgExplode(pos){
+function rpgExplode(pos, firedByPlayer){
   playRPGExplosion();
   // Screen shake
   state.recoil = Math.max(state.recoil, 3.0);
@@ -3204,6 +3205,35 @@ function rpgExplode(pos){
       if(state.boss.hp <= 0) killZombie(state.boss, false);
     }
   }
+
+  // Player self-damage and knockback (rocket-jump friendly)
+  if(firedByPlayer){
+    const playerPos = player.pos;
+    const toPlayer = playerPos.clone().sub(pos);
+    const distToPlayer = toPlayer.length();
+    if(distToPlayer < RADIUS && distToPlayer > 0.01){
+      const falloff = 1 - (distToPlayer / RADIUS) * 0.5;
+      // Self-damage: 40% of normal
+      const selfDmg = BASE_DMG * falloff * 0.4;
+      damagePlayer(selfDmg);
+
+      // Knockback: strong vertical, soft radial
+      const dirToPlayer = toPlayer.clone().normalize();
+      // Vertical impulse: 1.5x boosted
+      const verticalImpulse = 12.0 * 1.5 * falloff;
+      // Radial impulse: reduced
+      const radialImpulse = 3.0 * falloff;
+
+      // Apply vertical
+      player.vel.y += verticalImpulse;
+      player.grounded = false;
+
+      // Apply radial (horizontal only)
+      const radialDir = new THREE.Vector3(dirToPlayer.x, 0, dirToPlayer.z).normalize();
+      player.vel.x += radialDir.x * radialImpulse;
+      player.vel.z += radialDir.z * radialImpulse;
+    }
+  }
 }
 
 const rpgExplosions = [];
@@ -3223,7 +3253,7 @@ function updateRPGRockets(dt){
       if(!z.alive) continue;
       const d = r.pos.distanceTo(z.group.position);
       if(d < 0.8){
-        rpgExplode(r.pos.clone());
+        rpgExplode(r.pos.clone(), r.firedByPlayer);
         hit = true;
         break;
       }
@@ -3232,14 +3262,14 @@ function updateRPGRockets(dt){
     if(!hit && state.boss && state.boss.alive){
       const d = r.pos.distanceTo(state.boss.group.position);
       if(d < 1.2){
-        rpgExplode(r.pos.clone());
+        rpgExplode(r.pos.clone(), r.firedByPlayer);
         hit = true;
       }
     }
     // Check ground / world bounds
     if(!hit){
       if(r.pos.y < 0.1 || Math.abs(r.pos.x) > 50 || Math.abs(r.pos.z) > 50 || r.age > 5){
-        rpgExplode(r.pos.clone());
+        rpgExplode(r.pos.clone(), r.firedByPlayer);
         hit = true;
       }
     }
@@ -4544,6 +4574,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
