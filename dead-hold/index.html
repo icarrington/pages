@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795028980 -->
+<!-- page-version: 1795041069 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -809,8 +809,11 @@ function wbOpenMenu(){
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
   menu.querySelector('.wb-rows').innerHTML = rows + statRowsHTML;
   
-  // Dev Menu tab and panel
-  let devTabHTML = '<div class="wb-tabs"><button class="wb-tab locked" id="devTab"><span class="lock-ico">🔒</span><span style="font-size:9px;background:var(--accent);color:#000;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:800">DEV</span>Dev Menu</button></div>';
+  // Dev Menu tab and panel - use a persistent state object to avoid stacking
+  if(!window._devMenuState) window._devMenuState = { unlocked: false, pinInput: '' };
+  const devState = window._devMenuState;
+  
+  let devTabHTML = '<div class="wb-tabs"><button class="wb-tab ' + (devState.unlocked ? 'unlocked' : 'locked') + '" id="devTab"><span class="lock-ico">' + (devState.unlocked ? '🔓' : '🔒') + '</span><span style="font-size:9px;background:var(--accent);color:#000;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:800">DEV</span>Dev Menu</button></div>';
   let devPanelHTML = '<div class="wb-panel" id="devPanel" style="display:none"><div class="wb-pin" id="pinPad" style="display:none"><div class="wb-pin-display" id="pinDisplay"></div><div class="wb-pin-grid"><button class="wb-pin-btn" data-pin="1">1</button><button class="wb-pin-btn" data-pin="2">2</button><button class="wb-pin-btn" data-pin="3">3</button><button class="wb-pin-btn" data-pin="4">4</button><button class="wb-pin-btn" data-pin="5">5</button><button class="wb-pin-btn" data-pin="6">6</button><button class="wb-pin-btn" data-pin="7">7</button><button class="wb-pin-btn" data-pin="8">8</button><button class="wb-pin-btn" data-pin="9">9</button><button class="wb-pin-btn" data-pin="back">⌫</button><button class="wb-pin-btn" data-pin="0">0</button><button class="wb-pin-btn" data-pin="submit">OK</button></div><div class="wb-pin-msg" id="pinMsg"></div></div><div class="wb-dev-grid" id="devBtns" style="display:none"><button class="wb-dev-btn" data-dev="allWeapons">Give All Weapons</button><button class="wb-dev-btn" data-dev="pistol">Give Pistol</button><button class="wb-dev-btn" data-dev="smg">Give SMG</button><button class="wb-dev-btn" data-dev="m4a1">Give M4</button><button class="wb-dev-btn" data-dev="awp">Give Sniper</button><button class="wb-dev-btn" data-dev="rpg">Give RPG</button><button class="wb-dev-btn" data-dev="maxAmmo">Max Ammo</button><button class="wb-dev-btn" data-dev="fullHealth">Full Health</button><button class="wb-dev-btn" data-dev="spawn5">Spawn 5 Enemies</button><button class="wb-dev-btn" data-dev="spawnBoss">Spawn Boss</button><button class="wb-dev-btn" data-dev="nextWave">Start Next Wave</button><button class="wb-dev-btn" data-dev="give1000">Give 1000 Credits</button><button class="wb-dev-btn" data-dev="resetWave">Reset Wave</button><button class="wb-dev-btn" data-dev="teleportWB">Teleport to Workbench</button><button class="wb-dev-btn danger" data-dev="resetDev">Reset Dev</button><button class="wb-dev-btn" data-dev="godMode">God Mode Toggle</button></div><div class="wb-dev-msg" id="devMsg"></div></div>';
   
   // Insert dev tab and panel before the close button
@@ -820,8 +823,6 @@ function wbOpenMenu(){
   }
   
   // Dev Menu logic
-  let devUnlocked = false;
-  let pinInput = '';
   const devTab = document.getElementById('devTab');
   const devPanel = document.getElementById('devPanel');
   const pinPad = document.getElementById('pinPad');
@@ -831,13 +832,11 @@ function wbOpenMenu(){
   const devMsg = document.getElementById('devMsg');
   
   devTab.addEventListener('click', ()=>{
-    console.log('[DevMenu] Tab clicked, unlocked:', devUnlocked);
-    // Always show the panel
     devPanel.style.display = 'block';
-    if(!devUnlocked){
+    if(!devState.unlocked){
       pinPad.style.display = 'block';
       devBtns.style.display = 'none';
-      pinInput = '';
+      devState.pinInput = '';
       pinDisplay.textContent = '';
       pinMsg.textContent = '';
       pinMsg.className = 'wb-pin-msg';
@@ -851,31 +850,29 @@ function wbOpenMenu(){
     btn.addEventListener('click', ()=>{
       const val = btn.dataset.pin;
       if(val === 'back'){
-        pinInput = pinInput.slice(0, -1);
-        pinDisplay.textContent = pinInput;
+        devState.pinInput = devState.pinInput.slice(0, -1);
+        pinDisplay.textContent = devState.pinInput;
       } else if(val === 'submit'){
-        if(pinInput === '1234'){
-          devUnlocked = true;
+        if(devState.pinInput === '1234'){
+          devState.unlocked = true;
           devTab.classList.add('unlocked');
           devTab.querySelector('.lock-ico').textContent = '🔓';
-          devPanel.style.display = 'block';
           pinPad.style.display = 'none';
           devBtns.style.display = 'grid';
           pinMsg.textContent = 'Unlocked!';
           pinMsg.className = 'wb-pin-msg ok';
-          console.log('[DevMenu] Unlocked successfully');
           setTimeout(()=>{ pinMsg.textContent = ''; }, 1500);
         } else {
           pinPad.classList.add('shake');
           setTimeout(()=>pinPad.classList.remove('shake'), 400);
           pinMsg.textContent = 'Wrong PIN';
           pinMsg.className = 'wb-pin-msg err';
-          pinInput = '';
+          devState.pinInput = '';
           pinDisplay.textContent = '';
         }
       } else {
-        pinInput += val;
-        pinDisplay.textContent = pinInput;
+        devState.pinInput += val;
+        pinDisplay.textContent = devState.pinInput;
       }
     });
   });
@@ -951,12 +948,12 @@ function wbOpenMenu(){
         devMsg.textContent = 'Teleported to workbench!';
         devMsg.className = 'wb-dev-msg ok';
       } else if(action === 'resetDev'){
-        devUnlocked = false;
+        devState.unlocked = false;
         devTab.classList.remove('unlocked');
         devTab.querySelector('.lock-ico').textContent = '🔒';
         pinPad.style.display = 'block';
         devBtns.style.display = 'none';
-        pinInput = '';
+        devState.pinInput = '';
         pinDisplay.textContent = '';
         pinMsg.textContent = 'Dev menu locked';
         pinMsg.className = 'wb-pin-msg';
@@ -4402,6 +4399,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
