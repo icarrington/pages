@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1794972637 -->
+<!-- page-version: 1794972798 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -643,7 +643,7 @@ const WB_STAT_UPGRADES = [
   {key:'staminaPool', name:'Stamina Pool', baseCost:80, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
   {key:'staminaRegen', name:'Stamina Regen', baseCost:70, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
   {key:'pointMult', name:'Point Multiplier', baseCost:140, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
-  {key:'lootChance', name:'Loot Chance', baseCost:120, costMult:1.6, maxLevel:5, desc:'+10% extra loot drop per level'},
+  {key:'lootChance', name:'Loot Chance', baseCost:120, costMult:1.6, maxLevel:5, desc:'+5% extra loot drop per level'},
   {key:'discount', name:'Workbench Discount', baseCost:200, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
   {key:'startAmmo', name:'Starting Ammo', baseCost:100, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
   {key:'zombieSlow', name:'Zombie Slow', baseCost:130, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
@@ -672,7 +672,7 @@ function getArmorReduction(){ return statUpgrades.armor * 3; }
 function getMaxStamina(){ return 100 + statUpgrades.staminaPool * 20; }
 function getStaminaRegenRate(){ return 15 + statUpgrades.staminaRegen * 5; }
 function getPointMultiplier(){ return 1 + statUpgrades.pointMult * 0.20; }
-function getLootChance(){ return statUpgrades.lootChance * 0.10; }
+function getLootChance(){ return statUpgrades.lootChance * 0.05; }
 function getZombieSlowMultiplier(){ return Math.max(0.2, 1 - statUpgrades.zombieSlow * 0.10); }
 function getGrenadeCount(){ return statUpgrades.grenade; }
 function getMedkitCount(){ return statUpgrades.medkit; }
@@ -3603,6 +3603,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
