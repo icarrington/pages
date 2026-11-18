@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795013297 -->
+<!-- page-version: 1795013398 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2745,7 +2745,7 @@ function killZombie(z, isHead){
 function startWave(n){
   state.wave = n;
   const count = 5 + n * 3;
-  const speed = (2.4 + n * 0.30) * getZombieSlowMultiplier(); // Faster base so zombies visibly walk/run toward the player, slowed by upgrade
+  const speed = (2.4 + n * 0.30) * getZombieSlowMultiplier() * 0.82; // Slightly slower (18% reduction)
   const playerX = player.pos.x;
   const playerZ = player.pos.z;
   for(let i=0;i<count;i++){
@@ -3634,6 +3634,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
