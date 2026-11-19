@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795048507 -->
+<!-- page-version: 1795048664 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2630,7 +2630,10 @@ function switchWeapon(w){
 function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || activeWeapon==='uzi' || activeWeapon==='m4a1' || activeWeapon==='minigun'; }
 function fireRate(){
   const base = {smg:12, rifle:8, uzi:18, m4a1:10, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:8/0.7};
-  return (base[activeWeapon] || 8) * getFireRateMultiplier();
+  const rate = (base[activeWeapon] || 8) * getFireRateMultiplier();
+  // RPG fires 30% faster: reduce the cooldown by 30% (cooldown = 1/rate, so rate * 1.3)
+  if(activeWeapon === 'rpg') return rate * 1.3;
+  return rate;
 }
 function cycleWeapon(){
   const list = weaponList();
@@ -4673,6 +4676,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
