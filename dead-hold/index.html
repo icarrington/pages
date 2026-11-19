@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795129109 -->
+<!-- page-version: 1795129512 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -4739,7 +4739,11 @@ function loop(){
     const _aliveList = zombies.filter(z => z.alive);
     const _aliveCount = _aliveList.length + (state.boss && state.boss.alive ? 1 : 0);
     const _noKillBeacon = state.seconds - state.lastKillTime >= 120;
+    // Beacons only on a small subset: show when fewer than 3 remain, or on the
+    // no-kill timer — but cap the number of beacons to at most 2 so that on a
+    // large wave (e.g. wave 6) not every zombie gets a beacon.
     const _showBeacons = (_aliveCount > 0 && _aliveCount < 3) || _noKillBeacon;
+    const _maxBeacons = 2;
     // Ensure beacon pool exists (created once)
     if(!_beaconPool) {
       _beaconPool = [];
@@ -4764,10 +4768,11 @@ function loop(){
         _beaconPool.push(grp);
       }
     }
-    // Assign beacons to alive zombies
+    // Assign beacons to alive zombies (capped at _maxBeacons)
+    const _beaconCount = _showBeacons ? Math.min(_aliveCount, _maxBeacons) : 0;
     for(let bi=0; bi<_beaconPool.length; bi++){
       const b = _beaconPool[bi];
-      if(bi < _aliveCount && _showBeacons){
+      if(bi < _beaconCount){
         const target = (bi < _aliveList.length) ? _aliveList[bi] : state.boss;
         if(target){
           b.visible = true;
@@ -4824,6 +4829,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
