@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795046834 -->
+<!-- page-version: 1795047118 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3201,7 +3201,7 @@ function playRPGExplosion(){
   src.start(t); src.stop(t + 0.3);
 }
 
-function rpgExplode(pos, firedByPlayer){
+function rpgExplode(pos, firedByPlayer, rocketVel){
   playRPGExplosion();
   // Screen shake
   state.recoil = Math.max(state.recoil, 3.0);
@@ -3260,18 +3260,25 @@ function rpgExplode(pos, firedByPlayer){
       const selfDmg = BASE_DMG * falloff * 0.4;
       damagePlayer(selfDmg);
 
-      // Knockback: reduced impulse for more controlled rocket jumps
+      // Knockback: impulse follows rocket trajectory direction
       const dirToPlayer = toPlayer.clone().normalize();
-      // Vertical impulse: base 12.0 * 1.5, now 0.75X (50% of previous 1.5X)
-      const verticalImpulse = 12.0 * 0.75 * 1.5 * falloff;
-      // Radial impulse: base 3.0, now 0.75X (50% of previous 1.5X)
-      const radialImpulse = 3.0 * 0.75 * falloff;
-
-      // Apply vertical
-      player.vel.y += verticalImpulse;
+      
+      // Use rocket velocity direction for main impulse (if provided)
+      let impulseDir;
+      if(rocketVel && rocketVel.lengthSq() > 0.001){
+        impulseDir = rocketVel.clone().normalize();
+      } else {
+        // Fallback: straight up if no valid rocket direction
+        impulseDir = new THREE.Vector3(0, 1, 0);
+      }
+      
+      // Main impulse: 3× base (12.0 * 0.75 * 1.5 = 13.5) in rocket direction
+      const mainImpulse = 12.0 * 0.75 * 1.5 * falloff;
+      player.vel.addScaledVector(impulseDir, mainImpulse);
       player.grounded = false;
 
-      // Apply radial (horizontal only)
+      // Radial component: reduced to 30% of main impulse, push away from blast center
+      const radialImpulse = mainImpulse * 0.3;
       const radialDir = new THREE.Vector3(dirToPlayer.x, 0, dirToPlayer.z).normalize();
       player.vel.x += radialDir.x * radialImpulse;
       player.vel.z += radialDir.z * radialImpulse;
@@ -3296,7 +3303,7 @@ function updateRPGRockets(dt){
       if(!z.alive) continue;
       const d = r.pos.distanceTo(z.group.position);
       if(d < 0.8){
-        rpgExplode(r.pos.clone(), r.firedByPlayer);
+        rpgExplode(r.pos.clone(), r.firedByPlayer, r.vel);
         hit = true;
         break;
       }
@@ -4638,6 +4645,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
