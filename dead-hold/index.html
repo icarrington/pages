@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795052313 -->
+<!-- page-version: 1795052785 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -790,6 +790,33 @@ function wbOpenMenu(){
     return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
   }).join('');
   
+  // Weapon purchase rows
+  const WEAPON_PRICES = {
+    pistol: 0, // free, always owned
+    smg: 150,
+    shotgun: 200,
+    rifle: 250,
+    uzi: 180,
+    m4a1: 300,
+    awp: 400,
+    deagle: 220,
+    minigun: 500,
+    rpg: 350,
+    doubleShotgun: 280
+  };
+  
+  let weaponRowsHTML = '';
+  const allWeapons = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg','doubleShotgun'];
+  for(const w of allWeapons){
+    const owned = isOwned(w);
+    const cost = WEAPON_PRICES[w] || 200;
+    const canBuy = !owned && state.points >= cost;
+    const cls = owned ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
+    const right = owned ? '<span class="wb-check">OWNED ✓</span>' : (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
+    const wname = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'}[w] || w;
+    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name">'+wname+'</div><div class="wb-desc">Purchase this weapon</div><div class="wb-right">'+right+'</div></div>';
+  }
+  
   // Stat upgrade rows grouped by category
   const categories = [
     {name:'COMBAT', keys:['damage','fireRate','magSize','reloadSpeed','headshot','critChance']},
@@ -820,7 +847,23 @@ function wbOpenMenu(){
   menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
   menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
-  menu.querySelector('.wb-rows').innerHTML = rows + statRowsHTML;
+  menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line)"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div>' + weaponRowsHTML + '</div>' + rows + statRowsHTML;
+  // Ensure all weapon rows have proper event listeners
+  menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
+    r.addEventListener('click', ()=>{
+      const weaponKey = r.dataset.weapon;
+      if(isOwned(weaponKey)) return;
+      const WEAPON_PRICES = {smg:150,shotgun:200,rifle:250,uzi:180,m4a1:300,awp:400,deagle:220,minigun:500,rpg:350,doubleShotgun:280};
+      const cost = WEAPON_PRICES[weaponKey] || 200;
+      if(state.points < cost) return;
+      state.points -= cost;
+      addWeapon(weaponKey);
+      ensureAudio();
+      if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(600,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+      wbOpenMenu(); // refresh
+      updateHUD();
+    });
+  });
   
   // Dev Menu tab and panel - create ONCE and persist across menu opens
   if(!window._devMenuState) window._devMenuState = { unlocked: false, pinInput: '' };
@@ -1026,6 +1069,21 @@ function wbOpenMenu(){
     r.addEventListener('click', ()=>{
       const key = r.dataset.key;
       const statKey = r.dataset.statkey;
+      const weaponKey = r.dataset.weapon;
+      if(weaponKey){
+        // Weapon purchase
+        if(isOwned(weaponKey)) return;
+        const WEAPON_PRICES = {smg:150,shotgun:200,rifle:250,uzi:180,m4a1:300,awp:400,deagle:220,minigun:500,rpg:350,doubleShotgun:280};
+        const cost = WEAPON_PRICES[weaponKey] || 200;
+        if(state.points < cost) return;
+        state.points -= cost;
+        addWeapon(weaponKey);
+        ensureAudio();
+        if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(600,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+        wbOpenMenu(); // refresh
+        updateHUD();
+        return;
+      }
       if(statKey){
         // Stat upgrade purchase
         const def = WB_STAT_UPGRADES.find(d=>d.key===statKey);
@@ -4676,6 +4734,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
