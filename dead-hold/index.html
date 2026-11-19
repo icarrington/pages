@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795110032 -->
+<!-- page-version: 1795110204 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -764,35 +764,35 @@ function wbGet(w){ if(!wbAttachments[w]) wbAttachments[w] = {redDot:false, extMa
 let wbMenuOpen = false;
 let wbNear = false;
 const WB_ATTACH_DEFS = [
-  {key:'redDot', name:'Red Dot Sight', cost:50, desc:'Rail-mounted optic with precise ADS reticle'},
-  {key:'extMag', name:'Extended Magazine', cost:75, desc:'+50% max ammo'},
-  {key:'suppressor', name:'Suppressor', cost:100, desc:'Smaller muzzle flash, quieter'},
-  {key:'vGrip', name:'Vertical Grip', cost:125, desc:'-30% recoil spread'}
+  {key:'redDot', name:'Red Dot Sight', cost:100, desc:'Rail-mounted optic with precise ADS reticle'},
+  {key:'extMag', name:'Extended Magazine', cost:150, desc:'+50% max ammo'},
+  {key:'suppressor', name:'Suppressor', cost:200, desc:'Smaller muzzle flash, quieter'},
+  {key:'vGrip', name:'Vertical Grip', cost:250, desc:'-30% recoil spread'}
 ];
 
 // Player stat upgrades (multi-level)
 const WB_STAT_UPGRADES = [
-  {key:'defense', name:'Defense Plating', baseCost:120, costMult:1.5, maxLevel:5, desc:'-10% damage taken per level'},
-  {key:'speed', name:'Speed Boost', baseCost:150, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'},
-  {key:'damage', name:'Damage Boost', baseCost:180, costMult:1.6, maxLevel:5, desc:'+15% weapon damage per level'},
-  {key:'fireRate', name:'Fire Rate', baseCost:150, costMult:1.6, maxLevel:5, desc:'+12% trigger speed per level'},
-  {key:'magSize', name:'Mag Size', baseCost:135, costMult:1.5, maxLevel:5, desc:'+2 rounds per level'},
-  {key:'reloadSpeed', name:'Reload Speed', baseCost:120, costMult:1.5, maxLevel:5, desc:'-12% reload time per level'},
-  {key:'headshot', name:'Headshot Bonus', baseCost:225, costMult:1.7, maxLevel:5, desc:'+1x headshot multiplier per level (base 2x)'},
-  {key:'critChance', name:'Crit Chance', baseCost:195, costMult:1.6, maxLevel:5, desc:'+8% crit chance per level (2x damage)'},
-  {key:'maxHealth', name:'Max Health', baseCost:150, costMult:1.5, maxLevel:5, desc:'+20 max HP per level'},
-  {key:'regen', name:'Regen', baseCost:135, costMult:1.5, maxLevel:5, desc:'+4 HP/s regen per level'},
-  {key:'armor', name:'Armor', baseCost:165, costMult:1.6, maxLevel:5, desc:'-3 flat damage per level'},
-  {key:'staminaPool', name:'Stamina Pool', baseCost:120, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
-  {key:'staminaRegen', name:'Stamina Regen', baseCost:105, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
-  {key:'pointMult', name:'Point Multiplier', baseCost:210, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
+  {key:'defense', name:'Defense Plating', baseCost:240, costMult:1.5, maxLevel:5, desc:'-10% damage taken per level'},
+  {key:'speed', name:'Speed Boost', baseCost:300, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'},
+  {key:'damage', name:'Damage Boost', baseCost:360, costMult:1.6, maxLevel:5, desc:'+15% weapon damage per level'},
+  {key:'fireRate', name:'Fire Rate', baseCost:300, costMult:1.6, maxLevel:5, desc:'+12% trigger speed per level'},
+  {key:'magSize', name:'Mag Size', baseCost:270, costMult:1.5, maxLevel:5, desc:'+2 rounds per level'},
+  {key:'reloadSpeed', name:'Reload Speed', baseCost:240, costMult:1.5, maxLevel:5, desc:'-12% reload time per level'},
+  {key:'headshot', name:'Headshot Bonus', baseCost:450, costMult:1.7, maxLevel:5, desc:'+1x headshot multiplier per level (base 2x)'},
+  {key:'critChance', name:'Crit Chance', baseCost:390, costMult:1.6, maxLevel:5, desc:'+8% crit chance per level (2x damage)'},
+  {key:'maxHealth', name:'Max Health', baseCost:300, costMult:1.5, maxLevel:5, desc:'+20 max HP per level'},
+  {key:'regen', name:'Regen', baseCost:270, costMult:1.5, maxLevel:5, desc:'+4 HP/s regen per level'},
+  {key:'armor', name:'Armor', baseCost:330, costMult:1.6, maxLevel:5, desc:'-3 flat damage per level'},
+  {key:'staminaPool', name:'Stamina Pool', baseCost:240, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
+  {key:'staminaRegen', name:'Stamina Regen', baseCost:210, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
+  {key:'pointMult', name:'Point Multiplier', baseCost:420, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
 
-  {key:'discount', name:'Workbench Discount', baseCost:300, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
-  {key:'startAmmo', name:'Starting Ammo', baseCost:150, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
-  {key:'zombieSlow', name:'Zombie Slow', baseCost:195, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
-  {key:'grenade', name:'Grenade Count', baseCost:240, costMult:1.7, maxLevel:5, desc:'+1 grenade per wave per level'},
-  {key:'medkit', name:'Medkit Count', baseCost:225, costMult:1.7, maxLevel:5, desc:'+1 medkit per wave per level'},
-  {key:'spawnShield', name:'Spawn Shield', baseCost:270, costMult:1.8, maxLevel:5, desc:'+0.5s invulnerability after hit per level'}
+  {key:'discount', name:'Workbench Discount', baseCost:600, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
+  {key:'startAmmo', name:'Starting Ammo', baseCost:300, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
+  {key:'zombieSlow', name:'Zombie Slow', baseCost:390, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
+  {key:'grenade', name:'Grenade Count', baseCost:480, costMult:1.7, maxLevel:5, desc:'+1 grenade per wave per level'},
+  {key:'medkit', name:'Medkit Count', baseCost:450, costMult:1.7, maxLevel:5, desc:'+1 medkit per wave per level'},
+  {key:'spawnShield', name:'Spawn Shield', baseCost:540, costMult:1.8, maxLevel:5, desc:'+0.5s invulnerability after hit per level'}
 ];
 const statUpgrades = {defense:0, speed:0, damage:0, fireRate:0, magSize:0, reloadSpeed:0, headshot:0, critChance:0, maxHealth:0, regen:0, armor:0, staminaPool:0, staminaRegen:0, pointMult:0, discount:0, startAmmo:0, zombieSlow:0, grenade:0, medkit:0, spawnShield:0};
 function getUpgradeCost(def, level){
@@ -853,23 +853,23 @@ function wbOpenMenu(){
   // Weapon purchase rows
   const WEAPON_PRICES = {
     pistol: 0, // free, always owned
-    smg: 225,
-    shotgun: 300,
-    rifle: 375,
-    uzi: 270,
-    m4a1: 450,
-    awp: 600,
-    deagle: 330,
-    minigun: 750,
-    rpg: 525,
-    doubleShotgun: 420
+    smg: 450,
+    shotgun: 600,
+    rifle: 750,
+    uzi: 540,
+    m4a1: 900,
+    awp: 1200,
+    deagle: 660,
+    minigun: 1500,
+    rpg: 1050,
+    doubleShotgun: 840
   };
   
   let weaponRowsHTML = '';
   const allWeapons = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg','doubleShotgun'];
-  const AMMO_COST = 75; // Cost for a full magazine of ammo (was 50, +50%)
+  const AMMO_COST = 150; // Cost for a full magazine of ammo (doubled)
   // Cost to install ALL missing attachments on one weapon at once (flat, fair price)
-  const UPGRADE_COST = 375; // was 250, +50%
+  const UPGRADE_COST = 750; // doubled
   for(const w of allWeapons){
     const owned = isOwned(w);
     const cost = WEAPON_PRICES[w] || 200;
@@ -938,7 +938,7 @@ function wbOpenMenu(){
       if(upgBtn){
         const uw = upgBtn.dataset.upgrade;
         if(!uw) return;
-        const UPGRADE_COST = 375;
+        const UPGRADE_COST = 750;
         const att = wbGet(uw);
         const missing = WB_ATTACH_DEFS.filter(d=>!att[d.key]);
         if(missing.length === 0) return;
@@ -961,8 +961,8 @@ function wbOpenMenu(){
         return;
       }
       const weaponKey = r.dataset.weapon;
-      const WEAPON_PRICES = {smg:225,shotgun:300,rifle:375,uzi:270,m4a1:450,awp:600,deagle:330,minigun:750,rpg:525,doubleShotgun:420};
-      const AMMO_COST = 75;
+      const WEAPON_PRICES = {smg:450,shotgun:600,rifle:750,uzi:540,m4a1:900,awp:1200,deagle:660,minigun:1500,rpg:1050,doubleShotgun:840};
+      const AMMO_COST = 150;
       if(isOwned(weaponKey)){
         // Buy ammo for owned weapon
         if(state.points < AMMO_COST) return;
@@ -1195,8 +1195,8 @@ function wbOpenMenu(){
       const statKey = r.dataset.statkey;
       const weaponKey = r.dataset.weapon;
       if(weaponKey){
-        const WEAPON_PRICES = {smg:225,shotgun:300,rifle:375,uzi:270,m4a1:450,awp:600,deagle:330,minigun:750,rpg:525,doubleShotgun:420};
-        const AMMO_COST = 75;
+        const WEAPON_PRICES = {smg:450,shotgun:600,rifle:750,uzi:540,m4a1:900,awp:1200,deagle:660,minigun:1500,rpg:1050,doubleShotgun:840};
+        const AMMO_COST = 150;
         if(isOwned(weaponKey)){
           // Buy ammo for owned weapon
           if(state.points < AMMO_COST) return;
@@ -4823,6 +4823,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
