@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795047118 -->
+<!-- page-version: 1795047717 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3272,13 +3272,13 @@ function rpgExplode(pos, firedByPlayer, rocketVel){
         impulseDir = new THREE.Vector3(0, 1, 0);
       }
       
-      // Main impulse: 3× base (12.0 * 0.75 * 1.5 = 13.5) in rocket direction
-      const mainImpulse = 12.0 * 0.75 * 1.5 * falloff;
+      // Main impulse: STRONG directional boost along rocket trajectory (18.0 * 0.75 * 1.5 = 20.25)
+      const mainImpulse = 18.0 * 0.75 * 1.5 * falloff;
       player.vel.addScaledVector(impulseDir, mainImpulse);
       player.grounded = false;
 
-      // Radial component: reduced to 30% of main impulse, push away from blast center
-      const radialImpulse = mainImpulse * 0.3;
+      // Radial component: reduced to 15% of main impulse, push away from blast center (trajectory dominates)
+      const radialImpulse = mainImpulse * 0.15;
       const radialDir = new THREE.Vector3(dirToPlayer.x, 0, dirToPlayer.z).normalize();
       player.vel.x += radialDir.x * radialImpulse;
       player.vel.z += radialDir.z * radialImpulse;
@@ -4257,20 +4257,20 @@ function loop(){
   }
 
   const targetVel = move.multiplyScalar(speed);
-  // Air control: reduced air movement for more controlled rocket jumps
+  // Air control: JETPACK-style acceleration for rocket jumps
   if(!player.grounded){
-    // 0.5x air acceleration (slower lerp) and allow up to 0.5x ground speed horizontally (50% of previous 1.0x)
-    const airLerp = 1 - Math.pow(0.001, dt); // same as ground's lerp factor
-    const airMaxSpeed = speed * 0.5; // reduced from 1.0 to 0.5 (50% of previous)
-    player.vel.x = THREE.MathUtils.lerp(player.vel.x, targetVel.x, airLerp);
-    player.vel.z = THREE.MathUtils.lerp(player.vel.z, targetVel.z, airLerp);
-    // Clamp horizontal air velocity
-    const hSpeed = Math.sqrt(player.vel.x*player.vel.x + player.vel.z*player.vel.z);
-    if(hSpeed > airMaxSpeed){
-      const scale = airMaxSpeed / hSpeed;
-      player.vel.x *= scale;
-      player.vel.z *= scale;
+    // Strong jetpack thrust: 8.0 units/s² acceleration in facing direction while moving
+    const JETPACK_THRUST = 8.0;
+    if(moving){
+      // Apply thrust in the direction the player is facing (WASD input)
+      player.vel.x += targetVel.x * JETPACK_THRUST * dt;
+      player.vel.z += targetVel.z * JETPACK_THRUST * dt;
     }
+    // Air drag: slight resistance so speed doesn't go infinite (0.3x per second)
+    const AIR_DRAG = 0.3;
+    player.vel.x *= Math.max(0, 1 - AIR_DRAG * dt);
+    player.vel.z *= Math.max(0, 1 - AIR_DRAG * dt);
+    // No hard speed cap — drag naturally limits terminal velocity
   } else {
     player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
   }
@@ -4645,6 +4645,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
