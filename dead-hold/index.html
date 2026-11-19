@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795053568 -->
+<!-- page-version: 1795053898 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2864,6 +2864,8 @@ let lastShotTime = 0;
    from zombie drops (see killZombie / weaponDrops). ---- */
 const ownedWeapons = ['pistol'];
 function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
+function spawnWeaponDrop(x,z,weapon){ /* loot drops removed - no-op */ }
+function clearWeaponDrops(){ /* loot drops removed - no-op */ }
 function addWeapon(w){
   const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
   if(ownedWeapons.indexOf(w) < 0){
@@ -2885,54 +2887,8 @@ function weaponList(){
 }
 
 // Ensure RPG is available from the start
-function initRPG(){
-  if(!isOwned('rpg')){
-    addWeapon('rpg');
-  }
-}
-/* ---- Weapon drop pool (the 9 non-pistol weapons) ---- */
-const DROP_POOL = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg'];
-const weaponDrops = [];
-const _dropMat = new THREE.MeshLambertMaterial({color:0x1a2a1a, emissive:0x66ff33, emissiveIntensity:0.6});
-function spawnWeaponDrop(x, z, w){
-  const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.36,0.06,16), _dropMat);
-  base.position.y = 0.03; g.add(base);
-  const model = weaponModels[w].clone();
-  model.scale.setScalar(0.55);
-  model.rotation.set(0, Math.random()*Math.PI*2, 0);
-  model.position.y = 0.14;
-  g.add(model);
-  g.position.set(x, 0, z);
-  g.userData = { w: w, t: Math.random()*Math.PI*2 };
-  scene.add(g);
-  weaponDrops.push(g);
-}
-function updateWeaponDrops(dt){
-  for(let i = weaponDrops.length - 1; i >= 0; i--){
-    const d = weaponDrops[i];
-    d.userData.t += dt*2.2;
-    d.position.y = 0.12 + Math.abs(Math.sin(d.userData.t))*0.12; // gentle bounce
-    d.rotation.y += dt*0.8;
-    const dx = player.pos.x - d.position.x, dz = player.pos.z - d.position.z;
-    if(Math.hypot(dx,dz) < 1.2){
-      const wasOwned = isOwned(d.userData.w);
-      addWeapon(d.userData.w);
-      // Only auto-switch if this is the first time acquiring this weapon type
-      if(!wasOwned){
-        switchWeapon(d.userData.w);
-      }
-      scene.remove(d);
-      weaponDrops.splice(i,1);
-      updateWeaponSlots();
-      updateHUD();
-    }
-  }
-}
-function clearWeaponDrops(){
-  for(const d of weaponDrops) scene.remove(d);
-  weaponDrops.length = 0;
-}
+
+
 function updateRedDot(){
   const el = document.getElementById('crosshair');
   const hud = document.getElementById('hud');
@@ -3587,11 +3543,7 @@ function killZombie(z, isHead){
   } else {
     spawnParticleBurst(z.group.position);
     playHit();
-    // 3% chance a normal zombie drops a random weapon pickup at its death spot.
-    if(Math.random() < 0.03){
-      const w = DROP_POOL[Math.floor(Math.random()*DROP_POOL.length)];
-      spawnWeaponDrop(z.group.position.x, z.group.position.z, w);
-    }
+  
   }
   updateHUD();
 }
@@ -4672,8 +4624,7 @@ function loop(){
   }
   for(const z of toRemove) removeZombie(z);
 
-  /* ---- weapon drops (pickup / bounce) ---- */
-  updateWeaponDrops(dt);
+
 
   /* ---- RPG rockets & explosions ---- */
   updateRPGRockets(dt);
@@ -4790,6 +4741,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
