@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795046580 -->
+<!-- page-version: 1795046834 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3260,12 +3260,12 @@ function rpgExplode(pos, firedByPlayer){
       const selfDmg = BASE_DMG * falloff * 0.4;
       damagePlayer(selfDmg);
 
-      // Knockback: strong vertical, soft radial
+      // Knockback: reduced impulse for more controlled rocket jumps
       const dirToPlayer = toPlayer.clone().normalize();
-      // Vertical impulse: base 12.0 * 1.5, now 3X for dramatic rocket-jump (was 10X)
-      const verticalImpulse = 12.0 * 1.5 * 3 * falloff;
-      // Radial impulse: base 3.0, now 3X for dramatic rocket-jump (was 10X)
-      const radialImpulse = 3.0 * 3 * falloff;
+      // Vertical impulse: base 12.0 * 1.5, now 0.75X (50% of previous 1.5X)
+      const verticalImpulse = 12.0 * 0.75 * 1.5 * falloff;
+      // Radial impulse: base 3.0, now 0.75X (50% of previous 1.5X)
+      const radialImpulse = 3.0 * 0.75 * falloff;
 
       // Apply vertical
       player.vel.y += verticalImpulse;
@@ -4250,11 +4250,11 @@ function loop(){
   }
 
   const targetVel = move.multiplyScalar(speed);
-  // Air control: much faster lerp and higher max horizontal velocity for snappy rocket jumps
+  // Air control: reduced air movement for more controlled rocket jumps
   if(!player.grounded){
-    // 2x air acceleration (higher lerp factor) and allow up to 2x ground speed horizontally
-    const airLerp = 1 - Math.pow(0.0001, dt); // much faster than ground's 0.001
-    const airMaxSpeed = speed * 2.0;
+    // 0.5x air acceleration (slower lerp) and allow up to 0.5x ground speed horizontally (50% of previous 1.0x)
+    const airLerp = 1 - Math.pow(0.001, dt); // same as ground's lerp factor
+    const airMaxSpeed = speed * 0.5; // reduced from 1.0 to 0.5 (50% of previous)
     player.vel.x = THREE.MathUtils.lerp(player.vel.x, targetVel.x, airLerp);
     player.vel.z = THREE.MathUtils.lerp(player.vel.z, targetVel.z, airLerp);
     // Clamp horizontal air velocity
@@ -4638,6 +4638,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
