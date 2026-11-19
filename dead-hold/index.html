@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795109401 -->
+<!-- page-version: 1795109599 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3333,7 +3333,7 @@ function rpgExplode(pos, firedByPlayer, rocketVel){
   rpgExplosions.push(expObj);
 
   // Area damage to zombies
-  const RADIUS = 4;
+  const RADIUS = 10;
   const BASE_DMG = 150;
   for(const z of zombies){
     if(!z.alive) continue;
@@ -4781,6 +4781,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
