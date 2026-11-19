@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795053898 -->
+<!-- page-version: 1795098256 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -277,7 +277,6 @@
   <div class="tbtn" id="btnReload">RELOAD</div>
   <div class="tbtn" id="btnDash">DASH</div>
   <div class="tbtn" id="btnScope">SCOPE</div>
-  <div class="tbtn" id="btnWorkbench">WORKBENCH</div>
   <div class="tbtn" id="btnCycle">CYCLE</div>
   <div id="tSlots"></div>
 </div>
@@ -316,32 +315,16 @@
     <div class="rpg-reload-track"><div class="rpg-reload-fill"></div></div>
   </div>
   <div id="waveBanner"></div>
-  <div id="wbHint"></div>
   <div id="waveCountdown"><div class="cd-label">Next wave in</div><div class="cd-num" id="cdNum">15</div></div>
   <div id="toast"></div>
 </div>
 
-<div id="wbMenu" class="hidden">
-  <div class="wb-card">
-    <div class="wb-title">WEAPON WORKBENCH</div>
-    <div class="wb-sub">Weapon Upgrades</div>
-    <div class="wb-head">
-      <div>
-        <div class="wb-weapon"></div>
-        <div class="wb-mag"></div>
-      </div>
-      <div class="wb-pts"></div>
-    </div>
-    <div class="wb-rows"></div>
-    <button class="wb-close" id="wbCloseBtn">Close (E / ESC)</button>
-  </div>
-</div>
 
 <div class="screen" id="startScreen">
   <div class="card">
     <div class="tag">Zombie Survival // Sector Bunker</div>
     <h1>DEAD <span>HOLD</span></h1>
-    <p class="sub">Hold the line. Survive the waves. Every round counts — the dead keep coming. You start with only a pistol; kill zombies to drop more weapons — walk over them to pick them up.</p>
+    <p class="sub">Hold the line. Survive the waves. Every round counts — the dead keep coming.</p>
     <ul class="controls">
       <li><span class="key">W A S D</span> Move</li>
       <li><span class="key">MOUSE</span> Aim</li>
@@ -349,7 +332,6 @@
       <li><span class="key">RMB</span> Aim (ADS)</li>
       <li><span class="key">1-4</span> Switch Gun</li>
       <li><span class="key">R</span> Reload</li>
-      <li><span class="key">WALK OVER</span> Pick Up Drop</li>
       <li><span class="key">SPACE</span> Jump</li>
       <li><span class="key">ESC</span> Pause</li>
       <li><span class="key">Q / WHEEL</span> Cycle Gun</li>
@@ -789,12 +771,9 @@ function weaponIcon(w){
   };
   return icons[w] || '';
 }
-function wbToggleMenu(){
-  if(!state.running) return;
-  if(wbMenuOpen){ wbCloseMenu(); }
-  else if(wbNear){ wbOpenMenu(); }
-}
+function wbToggleMenu(){ /* workbench removed - no-op */ }
 function wbOpenMenu(){
+  return; /* workbench removed - no-op */
   wbMenuOpen = true;
   state.running = false;
   if(document.pointerLockElement === canvas) document.exitPointerLock();
@@ -1177,25 +1156,9 @@ function wbOpenMenu(){
 function wbCloseMenu(){
   wbMenuOpen = false;
   state.running = true;
-  document.getElementById('wbMenu').classList.add('hidden');
   updateHUD();
 }
-function wbUpdateNear(){
-  const dx = player.pos.x - WB.x;
-  const dz = player.pos.z - WB.z;
-  const d = Math.hypot(dx,dz);
-  const near = d < 3.0;
-  if(near !== wbNear){
-    wbNear = near;
-    const hint = document.getElementById('wbHint');
-    if(near && state.running && !wbMenuOpen){
-      hint.textContent = '[E] Open Workbench';
-      hint.classList.add('show');
-    } else if(!near){
-      hint.classList.remove('show');
-    }
-  }
-}
+function wbUpdateNear(){ /* workbench removed - no-op */ }
 // Small sand bunkers
 const bunkerMat2 = new THREE.MeshLambertMaterial({map:texBarrel()});
 [[-21,-9],[9,-19.5],[21,16.5],[-15,20],[15,-20],[25,10],[-25,-10],[10,25],[40,20],[-40,20],[20,40],[-20,40],[40,-20],[-40,-20],[20,-40],[-20,-40]].forEach(p=>{
@@ -2707,11 +2670,7 @@ if(!window._loopStarted){
 document.addEventListener('keydown', e=>{
   const k = e.key.toLowerCase();
   if(k==='shift'){ keys['shift']=true; }
-  if(k==='e'){
-    if(wbMenuOpen){ wbCloseMenu(); }
-    else if(wbNear){ wbOpenMenu(); }
-  }
-  if(k==='escape' && wbMenuOpen){ wbCloseMenu(); }
+
   if(k==='1'){ switchWeapon('pistol'); }
   if(k==='2'){ switchWeapon('smg'); }
   if(k==='3'){ switchWeapon('shotgun'); }
@@ -2723,7 +2682,7 @@ document.addEventListener('keydown', e=>{
   keys[k]=true;
   if(['w','a','s','d',' '].includes(k)) e.preventDefault();
 });
-document.getElementById('wbCloseBtn').addEventListener('click', wbCloseMenu);
+
 function tryJump(){
   if(!state.running) return;
   if(player.grounded){
@@ -3531,10 +3490,6 @@ function killZombie(z, isHead){
   const pointMult = getPointMultiplier() * getDamageMultiplier();
   state.points += Math.floor(60 * pointMult);
   if(isHead){ state.headshots++; state.points += Math.floor(100 * pointMult * getHeadshotMultiplier()); }
-  // Loot chance: extra ammo drop
-  if(Math.random() < getLootChance()){
-    spawnWeaponDrop(z.group.position.x, z.group.position.z, 'pistol');
-  }
   state.lastKillTime = state.seconds; // reset the 2-minute no-kill beacon timer
   if(z.boss){
     state.points += 500 + 25*(state.wave/5);
@@ -4741,6 +4696,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
