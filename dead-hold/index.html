@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795109235 -->
+<!-- page-version: 1795109401 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -807,13 +807,6 @@ function wbOpenMenu(){
   const w = activeWeapon;
   const att = wbGet(w);
   const cap = MAGS[w];
-  const rows = WB_ATTACH_DEFS.map(d=>{
-    const owned = att[d.key];
-    const canBuy = !owned && state.points >= d.cost;
-    const cls = owned ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
-    const right = owned ? '<span class="wb-check">EQUIPPED ✓</span>' : (canBuy ? '<span class="wb-cost">'+d.cost+' pts</span>' : '<span class="wb-cost">Need '+(d.cost-state.points)+' more pts</span>');
-    return '<div class="'+cls+'" data-key="'+d.key+'"><div class="wb-name">'+d.name+'</div><div class="wb-desc">'+d.desc+'</div><div class="wb-right">'+right+'</div></div>';
-  }).join('');
   
   // Weapon purchase rows
   const WEAPON_PRICES = {
@@ -894,7 +887,7 @@ function wbOpenMenu(){
   menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
   menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
-  menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line);width:100%"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div><div class="wb-weapon-grid" style="width:100%">' + weaponRowsHTML + '</div></div>' + rows + statRowsHTML;
+  menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line);width:100%"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div><div class="wb-weapon-grid" style="width:100%">' + weaponRowsHTML + '</div></div>' + statRowsHTML;
   // Ensure all weapon rows have proper event listeners
   menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
     r.addEventListener('click', (ev)=>{
@@ -4788,6 +4781,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
