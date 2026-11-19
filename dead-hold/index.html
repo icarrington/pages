@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795110481 -->
+<!-- page-version: 1795125859 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3032,7 +3032,7 @@ function lerpCrouch(dt){
   else if(crouchBlend > target) crouchBlend = Math.max(target, crouchBlend-step);
 }
 function currentEye(){ return EYE_STAND + (EYE_CROUCH - EYE_STAND)*crouchBlend; }
-const hipPos = new THREE.Vector3(0.35,-0.3,-0.6);
+const hipPos = new THREE.Vector3(0.35,-0.42,-0.6);
 let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
 // ADS: push the weapon FARther back (-Z) and slightly down so it reads as
@@ -4823,6 +4823,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
