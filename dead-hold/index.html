@@ -2631,6 +2631,7 @@ function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || acti
 function fireRate(){
   const base = {smg:12, rifle:8, uzi:18, m4a1:10, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:12};
   const rate = (base[activeWeapon] || 8) * getFireRateMultiplier();
+}
 function cycleWeapon(){
   const list = weaponList();
   let i = list.indexOf(activeWeapon);
