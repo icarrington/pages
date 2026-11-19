@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795110204 -->
+<!-- page-version: 1795110310 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -534,7 +534,7 @@ function texCeiling(){
   },2,2);
 }
 
-const concrete = new THREE.MeshLambertMaterial({map:texWall()}); // hedges
+const concrete = new THREE.MeshLambertMaterial({map:texWall(), visible:false}); // hedges (green walls removed)
 const concreteDark = new THREE.MeshLambertMaterial({map:texFloor()}); // grass
 const wood = new THREE.MeshLambertMaterial({map:texCrate()}); // sand bunker
 const metal = new THREE.MeshLambertMaterial({map:texBarrel()}); // sand bunker
@@ -4823,6 +4823,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
