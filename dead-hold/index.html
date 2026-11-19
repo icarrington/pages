@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795047717 -->
+<!-- page-version: 1795048024 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2207,7 +2207,8 @@ const state = {
   bossSpawnT:0,
   bossPending:false,
   spawnShieldT:0,
-  rpgReloading:false, rpgReloadT:0, rpgReloadDur:0, rpgFullReload:false
+  rpgReloading:false, rpgReloadT:0, rpgReloadDur:0, rpgFullReload:false,
+  rocketJumpT:0
 };
 
 /* finite magazine sizes; reserve is finite (10 full mags per weapon) */
@@ -3276,6 +3277,8 @@ function rpgExplode(pos, firedByPlayer, rocketVel){
       const mainImpulse = 18.0 * 0.75 * 1.5 * falloff;
       player.vel.addScaledVector(impulseDir, mainImpulse);
       player.grounded = false;
+      // Set rocket jump state (3 seconds of enhanced air control)
+      state.rocketJumpT = 3.0;
 
       // Radial component: reduced to 15% of main impulse, push away from blast center (trajectory dominates)
       const radialImpulse = mainImpulse * 0.15;
@@ -3915,6 +3918,7 @@ function resetGame(){
   state.boss=null; state.bossPending=false; state.bossWarnT=0; state.bossSpawnT=0;
   state.spawnShieldT=0;
   state.rpgReloading=false; state.rpgReloadT=0; state.rpgReloadDur=0; state.rpgFullReload=false;
+  state.rocketJumpT=0;
   // Clean up fireball projectiles
   for(const p of lightningProjectiles){
     scene.remove(p);
@@ -4138,6 +4142,11 @@ function loop(){
     }
   }
   
+  /* ---- Rocket jump timer ---- */
+  if(state.rocketJumpT > 0){
+    state.rocketJumpT = Math.max(0, state.rocketJumpT - dt);
+  }
+
   /* ---- RPG reload animation ---- */
   if(state.rpgReloading){
     state.rpgReloadT += dt;
@@ -4257,20 +4266,34 @@ function loop(){
   }
 
   const targetVel = move.multiplyScalar(speed);
-  // Air control: JETPACK-style acceleration for rocket jumps
+  // Air control: BOOSTED acceleration ONLY during rocket jump state (3s after RPG explosion)
+  // Outside of rocket jump: minimal air control (normal jumping/falling)
   if(!player.grounded){
-    // Strong jetpack thrust: 8.0 units/s² acceleration in facing direction while moving
-    const JETPACK_THRUST = 8.0;
-    if(moving){
-      // Apply thrust in the direction the player is facing (WASD input)
-      player.vel.x += targetVel.x * JETPACK_THRUST * dt;
-      player.vel.z += targetVel.z * JETPACK_THRUST * dt;
+    if(state.rocketJumpT > 0){
+      // ROCKET JUMP ACTIVE: strong directional air acceleration (jetpack feel)
+      const JETPACK_THRUST = 8.0;
+      if(moving){
+        // Apply thrust in the direction the player is facing (WASD input)
+        player.vel.x += targetVel.x * JETPACK_THRUST * dt;
+        player.vel.z += targetVel.z * JETPACK_THRUST * dt;
+      }
+      // Air drag: slight resistance so speed doesn't go infinite (0.3x per second)
+      const AIR_DRAG = 0.3;
+      player.vel.x *= Math.max(0, 1 - AIR_DRAG * dt);
+      player.vel.z *= Math.max(0, 1 - AIR_DRAG * dt);
+      // No hard speed cap — drag naturally limits terminal velocity
+    } else {
+      // NORMAL AIR CONTROL: minimal acceleration, just slight drift (no jetpack)
+      const AIR_CONTROL = 1.5;
+      if(moving){
+        player.vel.x += targetVel.x * AIR_CONTROL * dt;
+        player.vel.z += targetVel.z * AIR_CONTROL * dt;
+      }
+      // Light air drag
+      const AIR_DRAG = 0.1;
+      player.vel.x *= Math.max(0, 1 - AIR_DRAG * dt);
+      player.vel.z *= Math.max(0, 1 - AIR_DRAG * dt);
     }
-    // Air drag: slight resistance so speed doesn't go infinite (0.3x per second)
-    const AIR_DRAG = 0.3;
-    player.vel.x *= Math.max(0, 1 - AIR_DRAG * dt);
-    player.vel.z *= Math.max(0, 1 - AIR_DRAG * dt);
-    // No hard speed cap — drag naturally limits terminal velocity
   } else {
     player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
   }
@@ -4645,6 +4668,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
