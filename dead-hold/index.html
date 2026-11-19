@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795128828 -->
+<!-- page-version: 1795129109 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2827,7 +2827,8 @@ function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || acti
 function fireRate(){
   // Automatic weapons: significantly faster — 20-25 shots/sec (40-50ms between shots)
   // Semi-auto weapons: 8 shots/sec (unchanged)
-  const base = {smg:22, rifle:20, uzi:25, m4a1:20, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:12};
+  // Rifles (rifle, m4a1) slowed by ~35% for balance
+  const base = {smg:22, rifle:8, uzi:25, m4a1:8, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:12};
   const rate = (base[activeWeapon] || 8) * getFireRateMultiplier();
   return rate;
 }
@@ -4823,6 +4824,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
