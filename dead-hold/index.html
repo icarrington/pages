@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795053001 -->
+<!-- page-version: 1795053187 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -770,6 +770,22 @@ function getGrenadeCount(){ return statUpgrades.grenade; }
 function getMedkitCount(){ return statUpgrades.medkit; }
 function getSpawnShieldDuration(){ return statUpgrades.spawnShield * 0.5; }
 function getStartAmmoBonus(){ return statUpgrades.startAmmo; }
+function weaponIcon(w){
+  const icons = {
+    pistol:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M3 8h13v3H9l-1 6H5l1-6H3z"/></svg>',
+    smg:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M2 9h16v3H8l-1 5H5l1-5H2z"/></svg>',
+    shotgun:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M1 8h20v3H7l-1 6H4l1-6H1z"/></svg>',
+    rifle:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M1 9h21v2H8l-1 5H5l1-5H1z"/></svg>',
+    doubleShotgun:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M1 7h20v2H7l-1 6H4l1-6H1zM1 11h20v2H7l-1 6H4l1-6H1z"/></svg>',
+    uzi:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M4 8h12v3H9l-1 6H6l1-6H4z"/></svg>',
+    m4a1:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M1 9h21v2H8l-1 5H5l1-5H1z"/></svg>',
+    awp:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M1 10h21v2H8l-1 5H5l1-5H1z"/><rect x="9" y="6" width="6" height="3" rx="1"/></svg>',
+    deagle:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M3 7h14v4H9l-1 7H5l1-7H3z"/></svg>',
+    minigun:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M2 8h18v2H8l-1 5H5l1-5H2zM2 11h18v2H8l-1 5H5l1-5H2z"/></svg>',
+    rpg:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M2 9h19v3H8l-1 5H5l1-5H2z"/><path d="M21 9l2 1.5L21 12z"/></svg>'
+  };
+  return icons[w] || '';
+}
 function wbToggleMenu(){
   if(!state.running) return;
   if(wbMenuOpen){ wbCloseMenu(); }
@@ -822,7 +838,7 @@ function wbOpenMenu(){
     }
     const wname = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'}[w] || w;
     const desc = owned ? 'Buy a full magazine of ammo' : 'Purchase this weapon';
-    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name">'+wname+'</div><div class="wb-desc">'+desc+'</div><div class="wb-right">'+right+'</div></div>';
+    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name" style="display:flex;align-items:center">'+weaponIcon(w)+wname+'</div><div class="wb-desc">'+desc+'</div><div class="wb-right">'+right+'</div></div>';
   }
   
   // Stat upgrade rows grouped by category
@@ -4771,6 +4787,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
