@@ -2994,7 +2994,7 @@ function shoot(){
     // Start reload animation: single-shot reload (2.5s) or full mag reload (4s)
     state.rpgReloading = true;
     state.rpgReloadT = 0;
-    state.rpgReloadDur = (mags['rpg'] <= 0) ? 4.0 : 2.5;
+    state.rpgReloadDur = (mags['rpg'] <= 0) ? 3 : 1;
     state.rpgFullReload = (mags['rpg'] <= 0);
     updateHUD();
     return;
