@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795046385 -->
+<!-- page-version: 1795046580 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -4250,7 +4250,23 @@ function loop(){
   }
 
   const targetVel = move.multiplyScalar(speed);
-  player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
+  // Air control: much faster lerp and higher max horizontal velocity for snappy rocket jumps
+  if(!player.grounded){
+    // 2x air acceleration (higher lerp factor) and allow up to 2x ground speed horizontally
+    const airLerp = 1 - Math.pow(0.0001, dt); // much faster than ground's 0.001
+    const airMaxSpeed = speed * 2.0;
+    player.vel.x = THREE.MathUtils.lerp(player.vel.x, targetVel.x, airLerp);
+    player.vel.z = THREE.MathUtils.lerp(player.vel.z, targetVel.z, airLerp);
+    // Clamp horizontal air velocity
+    const hSpeed = Math.sqrt(player.vel.x*player.vel.x + player.vel.z*player.vel.z);
+    if(hSpeed > airMaxSpeed){
+      const scale = airMaxSpeed / hSpeed;
+      player.vel.x *= scale;
+      player.vel.z *= scale;
+    }
+  } else {
+    player.vel.lerp(targetVel, 1 - Math.pow(0.001, dt));
+  }
   const newPos = player.pos.clone().add(player.vel.clone().multiplyScalar(dt));
   resolveCollision(newPos);
   player.pos.copy(newPos);
@@ -4622,6 +4638,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
