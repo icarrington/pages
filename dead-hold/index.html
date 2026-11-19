@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795109102 -->
+<!-- page-version: 1795109235 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -540,6 +540,12 @@ const wood = new THREE.MeshLambertMaterial({map:texCrate()}); // sand bunker
 const metal = new THREE.MeshLambertMaterial({map:texBarrel()}); // sand bunker
 const ceilMat = new THREE.MeshLambertMaterial({map:texCeiling(), side:THREE.FrontSide}); // sky
 const outerWallMat = new THREE.MeshLambertMaterial({map:texWall()}); // outer arena walls
+/* Workbench "Upgrade All Attachments" button styles */
+(function(){
+  const st = document.createElement('style');
+  st.textContent = '.wb-upgrade-btn{cursor:pointer;border:1px solid var(--accent);background:rgba(0,0,0,.25);color:var(--accent);font-size:10px;font-weight:800;letter-spacing:.4px;padding:4px 8px;border-radius:4px;text-transform:uppercase;white-space:nowrap;transition:background .12s,transform .08s}.wb-upgrade-btn:hover:not(:disabled){background:var(--accent);color:#000}.wb-upgrade-btn:active:not(:disabled){transform:scale(.96)}.wb-upgrade-btn:disabled,.wb-upgrade-btn.locked,.wb-upgrade-btn.maxed{cursor:not-allowed;opacity:.55;border-color:var(--dim);color:var(--dim);background:rgba(0,0,0,.15)}.wb-upgrade-btn.maxed{border-color:var(--ok,#4caf50);color:var(--ok,#4caf50);opacity:.8}';
+  document.head.appendChild(st);
+})();
 
 function box(w,h,d,mat,x,y,z){
   const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
@@ -827,6 +833,8 @@ function wbOpenMenu(){
   let weaponRowsHTML = '';
   const allWeapons = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg','doubleShotgun'];
   const AMMO_COST = 50; // Cost for a full magazine of ammo
+  // Cost to install ALL missing attachments on one weapon at once (flat, fair price)
+  const UPGRADE_COST = 250;
   for(const w of allWeapons){
     const owned = isOwned(w);
     const cost = WEAPON_PRICES[w] || 200;
@@ -841,7 +849,19 @@ function wbOpenMenu(){
     }
     const wname = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'}[w] || w;
     const desc = owned ? 'Buy a full magazine of ammo' : 'Purchase this weapon';
-    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name" style="display:flex;align-items:center">'+weaponIcon(w)+wname+'</div><div class="wb-desc">'+desc+'</div><div class="wb-right">'+right+'</div></div>';
+    // Determine upgrade state for owned weapons: how many attachments are still missing
+    let upgradeBtn = '';
+    if(owned){
+      const att = wbGet(w);
+      const missing = WB_ATTACH_DEFS.filter(d=>!att[d.key]);
+      if(missing.length === 0){
+        upgradeBtn = '<button class="wb-upgrade-btn maxed" disabled>MAXED ✓</button>';
+      } else {
+        const canUpg = state.points >= UPGRADE_COST;
+        upgradeBtn = '<button class="wb-upgrade-btn '+(canUpg?'':'locked')+'" data-upgrade="'+w+'" '+(canUpg?'':'disabled')+'>'+(canUpg?('UPGRADE ALL: '+UPGRADE_COST+' pts'):('Need '+(UPGRADE_COST-state.points)+' more'))+'</button>';
+      }
+    }
+    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name" style="display:flex;align-items:center">'+weaponIcon(w)+wname+'</div><div class="wb-desc">'+desc+'</div><div class="wb-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+right+upgradeBtn+'</div></div>';
   }
   
   // Stat upgrade rows grouped by category
@@ -877,7 +897,34 @@ function wbOpenMenu(){
   menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line);width:100%"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div><div class="wb-weapon-grid" style="width:100%">' + weaponRowsHTML + '</div></div>' + rows + statRowsHTML;
   // Ensure all weapon rows have proper event listeners
   menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
-    r.addEventListener('click', ()=>{
+    r.addEventListener('click', (ev)=>{
+      // If the click was on the UPGRADE button, handle it separately
+      const upgBtn = ev.target.closest('.wb-upgrade-btn');
+      if(upgBtn){
+        const uw = upgBtn.dataset.upgrade;
+        if(!uw) return;
+        const UPGRADE_COST = 250;
+        const att = wbGet(uw);
+        const missing = WB_ATTACH_DEFS.filter(d=>!att[d.key]);
+        if(missing.length === 0) return;
+        if(state.points < UPGRADE_COST) return;
+        state.points -= UPGRADE_COST;
+        // Install every missing attachment at once
+        for(const d of WB_ATTACH_DEFS){
+          if(!att[d.key]){
+            att[d.key] = true;
+            if(d.key==='extMag'){ mags[uw] = Math.floor(MAGS[uw]*1.5); }
+          }
+        }
+        ensureAudio();
+        if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(900,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.10); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.11); }
+        const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
+        showToast('Upgraded ' + (wnames[uw] || uw) + ' with all attachments!', 2200);
+        updateRedDot();
+        updateHUD();
+        wbOpenMenu(); // refresh
+        return;
+      }
       const weaponKey = r.dataset.weapon;
       const WEAPON_PRICES = {smg:150,shotgun:200,rifle:250,uzi:180,m4a1:300,awp:400,deagle:220,minigun:500,rpg:350,doubleShotgun:280};
       const AMMO_COST = 50;
@@ -4741,6 +4788,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
