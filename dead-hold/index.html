@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795048871 -->
+<!-- page-version: 1795049136 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2632,8 +2632,7 @@ function fireRate(){
   const base = {smg:12, rifle:8, uzi:18, m4a1:10, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:8};
   const rate = (base[activeWeapon] || 8) * getFireRateMultiplier();
   if(activeWeapon === 'rpg'){
-    // RPG cooldown reduced by 30%: newCooldown = oldCooldown * 0.7
-    // Since cooldown = 1/rate, we need rate_new = rate / 0.7
+    // RPG fires 30% faster: cooldown is multiplied by 0.7 (i.e. rate is divided by 0.7)
     return rate / 0.7;
   }
   return rate;
@@ -2973,7 +2972,7 @@ function shoot(){
   if(state.rpgReloading && activeWeapon === 'rpg') return; // RPG reloading: cannot fire
   if(isSprinting()) return; // sprinting: no bullets, no recoil
   const nowMs = performance.now();
-  const interval = isAuto() ? 1000/fireRate() : 300;
+  const interval = (isAuto() || activeWeapon === 'rpg') ? 1000/fireRate() : 300;
   if(nowMs - lastShotTime < interval) return;
   lastShotTime = nowMs;
 
@@ -4679,6 +4678,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
