@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795053898 -->
+<!-- page-version: 1795109102 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -738,7 +738,7 @@ const WB_STAT_UPGRADES = [
   {key:'staminaPool', name:'Stamina Pool', baseCost:80, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
   {key:'staminaRegen', name:'Stamina Regen', baseCost:70, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
   {key:'pointMult', name:'Point Multiplier', baseCost:140, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
-  {key:'lootChance', name:'Loot Chance', baseCost:120, costMult:1.6, maxLevel:5, desc:'+3% extra loot drop per level'},
+
   {key:'discount', name:'Workbench Discount', baseCost:200, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
   {key:'startAmmo', name:'Starting Ammo', baseCost:100, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
   {key:'zombieSlow', name:'Zombie Slow', baseCost:130, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
@@ -746,7 +746,7 @@ const WB_STAT_UPGRADES = [
   {key:'medkit', name:'Medkit Count', baseCost:150, costMult:1.7, maxLevel:5, desc:'+1 medkit per wave per level'},
   {key:'spawnShield', name:'Spawn Shield', baseCost:180, costMult:1.8, maxLevel:5, desc:'+0.5s invulnerability after hit per level'}
 ];
-const statUpgrades = {defense:0, speed:0, damage:0, fireRate:0, magSize:0, reloadSpeed:0, headshot:0, critChance:0, maxHealth:0, regen:0, armor:0, staminaPool:0, staminaRegen:0, pointMult:0, lootChance:0, discount:0, startAmmo:0, zombieSlow:0, grenade:0, medkit:0, spawnShield:0};
+const statUpgrades = {defense:0, speed:0, damage:0, fireRate:0, magSize:0, reloadSpeed:0, headshot:0, critChance:0, maxHealth:0, regen:0, armor:0, staminaPool:0, staminaRegen:0, pointMult:0, discount:0, startAmmo:0, zombieSlow:0, grenade:0, medkit:0, spawnShield:0};
 function getUpgradeCost(def, level){
   let cost = Math.floor(def.baseCost * Math.pow(def.costMult, level));
   const disc = statUpgrades.discount * 0.10;
@@ -767,7 +767,7 @@ function getArmorReduction(){ return statUpgrades.armor * 3; }
 function getMaxStamina(){ return 100 + statUpgrades.staminaPool * 20; }
 function getStaminaRegenRate(){ return 15 + statUpgrades.staminaRegen * 5; }
 function getPointMultiplier(){ return 1 + statUpgrades.pointMult * 0.20; }
-function getLootChance(){ return statUpgrades.lootChance * 0.03; }
+
 function getZombieSlowMultiplier(){ return Math.max(0.2, 1 - statUpgrades.zombieSlow * 0.10); }
 function getGrenadeCount(){ return statUpgrades.grenade; }
 function getMedkitCount(){ return statUpgrades.medkit; }
@@ -848,7 +848,7 @@ function wbOpenMenu(){
   const categories = [
     {name:'COMBAT', keys:['damage','fireRate','magSize','reloadSpeed','headshot','critChance']},
     {name:'SURVIVAL', keys:['maxHealth','regen','armor','staminaPool','staminaRegen']},
-    {name:'ECONOMY / META', keys:['pointMult','lootChance','discount','startAmmo']},
+    {name:'ECONOMY / META', keys:['pointMult','discount','startAmmo']},
     {name:'WILDCARD', keys:['zombieSlow','grenade','medkit','spawnShield']}
   ];
   
@@ -4741,6 +4741,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
