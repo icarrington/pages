@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795098256 -->
+<!-- page-version: 1795098518 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -127,7 +127,7 @@
   .wb-mag{font-family:var(--mono);font-size:clamp(10px,1.8vw,12px);color:var(--dim);margin-top:4px}
   .wb-pts{font-family:var(--mono);font-size:clamp(11px,2vw,14px);font-weight:700;color:var(--accent)}
   .wb-rows{display:flex;flex-direction:column;gap:clamp(6px,1vw,10px);margin-bottom:clamp(12px,2vw,20px)}
-  .wb-weapon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:clamp(6px,1vw,10px);margin-bottom:clamp(12px,2vw,20px);width:100%}
+  .wb-weapon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:clamp(6px,1vw,10px);margin-bottom:clamp(12px,2vw,20px);width:100%;max-width:100%}
   .wb-weapon-grid .wb-row{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:clamp(4px,0.8vw,8px)}
   .wb-weapon-grid .wb-right{margin-top:auto;width:100%;text-align:right}
   .wb-row{display:flex;align-items:center;justify-content:space-between;gap:clamp(8px,1.5vw,12px);padding:clamp(8px,1.5vw,12px) clamp(10px,1.5vw,14px);background:#0e1317;border:1px solid var(--line);cursor:pointer;transition:border-color .12s,background .12s;flex-wrap:wrap}
@@ -278,6 +278,7 @@
   <div class="tbtn" id="btnDash">DASH</div>
   <div class="tbtn" id="btnScope">SCOPE</div>
   <div class="tbtn" id="btnCycle">CYCLE</div>
+  <div class="tbtn" id="btnWorkbench">BENCH</div>
   <div id="tSlots"></div>
 </div>
 
@@ -335,6 +336,7 @@
       <li><span class="key">SPACE</span> Jump</li>
       <li><span class="key">ESC</span> Pause</li>
       <li><span class="key">Q / WHEEL</span> Cycle Gun</li>
+      <li><span class="key">B</span> Workbench</li>
     </ul>
     <button class="btn" id="startBtn">Start</button>
   </div>
@@ -771,9 +773,10 @@ function weaponIcon(w){
   };
   return icons[w] || '';
 }
-function wbToggleMenu(){ /* workbench removed - no-op */ }
+function wbToggleMenu(){
+  if(wbMenuOpen) wbCloseMenu(); else wbOpenMenu();
+}
 function wbOpenMenu(){
-  return; /* workbench removed - no-op */
   wbMenuOpen = true;
   state.running = false;
   if(document.pointerLockElement === canvas) document.exitPointerLock();
@@ -1158,7 +1161,16 @@ function wbCloseMenu(){
   state.running = true;
   updateHUD();
 }
-function wbUpdateNear(){ /* workbench removed - no-op */ }
+function wbUpdateNear(){
+  if(!state.running || wbMenuOpen) return;
+  const dx = player.pos.x - WB.x, dz = player.pos.z - WB.z;
+  const near = (dx*dx + dz*dz) < 16;
+  if(near !== wbNear){
+    wbNear = near;
+    const h = document.getElementById('wbHint');
+    if(h) h.classList.toggle('show', near);
+  }
+}
 // Small sand bunkers
 const bunkerMat2 = new THREE.MeshLambertMaterial({map:texBarrel()});
 [[-21,-9],[9,-19.5],[21,16.5],[-15,20],[15,-20],[25,10],[-25,-10],[10,25],[40,20],[-40,20],[20,40],[-20,40],[40,-20],[-40,-20],[20,-40],[-20,-40]].forEach(p=>{
@@ -2678,6 +2690,7 @@ document.addEventListener('keydown', e=>{
   if(k==='5' && state.hasDoubleShotgun){ switchWeapon('doubleShotgun'); }
   if(k==='r'){ startReload(); }
   if(k==='q'){ cycleWeapon(); }
+  if(k==='b'){ wbToggleMenu(); }
   if(k===' '){ tryJump(); }
   keys[k]=true;
   if(['w','a','s','d',' '].includes(k)) e.preventDefault();
@@ -4696,6 +4709,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
