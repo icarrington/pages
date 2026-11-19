@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795110310 -->
+<!-- page-version: 1795110481 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -590,7 +590,7 @@ wallSeg(45, 24.75,40.5,0.5,0); addCollider(45, 24.75,0.5,24.75,4.2);
 // existing boundary clamp already blocks movement), so it never changes gameplay.
 // Low-poly flat-shaded boxes to match the rest of the scene.
 (function buildFence(){
-  const B = 60;                 // boundary line (matches resolveCollision clamp)
+  const B = 60;                // boundary line (matches resolveCollision clamp exactly: ±60)
   const postMat = new THREE.MeshLambertMaterial({color:0x3a2a18}); // dark wood
   const railMat = new THREE.MeshLambertMaterial({color:0x4a3620}); // slightly lighter wood
   const postGeo = new THREE.BoxGeometry(0.55, 2.8, 0.55);
@@ -4823,6 +4823,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
