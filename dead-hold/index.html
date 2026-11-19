@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795052785 -->
+<!-- page-version: 1795053001 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -807,14 +807,22 @@ function wbOpenMenu(){
   
   let weaponRowsHTML = '';
   const allWeapons = ['smg','shotgun','rifle','uzi','m4a1','awp','deagle','minigun','rpg','doubleShotgun'];
+  const AMMO_COST = 50; // Cost for a full magazine of ammo
   for(const w of allWeapons){
     const owned = isOwned(w);
     const cost = WEAPON_PRICES[w] || 200;
     const canBuy = !owned && state.points >= cost;
     const cls = owned ? 'wb-row owned' : (canBuy ? 'wb-row avail' : 'wb-row poor');
-    const right = owned ? '<span class="wb-check">OWNED ✓</span>' : (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
+    let right;
+    if(owned){
+      const canBuyAmmo = state.points >= AMMO_COST;
+      right = '<span class="wb-cost" style="color:var(--accent)">AMMO: '+AMMO_COST+' pts</span>';
+    } else {
+      right = (canBuy ? '<span class="wb-cost">'+cost+' pts</span>' : '<span class="wb-cost">Need '+(cost-state.points)+' more pts</span>');
+    }
     const wname = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'}[w] || w;
-    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name">'+wname+'</div><div class="wb-desc">Purchase this weapon</div><div class="wb-right">'+right+'</div></div>';
+    const desc = owned ? 'Buy a full magazine of ammo' : 'Purchase this weapon';
+    weaponRowsHTML += '<div class="'+cls+'" data-weapon="'+w+'"><div class="wb-name">'+wname+'</div><div class="wb-desc">'+desc+'</div><div class="wb-right">'+right+'</div></div>';
   }
   
   // Stat upgrade rows grouped by category
@@ -852,8 +860,23 @@ function wbOpenMenu(){
   menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
     r.addEventListener('click', ()=>{
       const weaponKey = r.dataset.weapon;
-      if(isOwned(weaponKey)) return;
       const WEAPON_PRICES = {smg:150,shotgun:200,rifle:250,uzi:180,m4a1:300,awp:400,deagle:220,minigun:500,rpg:350,doubleShotgun:280};
+      const AMMO_COST = 50;
+      if(isOwned(weaponKey)){
+        // Buy ammo for owned weapon
+        if(state.points < AMMO_COST) return;
+        state.points -= AMMO_COST;
+        const cap = (wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus();
+        reserves[weaponKey] += cap; // Add one full magazine to reserve
+        ensureAudio();
+        if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(800,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+        const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
+        showToast('Bought ' + cap + ' rounds for ' + (wnames[weaponKey] || weaponKey), 2000);
+        wbOpenMenu(); // refresh
+        updateHUD();
+        return;
+      }
+      // Buy new weapon
       const cost = WEAPON_PRICES[weaponKey] || 200;
       if(state.points < cost) return;
       state.points -= cost;
@@ -1071,9 +1094,23 @@ function wbOpenMenu(){
       const statKey = r.dataset.statkey;
       const weaponKey = r.dataset.weapon;
       if(weaponKey){
-        // Weapon purchase
-        if(isOwned(weaponKey)) return;
         const WEAPON_PRICES = {smg:150,shotgun:200,rifle:250,uzi:180,m4a1:300,awp:400,deagle:220,minigun:500,rpg:350,doubleShotgun:280};
+        const AMMO_COST = 50;
+        if(isOwned(weaponKey)){
+          // Buy ammo for owned weapon
+          if(state.points < AMMO_COST) return;
+          state.points -= AMMO_COST;
+          const cap = (wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus();
+          reserves[weaponKey] += cap; // Add one full magazine to reserve
+          ensureAudio();
+          if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(800,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
+          const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
+          showToast('Bought ' + cap + ' rounds for ' + (wnames[weaponKey] || weaponKey), 2000);
+          wbOpenMenu(); // refresh
+          updateHUD();
+          return;
+        }
+        // Buy new weapon
         const cost = WEAPON_PRICES[weaponKey] || 200;
         if(state.points < cost) return;
         state.points -= cost;
@@ -4734,6 +4771,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
