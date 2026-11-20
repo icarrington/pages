@@ -40,9 +40,12 @@
   #crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
   #crosshair i{position:absolute;width:4px;height:4px;background:var(--accent);left:50%;top:50%;transform:translate(-50%,-50%)}
   /* The optic is a real 3D attachment, not a screen-sized fake scope.
-     Use the normal crosshair at hip; on ADS the illuminated optic is the reticle. */
+     Use the normal crosshair at hip; on ADS the illuminated optic is the reticle.
+     For EVERY weapon (red dot, iron sights, scope) the aiming reticle is a
+     screen-centered 2D overlay so the sight center ALWAYS coincides with the
+     center of the player's view, regardless of weapon model or ADS offset. */
   #crosshair{transition:opacity .09s ease}
-  #hud.rd-active.ads-active #crosshair{opacity:0}
+  #hud.ads-active #crosshair{opacity:0}
   #hitmarker{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:0;z-index:6}
   #hitmarker::before,#hitmarker::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:20px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.7)}
   #hitmarker::before{transform:translate(-50%,-50%) rotate(45deg)}
