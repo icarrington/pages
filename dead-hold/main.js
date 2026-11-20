@@ -169,8 +169,11 @@ function loop(){
     }
   }
 
+  /* ---- gamepad: poll + edge-triggered actions ---- */
+  pollGamepad(dt);
+
   /* ---- auto fire (SMG / Rifle) ---- */
-  if((mouseDown || (isTouch && fireHeld)) && isAuto() && !state.reloading && mags[activeWeapon]>0 && !isSprinting()){
+  if((mouseDown || (isTouch && fireHeld) || gpFire) && isAuto() && !state.reloading && mags[activeWeapon]>0 && !isSprinting()){
     shoot();
   }
 
@@ -195,6 +198,9 @@ function loop(){
       startWave(state.wave + 1);
     }
   }
+
+  /* ---- gamepad: apply movement + look (combines with keyboard) ---- */
+  applyGamepad(dt);
 
   /* ---- movement ---- */
   const _q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0,player.yaw,0));
