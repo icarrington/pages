@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<!-- page-version: 1795211030 -->
+<!-- page-version: 1795211805 -->
 <!-- page-version (before the split): 1795183816 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <title>DEAD HOLD</title>
-<link rel="stylesheet" href="style.css?v=1795211030">
+<link rel="stylesheet" href="style.css?v=1795211805">
 </head>
 <body>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -101,6 +101,59 @@
   </div>
 </div>
 
+<div id="calibMenu" class="hidden">
+  <div class="calib-card">
+    <div class="calib-head">
+      <div class="calib-title">CONTROLLER CALIBRATION</div>
+      <button class="calib-x" id="calibCloseBtn" title="Close (Start / X)">&#10005;</button>
+    </div>
+    <div class="calib-sub">Live stick values &amp; axis mapping</div>
+
+    <div class="calib-section">
+      <div class="calib-sec-label">LIVE STICK VALUES</div>
+      <div class="calib-sticks">
+        <div class="calib-stick">
+          <div class="calib-stick-name">LEFT (Move)</div>
+          <div class="calib-stick-val" id="calibLX">X 0.00</div>
+          <div class="calib-stick-val" id="calibLY">Y 0.00</div>
+        </div>
+        <div class="calib-stick">
+          <div class="calib-stick-name">RIGHT (Look)</div>
+          <div class="calib-stick-val" id="calibRX">X 0.00</div>
+          <div class="calib-stick-val" id="calibRY">Y 0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="calib-section">
+      <div class="calib-sec-label">AXIS FLIPS</div>
+      <label class="calib-row"><span class="calib-name">Left X (strafe)</span><input type="checkbox" id="calibFlipLX"></label>
+      <label class="calib-row"><span class="calib-name">Left Y (forward/back)</span><input type="checkbox" id="calibFlipLY"></label>
+      <label class="calib-row"><span class="calib-name">Right X (look L/R)</span><input type="checkbox" id="calibFlipRX"></label>
+      <label class="calib-row"><span class="calib-name">Right Y (look U/D)</span><input type="checkbox" id="calibFlipRY"></label>
+    </div>
+
+    <div class="calib-section">
+      <div class="calib-sec-label">SENSITIVITY</div>
+      <label class="calib-row">
+        <span class="calib-name">Look</span>
+        <input type="range" id="calibLookSens" min="0.001" max="0.02" step="0.0005" value="0.0038">
+        <span class="calib-val" id="calibLookSensVal">0.0038</span>
+      </label>
+      <label class="calib-row">
+        <span class="calib-name">Movement</span>
+        <input type="range" id="calibMoveSens" min="0.1" max="2.0" step="0.05" value="1.0">
+        <span class="calib-val" id="calibMoveSensVal">1.00</span>
+      </label>
+    </div>
+
+    <div class="calib-foot">
+      <span class="calib-hint">Start = open/close &nbsp;·&nbsp; X = close</span>
+      <button class="calib-btn" id="calibResetBtn">Reset</button>
+    </div>
+  </div>
+</div>
+
 <div class="screen hidden" id="overScreen">
   <div class="card">
     <div class="tag">Mission Failed</div>
@@ -119,18 +172,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <!-- The game's code, one file per system (see the comment at the top of each). -->
-<script src="core.js?v=1795211030"></script>
-<script src="world.js?v=1795211030"></script>
-<script src="guns-1.js?v=1795211030"></script>
-<script src="guns-2.js?v=1795211030"></script>
-<script src="weapons.js?v=1795211030"></script>
-<script src="rpg.js?v=1795211030"></script>
-<script src="zombies.js?v=1795211030"></script>
-<script src="boss.js?v=1795211030"></script>
-<script src="workbench.js?v=1795211030"></script>
-<script src="mobile.js?v=1795211030"></script>
-<script src="game.js?v=1795211030"></script>
-<script src="main.js?v=1795211030"></script>
+<script src="core.js?v=1795211805"></script>
+<script src="world.js?v=1795211805"></script>
+<script src="guns-1.js?v=1795211805"></script>
+<script src="guns-2.js?v=1795211805"></script>
+<script src="weapons.js?v=1795211805"></script>
+<script src="rpg.js?v=1795211805"></script>
+<script src="zombies.js?v=1795211805"></script>
+<script src="boss.js?v=1795211805"></script>
+<script src="workbench.js?v=1795211805"></script>
+<script src="mobile.js?v=1795211805"></script>
+<script src="game.js?v=1795211805"></script>
+<script src="main.js?v=1795211805"></script>
+
+
 
 
 
