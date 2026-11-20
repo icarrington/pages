@@ -172,6 +172,24 @@ function loop(){
   /* ---- gamepad: poll + edge-triggered actions ---- */
   pollGamepad(dt);
 
+  /* ---- gamepad: workbench menu navigation (only while the menu is open) ---- */
+  if(wbMenuOpen){
+    const _gp = gpFindPad();
+    if(_gp){
+      // Left stick / D-pad up-down (deadzone ~0.4) moves the selection cursor.
+      const _ly = _gp.axes[1] || 0;
+      const _dpUp = _gp.buttons[12] && _gp.buttons[12].pressed;
+      const _dpDn = _gp.buttons[13] && _gp.buttons[13].pressed;
+      let _dir = 0;
+      if(_ly < -0.4 || _dpUp) _dir = -1;
+      else if(_ly > 0.4 || _dpDn) _dir = 1;
+      if(_dir) wbNavMove(_dir, dt);
+      // A (0) = activate selected; B (1) / Start (9) = close the menu.
+      if(gpRising(_gp, 0)) wbNavActivate();
+      if(gpRising(_gp, 1) || gpRising(_gp, 9)) wbNavClose();
+    }
+  }
+
   /* ---- auto fire (SMG / Rifle) ---- */
   if((mouseDown || (isTouch && fireHeld) || gpFire) && isAuto() && !state.reloading && mags[activeWeapon]>0 && !isSprinting()){
     shoot();
