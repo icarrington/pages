@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795140628 -->
+<!-- page-version: 1795183816 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -4619,47 +4619,28 @@ function loop(){
     
     if(dist > 0.9){
       // Moderate speed: faster than walking, slower than sprint
-      const speed = z.speed || 3.0;
+      const speed = (z.speed || 3.0) * (z.speedVar || 1.0);
       const step = speed * dt;
       
       // Unit direction toward player
       const ux = dx/dist, uz = dz/dist;
       
-      // Anti-stuck tracking: measure actual movement over 1s window
-      if(!z._moveTrack) z._moveTrack = {t: state.seconds, x: z.group.position.x, z: z.group.position.z, dist: 0};
+      // Perpendicular direction (left of facing)
+      const px = -uz, pz = ux;
+      
+      // Initialize anti-stuck state if not present
       if(!z._detourTimer) z._detourTimer = 0;
       if(!z._detourDir) z._detourDir = 1;
+      if(!z._moveTrack) z._moveTrack = {t: state.seconds, x: z.group.position.x, z: z.group.position.z, dist: 0};
       
       // Determine movement direction
       let dirX = ux, dirZ = uz;
       
-      // If in detour mode, use perpendicular direction
+      // If in detour mode, steer 0.35 toward player + 0.9 perpendicular (signed by detourDir)
       if(z._detourTimer > 0){
         z._detourTimer -= dt;
-        const px = -uz * z._detourDir, pz = ux * z._detourDir;
-        dirX = ux * 0.3 + px * 0.9;
-        dirZ = uz * 0.3 + pz * 0.9;
-        const dl = Math.hypot(dirX, dirZ) || 1;
-        dirX /= dl; dirZ /= dl;
-      } else {
-        // Obstacle avoidance: steer around nearby colliders
-        let offX = 0, offZ = 0;
-        const zx = z.group.position.x, zz = z.group.position.z;
-        for(let ci = 0; ci < colliders.length; ci++){
-          const c = colliders[ci];
-          if(zx < c.minX - 1.5 || zx > c.maxX + 1.5 || zz < c.minZ - 1.5 || zz > c.maxZ + 1.5) continue;
-          const cx = (c.minX + c.maxX) / 2;
-          const cz = (c.minZ + c.maxZ) / 2;
-          const cd = Math.hypot(zx - cx, zz - cz);
-          if(cd < 2.0){
-            const px = -uz, pz = ux;
-            const strength = 0.8 * (1 - cd/2.0);
-            offX += px * strength;
-            offZ += pz * strength;
-          }
-        }
-        dirX = ux + offX;
-        dirZ = uz + offZ;
+        dirX = ux * 0.35 + px * z._detourDir * 0.9;
+        dirZ = uz * 0.35 + pz * z._detourDir * 0.9;
         const dl = Math.hypot(dirX, dirZ) || 1;
         dirX /= dl; dirZ /= dl;
       }
@@ -4672,17 +4653,14 @@ function loop(){
       if(!zombieBlocked(nx, nz)){
         z.group.position.x = nx;
         z.group.position.z = nz;
-        // Update zombie Y position to follow terrain
-        z.group.position.y = terrainHeight(nx, nz);
         moved = true;
       } else {
-        // Slide along obstacle: try perpendicular and axis-aligned directions
-        const px = -uz, pz = ux;
+        // 4-way fallback: pure perp, opposite perp, x-only, z-only
         const candidates = [
           [z.group.position.x + px * step, z.group.position.z + pz * step],
           [z.group.position.x - px * step, z.group.position.z - pz * step],
-          [nx, z.group.position.z],
-          [z.group.position.x, nz]
+          [z.group.position.x + dirX * step, z.group.position.z],
+          [z.group.position.x, z.group.position.z + dirZ * step]
         ];
         for(let ci = 0; ci < candidates.length; ci++){
           if(!zombieBlocked(candidates[ci][0], candidates[ci][1])){
@@ -4700,12 +4678,10 @@ function loop(){
       z._moveTrack.x = z.group.position.x;
       z._moveTrack.z = z.group.position.z;
       
-      // Anti-stuck: if speed dropped below 5% of target over 1s, trigger detour
+      // Anti-stuck: every 0.5s, if movedDist < 0.12 (barely moved), trigger detour
       const elapsed = state.seconds - z._moveTrack.t;
-      if(elapsed >= 1.0){
-        const actualSpeed = z._moveTrack.dist / elapsed;
-        const targetSpeed = speed;
-        if(actualSpeed < targetSpeed * 0.05){
+      if(elapsed >= 0.5){
+        if(z._moveTrack.dist < 0.12){
           z._detourTimer = 1.0;
           z._detourDir = Math.random() < 0.5 ? 1 : -1;
         }
@@ -4719,6 +4695,9 @@ function loop(){
       else if(z.group.position.x > _B) z.group.position.x = _B;
       if(z.group.position.z < -_B) z.group.position.z = -_B;
       else if(z.group.position.z > _B) z.group.position.z = _B;
+      
+      // Update zombie Y position to follow terrain
+      z.group.position.y = terrainHeight(z.group.position.x, z.group.position.z);
       
       // Bob animation (relative to terrain height)
       z.bobPhase += dt*6;
@@ -4863,6 +4842,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
