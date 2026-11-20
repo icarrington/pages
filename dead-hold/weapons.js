@@ -38,26 +38,9 @@ const scopeGlass = new THREE.Mesh(new THREE.CircleGeometry(0.076,28),
     side:THREE.DoubleSide, depthWrite:false}));
 scopeGlass.position.z = SCOPE_LENS_Z-0.004;
 scopeGroup.add(scopeGlass);
-// A radial glow texture makes the reticle readable without turning into a big red ball.
-const scopeDotCanvas = document.createElement('canvas');
-scopeDotCanvas.width = scopeDotCanvas.height = 64;
-const scopeDotCtx = scopeDotCanvas.getContext('2d');
-const scopeDotGradient = scopeDotCtx.createRadialGradient(32,32,0,32,32,32);
-scopeDotGradient.addColorStop(0,'rgba(255,235,204,1)');
-scopeDotGradient.addColorStop(0.10,'rgba(255,65,40,1)');
-scopeDotGradient.addColorStop(0.25,'rgba(255,24,12,.65)');
-scopeDotGradient.addColorStop(1,'rgba(255,15,5,0)');
-scopeDotCtx.fillStyle = scopeDotGradient;
-scopeDotCtx.fillRect(0,0,64,64);
-const scopeDotTexture = new THREE.CanvasTexture(scopeDotCanvas);
-const scopeDotMat = new THREE.SpriteMaterial({map:scopeDotTexture, color:0xffffff,
-  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
-const scopeDot = new THREE.Sprite(scopeDotMat);
-scopeDot.scale.set(0.032,0.032,1);
-scopeDot.position.set(0,0,SCOPE_LENS_Z);
-scopeDot.renderOrder = 999;
-scopeDot.visible = false;
-scopeGroup.add(scopeDot);
+// The red dot reticle is now a 2D HTML overlay anchored to screen center.
+// The 3D scope housing (tube, rim, etc.) remains attached to the weapon,
+// but the actual aiming dot is always at 50% width, 50% height.
 scopeGroup.visible = false;
 gun.add(scopeGroup);
 // Reused scratch vectors for projecting the CAMERA AIM RAY onto the actual lens.
@@ -233,36 +216,11 @@ function lerpAds(dt){
   const hud = document.getElementById('hud');
   hud.classList.toggle('ads-active', wantScope && b > 0.88);
   scopeGroup.visible = wantScope;
-  scopeDot.visible = false;
-  // Show the screen-centered scope crosshair overlay when ADS is active with a red dot
+  // Show the screen-centered scope crosshair overlay when ADS is active with a red dot.
+  // The dot is ALWAYS at exact screen center (50% width, 50% height), regardless of
+  // weapon bob, ADS offsets, or weapon model position.
   const scopeCrossEl = document.getElementById('scopeCrosshair');
   scopeCrossEl.classList.toggle('show', wantScope && b > 0.88);
-  if(wantScope){
-    // The camera fires hitscan straight through screen center. Intersect that
-    // exact ray with the lens plane in SCOPE coordinates. This makes the dot
-    // indicate the true point of aim while the housing can sway/recoil around it.
-    // If the eye is no longer looking through the aperture, the dot disappears
-    // instead of glowing through the metal tube or floating outside the sight.
-    camera.updateMatrixWorld(true);
-    scopeRayOrigin.set(0,0,0);
-    camera.localToWorld(scopeRayOrigin);
-    scopeGroup.worldToLocal(scopeRayOrigin);
-    scopeRayEnd.set(0,0,-5);
-    camera.localToWorld(scopeRayEnd);
-    scopeGroup.worldToLocal(scopeRayEnd);
-    const dx = scopeRayEnd.x - scopeRayOrigin.x;
-    const dy = scopeRayEnd.y - scopeRayOrigin.y;
-    const dz = scopeRayEnd.z - scopeRayOrigin.z;
-    if(Math.abs(dz) > 1e-6){
-      const t = (SCOPE_LENS_Z - scopeRayOrigin.z) / dz;
-      const x = scopeRayOrigin.x + dx*t;
-      const y = scopeRayOrigin.y + dy*t;
-      if(b > 0.55 && t > 0 && t < 1 && x*x+y*y < SCOPE_CLEAR_RADIUS*SCOPE_CLEAR_RADIUS){
-        scopeDot.position.set(x,y,SCOPE_LENS_Z);
-        scopeDot.visible = true;
-      }
-    }
-  }
 }
 function resetAds(){
   adsActive = false;
