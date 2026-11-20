@@ -238,8 +238,9 @@ function buildAWP(){
   const awpScopeMat = new THREE.MeshLambertMaterial({color:0x14191e, side:THREE.DoubleSide});
   const awpScopeRimMat = new THREE.MeshLambertMaterial({color:0x343d45});
   const awpScope = new THREE.Group();
-  // 20% higher than the original scope center (0.10) relative to the weapon model.
-  const awpScopeLift = 0.10 * 0.20; // = 0.02
+  // 20% higher than the original scope center (0.10) relative to the weapon model,
+  // plus an extra 2% lift so the scope sits a little higher on screen during ADS.
+  const awpScopeLift = 0.10 * 0.20 + 0.10 * 0.02; // = 0.022
   const awpScopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.081,0.081,0.22,24,1,true), awpScopeMat);
   awpScopeTube.rotation.x = Math.PI/2; awpScopeTube.position.set(0,0.12+awpScopeLift,0.05); awpScope.add(awpScopeTube);
   for(const rz of [-0.11, 0.11]){
