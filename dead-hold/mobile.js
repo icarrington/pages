@@ -304,6 +304,15 @@ function pollGamepad(dt){
   if(!gpConnected){ gpConnected = true; gpPrev = {}; }
   if(gpAnyActive(gp)) gpToast();
 
+  // While the workbench menu is open, the gamepad drives MENU navigation only.
+  // Suppress all normal gameplay actions (fire, jump, reload, cycle, ADS, sprint)
+  // so they don't fire accidentally. Menu nav is handled in the main loop.
+  if(typeof wbMenuOpen !== 'undefined' && wbMenuOpen){
+    gpFire = false; gpSprint = false; gpCrouch = false; gpAds = false;
+    if(window._touchSprint !== undefined) window._touchSprint = false;
+    return;
+  }
+
   // Hold-state (continuous)
   gpFire   = gpButtonVal(gp, 7) > 0;   // RT = FIRE
   gpSprint = gpButtonVal(gp, 10) > 0;  // L3 = sprint
@@ -510,6 +519,24 @@ document.addEventListener('keydown', e=>{
   if(['w','a','s','d',' '].includes(k)) e.preventDefault();
 });
 document.getElementById('wbCloseBtn').addEventListener('click', wbCloseMenu);
+
+/* ---- Workbench menu: keyboard navigation (arrows + Enter + Escape) ----
+   Works alongside mouse/touch clicks. Only active while the menu is open. */
+document.addEventListener('keydown', function(e){
+  if(typeof wbMenuOpen === 'undefined' || !wbMenuOpen) return;
+  const k = e.key;
+  if(k === 'ArrowDown' || k === 'ArrowUp'){
+    e.preventDefault();
+    if(!wbNavEls.length) wbNavBuild();
+    wbNavMove(k === 'ArrowDown' ? 1 : -1, 0);
+  } else if(k === 'Enter' || k === ' '){
+    e.preventDefault();
+    wbNavActivate();
+  } else if(k === 'Escape' || k === 'Backspace'){
+    e.preventDefault();
+    wbNavClose();
+  }
+});
 function tryJump(){
   if(!state.running) return;
   if(player.grounded){
