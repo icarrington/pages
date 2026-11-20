@@ -63,8 +63,8 @@ function resetGame(){
   ownedWeapons.length = 0; ownedWeapons.push('pistol'); // start with pistol only
   Object.keys(MAGS).forEach(w=>{
     mags[w]=Math.floor(MAGS[w] + getMagSizeBonus());
-    if(w === 'pistol') reserves[w] = 116 + (getStartAmmoBonus() * MAGS[w]);
-    else reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
+    if(w === 'pistol') reserves[w] = Math.floor(116 + (getStartAmmoBonus() * MAGS[w]));
+    else reserves[w]=Math.floor((MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w])); // 10 full magazines + starting ammo bonus
   });
   
   // Clear any pending dev actions to prevent stacking on wave reset
@@ -145,7 +145,11 @@ function updateHUD(){
   const mag = Math.floor(mags[activeWeapon]);
   const cap = Math.floor((wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.3) : MAGS[activeWeapon]) + getMagSizeBonus());
   setNum('mag', mag);
-  setNum('reserve', reserves[activeWeapon]);
+  // Force the reserve onto the DOM as a whole integer (bypass cache so it is always visible)
+  const _resVal = Math.floor(Math.max(0, reserves[activeWeapon]));
+  const _resEl = document.getElementById('reserve');
+  if(_resEl && _resEl.textContent !== String(_resVal)) _resEl.textContent = _resVal;
+  hudCache['reserve'] = _resVal;
   const ammoEl = document.getElementById('ammo');
   const wnames = {pistol:'Pistol',smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',doubleShotgun:'DB Shotgun',rpg:'RPG-7'};
   const wnameEl = document.getElementById('weaponName');
