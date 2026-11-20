@@ -292,8 +292,8 @@ function wbOpenMenu(){
         // Buy ammo for owned weapon
         if(state.points < AMMO_COST) return;
         state.points -= AMMO_COST;
-        const cap = (wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus();
-        reserves[weaponKey] += cap; // Add one full magazine to reserve
+        const cap = Math.floor((wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus());
+        reserves[weaponKey] = Math.floor(Math.max(0, reserves[weaponKey] + cap)); // Add one full magazine to reserve
         ensureAudio();
         if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(800,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
         const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
@@ -526,8 +526,8 @@ function wbOpenMenu(){
           // Buy ammo for owned weapon
           if(state.points < AMMO_COST) return;
           state.points -= AMMO_COST;
-          const cap = (wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus();
-          reserves[weaponKey] += cap; // Add one full magazine to reserve
+          const cap = Math.floor((wbGet(weaponKey).extMag ? Math.ceil(MAGS[weaponKey]*1.5) : MAGS[weaponKey]) + getMagSizeBonus());
+          reserves[weaponKey] = Math.floor(Math.max(0, reserves[weaponKey] + cap)); // Add one full magazine to reserve
           ensureAudio();
           if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(800,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.08); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.09); }
           const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
