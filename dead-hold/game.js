@@ -143,7 +143,7 @@ function updateHUD(){
   setNum('headshots', state.headshots);
   setNum('zombiesLeft', zombies.filter(z=>z.alive).length + (state.boss && state.boss.alive ? 1 : 0));
   const mag = mags[activeWeapon];
-  const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.5) : MAGS[activeWeapon];
+  const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.3) : MAGS[activeWeapon];
   setNum('mag', mag);
   setNum('reserve', reserves[activeWeapon]);
   const ammoEl = document.getElementById('ammo');
