@@ -171,6 +171,7 @@ function wbOpenMenu(){
   wbMenuOpen = true;
   state.running = false;
   if(document.pointerLockElement === canvas) document.exitPointerLock();
+  wbNavReset();
   const w = activeWeapon;
   const att = wbGet(w);
   const cap = MAGS[w];
@@ -585,7 +586,70 @@ function wbCloseMenu(){
   wbMenuOpen = false;
   state.running = true;
   document.getElementById('wbMenu').classList.add('hidden');
+  wbNavReset();
   updateHUD();
+}
+
+/* ============================ GAMEPAD WORKBENCH NAV ============================ */
+// Navigates the #wbMenu overlay with the gamepad while it is open.
+// Left stick / D-pad move a selection cursor; A activates; B/Start close.
+let wbNavIdx = -1;
+let wbNavEls = [];
+let wbNavLastMove = 0;
+let wbNavLastDir = 0;
+function wbNavReset(){
+  wbNavIdx = -1;
+  wbNavEls = [];
+  wbNavLastMove = 0;
+  wbNavLastDir = 0;
+  const menu = document.getElementById('wbMenu');
+  if(menu) menu.querySelectorAll('.wb-gp-sel').forEach(el=>el.classList.remove('wb-gp-sel'));
+}
+function wbNavBuild(){
+  const menu = document.getElementById('wbMenu');
+  if(!menu) return;
+  const rows = Array.prototype.slice.call(menu.querySelectorAll('.wb-row'));
+  const btns = Array.prototype.slice.call(menu.querySelectorAll('.wb-upgrade-btn'));
+  const close = menu.querySelector('#wbCloseBtn');
+  wbNavEls = rows.concat(btns);
+  if(close) wbNavEls.push(close);
+  if(wbNavIdx >= wbNavEls.length) wbNavIdx = wbNavEls.length - 1;
+}
+function wbNavApply(){
+  const menu = document.getElementById('wbMenu');
+  if(!menu) return;
+  menu.querySelectorAll('.wb-gp-sel').forEach(el=>el.classList.remove('wb-gp-sel'));
+  if(wbNavIdx < 0 || wbNavIdx >= wbNavEls.length) return;
+  const el = wbNavEls[wbNavIdx];
+  if(!el) return;
+  el.classList.add('wb-gp-sel');
+  const scroller = menu.querySelector('.wb-rows') || menu.querySelector('.wb-card') || menu;
+  if(scroller && typeof el.scrollIntoView === 'function') el.scrollIntoView({block:'nearest'});
+}
+function wbNavMove(dir, dt){
+  if(!wbMenuOpen) return;
+  if(!wbNavEls.length) wbNavBuild();
+  if(!wbNavEls.length) return;
+  const t = performance.now();
+  if(dir === wbNavLastDir){
+    if(t - wbNavLastMove < 120) return; // repeat delay
+  } else {
+    if(t - wbNavLastMove < 300) return; // first-move delay
+    wbNavLastDir = dir;
+  }
+  wbNavLastMove = t;
+  wbNavIdx = Math.max(0, Math.min(wbNavEls.length - 1, wbNavIdx + dir));
+  wbNavApply();
+}
+function wbNavActivate(){
+  if(!wbMenuOpen) return;
+  if(wbNavIdx < 0 || wbNavIdx >= wbNavEls.length) return;
+  const el = wbNavEls[wbNavIdx];
+  if(el && typeof el.click === 'function') el.click();
+}
+function wbNavClose(){
+  if(!wbMenuOpen) return;
+  wbCloseMenu();
 }
 function wbUpdateNear(){
   const dx = player.pos.x - WB.x;
