@@ -157,7 +157,7 @@ function box(w,h,d,mat,x,y,z){
 // covers the ENTIRE playable area and beyond with no gaps or bare ground.
 /* ---- Terrain heightmap: gentle rolling hills over the arena ---- */
 const TERRAIN_SIZE = 160; // covers the whole arena + margin
-const TERRAIN_RES = 128;  // grid resolution (128x128 vertices)
+const TERRAIN_RES = 64;   // grid resolution (64x64 vertices)
 function terrainHeight(x, z){
   // Layered sine waves create smooth, natural-looking rolling hills
   // Exaggerated amplitudes for steeper, more dramatic slopes
@@ -285,27 +285,8 @@ debrisDefs.forEach(d=>{
 });
 
 /* ============================ LIGHTS ============================ */
-scene.add(new THREE.AmbientLight(0x8899aa, 2.5));
-const hemi = new THREE.HemisphereLight(0x667788, 0x334455, 2.0); scene.add(hemi);
-
-// Extra warm fill lights: corners + mid-floor, spread over the larger arena (no shadows, cheap)
-function addFill(x,z){
-  const l = new THREE.PointLight(0xfff5e0, 3.0, 40, 2);
-  l.castShadow = false;
-  l.position.set(x, 3.6, z); scene.add(l);
-}
-addFill(-33,-33); addFill(33,-33); addFill(-33,33); addFill(33,33);
-addFill(-15,0); addFill(15,0); addFill(0,-15); addFill(0,15);
-// extra fill lights out toward the larger arena edges
-addFill(-52,-52); addFill(52,-52); addFill(-52,52); addFill(52,52);
-addFill(0,-52); addFill(0,52); addFill(-52,0); addFill(52,0);
-
-// Extra white fill lights for overall brightness across the larger arena
-[[0,3.8,0],[-33,3.8,0],[33,3.8,0],[0,3.8,-33],[0,3.8,33],[-33,3.8,-33],[33,3.8,33],[-55,3.8,0],[55,3.8,0],[0,3.8,-55],[0,3.8,55]].forEach(p=>{
-  const l = new THREE.PointLight(0xffffff, 2.5, 50, 2);
-  l.castShadow = false;
-  l.position.set(p[0],p[1],p[2]); scene.add(l);
-});
+scene.add(new THREE.AmbientLight(0x8899aa, 3.2));
+const hemi = new THREE.HemisphereLight(0x667788, 0x334455, 2.6); scene.add(hemi);
 
 const flickerLights = [];
 function makeLight(x,z,color,intensity){
