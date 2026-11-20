@@ -319,8 +319,12 @@ function pollGamepad(dt){
     let i = list.indexOf(activeWeapon);
     switchWeapon(list[(i+1)%list.length]);
   }
-  if(gpRising(gp, 9)){                           // Start = pause
+  if(gpRising(gp, 9)){                           // Start = open/close calibration (or close workbench)
     if(wbMenuOpen) wbCloseMenu();
+    else if(typeof calibToggleMenu === 'function') calibToggleMenu();
+  }
+  if(gpRising(gp, 2) && typeof calibOpen !== 'undefined' && calibOpen){              // X = close calibration menu (only when open)
+    if(typeof calibCloseMenu === 'function') calibCloseMenu();
   }
   // Fire: RT (button 7) — for semi-auto weapons, fire on rising edge
   if(gpRising(gp, 7) && state.running && !wbMenuOpen && !isAuto()){
@@ -332,8 +336,15 @@ function applyGamepad(dt){
   const gp = gpFindPad();
   if(!gp) return;
   // LEFT STICK (axes 0,1) = MOVEMENT: X=strafe, Y=forward/back
-  const mx = gpDeadzone(gp.axes[0] || 0);
-  const my = gpDeadzone(gp.axes[1] || 0);
+  let mx = gpDeadzone(gp.axes[0] || 0);
+  let my = gpDeadzone(gp.axes[1] || 0);
+  // Apply user axis flips + movement sensitivity
+  if(typeof calib !== 'undefined' && calib){
+    if(calib.flipLX) mx = -mx;
+    if(calib.flipLY) my = -my;
+    mx *= calib.moveSens;
+    my *= calib.moveSens;
+  }
   if(mx || my){
     // Combine with keyboard: whichever axis value is larger in magnitude wins.
     const kx = (keys['d']?1:0) - (keys['a']?1:0);
@@ -344,12 +355,17 @@ function applyGamepad(dt){
     keys['gpX'] = 0; keys['gpY'] = 0;
   }
   // RIGHT STICK (axes 2,3) = LOOK: X=yaw, Y=pitch
-  const rx = gpDeadzone(gp.axes[2] || 0);
-  const ry = gpDeadzone(gp.axes[3] || 0);
-  if(rx || ry){
-    player.yaw   -= rx * GP_LOOK_SENS;
-    player.pitch -= ry * GP_LOOK_SENS;
-    player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
+  let rx = gpDeadzone(gp.axes[2] || 0);
+  let ry = gpDeadzone(gp.axes[3] || 0);
+  // Apply user axis flips
+  if(typeof calib !== 'undefined' && calib){
+    if(calib.flipRX) rx = -rx;
+    if(calib.flipRY) ry = -ry;
+    if(rx || ry){
+      player.yaw   -= rx * calib.lookSens;
+      player.pitch -= ry * calib.lookSens;
+      player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
+    }
   }
   // Sprint: hold L3 (mirror the touch sprint flag so isSprinting() reads it)
   if(gpSprint){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
@@ -368,6 +384,98 @@ function applyGamepad(dt){
     } else {
       // Semi-auto: fire on press (already handled by rising edge in pollGamepad)
     }
+  }
+}
+
+/* ============================ CONTROLLER CALIBRATION ============================ */
+// User-tunable gamepad mapping. Persisted to localStorage under "deadhold_calibration".
+const CALIB_DEFAULTS = { flipLX:false, flipLY:false, flipRX:false, flipRY:false, lookSens:0.0038, moveSens:1.0 };
+const CALIB_KEY = 'deadhold_calibration';
+let calib = Object.assign({}, CALIB_DEFAULTS);
+function loadCalib(){
+  try{
+    const raw = localStorage.getItem(CALIB_KEY);
+    if(raw){
+      const o = JSON.parse(raw);
+      if(o && typeof o === 'object'){
+        ['flipLX','flipLY','flipRX','flipRY'].forEach(k=>{ if(typeof o[k]==='boolean') calib[k]=o[k]; });
+        if(isFinite(+o.lookSens)) calib.lookSens = Math.min(0.02, Math.max(0.001, +o.lookSens));
+        if(isFinite(+o.moveSens)) calib.moveSens = Math.min(2.0, Math.max(0.1, +o.moveSens));
+      }
+    }
+  }catch(e){ calib = Object.assign({}, CALIB_DEFAULTS); }
+}
+function saveCalib(){
+  try{ localStorage.setItem(CALIB_KEY, JSON.stringify(calib)); }catch(e){}
+}
+let calibOpen = false;
+function calibSyncUI(){
+  const set = (id, v)=>{ const el = document.getElementById(id); if(el) el.checked = v; };
+  set('calibFlipLX', calib.flipLX);
+  set('calibFlipLY', calib.flipLY);
+  set('calibFlipRX', calib.flipRX);
+  set('calibFlipRY', calib.flipRY);
+  const ls = document.getElementById('calibLookSens');
+  if(ls){ ls.value = calib.lookSens; const v=document.getElementById('calibLookSensVal'); if(v) v.textContent = (+calib.lookSens).toFixed(4); }
+  const ms = document.getElementById('calibMoveSens');
+  if(ms){ ms.value = calib.moveSens; const v=document.getElementById('calibMoveSensVal'); if(v) v.textContent = (+calib.moveSens).toFixed(2); }
+}
+function calibOpenMenu(){
+  const el = document.getElementById('calibMenu');
+  if(!el) return;
+  calibOpen = true;
+  calibSyncUI();
+  el.classList.remove('hidden');
+}
+function calibCloseMenu(){
+  const el = document.getElementById('calibMenu');
+  if(!el) return;
+  calibOpen = false;
+  el.classList.add('hidden');
+}
+function calibToggleMenu(){ if(calibOpen) calibCloseMenu(); else calibOpenMenu(); }
+function calibUpdateSticks(){
+  if(!calibOpen) return;
+  const gp = gpFindPad();
+  const a = gp ? gp.axes : [0,0,0,0];
+  const fmt = (v)=> (v>=0?'+':'') + (+v).toFixed(2);
+  const set = (id, v)=>{ const el = document.getElementById(id); if(el) el.textContent = v; };
+  set('calibLX', 'X ' + fmt(a[0]||0));
+  set('calibLY', 'Y ' + fmt(a[1]||0));
+  set('calibRX', 'X ' + fmt(a[2]||0));
+  set('calibRY', 'Y ' + fmt(a[3]||0));
+}
+function initCalib(){
+  loadCalib();
+  const bind = (id, fn)=>{ const el = document.getElementById(id); if(el) el.addEventListener('change', fn); };
+  bind('calibFlipLX', ()=>{ calib.flipLX = document.getElementById('calibFlipLX').checked; saveCalib(); });
+  bind('calibFlipLY', ()=>{ calib.flipLY = document.getElementById('calibFlipLY').checked; saveCalib(); });
+  bind('calibFlipRX', ()=>{ calib.flipRX = document.getElementById('calibFlipRX').checked; saveCalib(); });
+  bind('calibFlipRY', ()=>{ calib.flipRY = document.getElementById('calibFlipRY').checked; saveCalib(); });
+  const ls = document.getElementById('calibLookSens');
+  if(ls) ls.addEventListener('input', ()=>{ calib.lookSens = +ls.value; const v=document.getElementById('calibLookSensVal'); if(v) v.textContent = calib.lookSens.toFixed(4); saveCalib(); });
+  const ms = document.getElementById('calibMoveSens');
+  if(ms) ms.addEventListener('input', ()=>{ calib.moveSens = +ms.value; const v=document.getElementById('calibMoveSensVal'); if(v) v.textContent = calib.moveSens.toFixed(2); saveCalib(); });
+  const close = document.getElementById('calibCloseBtn');
+  if(close) close.addEventListener('click', ()=>{ ensureAudio(); calibCloseMenu(); });
+  const reset = document.getElementById('calibResetBtn');
+  if(reset) reset.addEventListener('click', ()=>{ calib = Object.assign({}, CALIB_DEFAULTS); saveCalib(); calibSyncUI(); });
+  // On-screen "Calibrate" button (works with mouse/touch too)
+  const host = document.getElementById('touchUI');
+  if(host && !document.getElementById('btnCalibrate')){
+    const b = document.createElement('div');
+    b.className = 'tbtn';
+    b.id = 'btnCalibrate';
+    b.textContent = 'CALIBRATE';
+    b.style.right = '200px';
+    b.style.bottom = '272px';
+    b.style.width = '72px';
+    b.style.height = '48px';
+    b.style.fontSize = '9px';
+    b.style.borderRadius = '10px';
+    b.addEventListener('click', ()=>{ ensureAudio(); calibToggleMenu(); });
+    b.addEventListener('touchstart', e=>{ e.preventDefault(); ensureAudio(); calibToggleMenu(); }, {passive:false});
+    host.appendChild(b);
   }
 }
 
@@ -476,3 +584,7 @@ document.addEventListener('wheel', e=>{
   i = (i + (e.deltaY>0?1:-1) + list.length) % list.length;
   switchWeapon(list[i]);
 }, {passive:true});
+
+// Initialize calibration AFTER all const declarations (CALIB_DEFAULTS, gpConnected, etc.)
+// are fully initialized to avoid TDZ "Cannot access before initialization" errors.
+initCalib();
