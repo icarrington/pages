@@ -45,7 +45,7 @@ function makeBoss(){
 function spawnBoss(wave){
   const b = makeBoss();
   const hp = Math.round((150 + 100*(wave/5)) * 12.0); // Doubled from 6.0x to 12.0x for much tankier boss
-  b.group.position.set(0, 0, -40);
+  b.group.position.set(0, terrainHeight(0, -40), -40);
   b.hp = hp; b.maxHp = hp;
   b.alive = true; b.dying = false; b.deathT = 0;
   b.flash = 0; b.attackCd = 0; b.windup = 0; b.bobPhase = 0;
@@ -296,7 +296,7 @@ function updateBoss(dt){
       if(b.group.position.x < -_B) b.group.position.x = -_B; else if(b.group.position.x > _B) b.group.position.x = _B;
       if(b.group.position.z < -_B) b.group.position.z = -_B; else if(b.group.position.z > _B) b.group.position.z = _B;
       b.bobPhase += dt*3;
-      b.group.position.y = Math.abs(Math.sin(b.bobPhase))*0.08;
+      b.group.position.y = terrainHeight(b.group.position.x, b.group.position.z) + Math.abs(Math.sin(b.bobPhase))*0.08;
       
       // Throw lightning if in range and cooldown ready
       if(b.lightningCd <= 0 && dist < 25){
@@ -311,6 +311,7 @@ function updateBoss(dt){
         b.windup = 0.6;
         b.attackCd = 1.2;
       }
+      b.group.position.y = terrainHeight(b.group.position.x, b.group.position.z);
     }
   }
   updateBossBar(true);
