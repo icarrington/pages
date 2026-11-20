@@ -265,6 +265,12 @@ function gpRising(gp, i){
   gpPrev[i] = now;
   return now && !was;
 }
+function gpFalling(gp, i){
+  const now = gpButtonVal(gp, i) > 0;
+  const was = !!gpPrev[i];
+  gpPrev[i] = now;
+  return !now && was;
+}
 function gpFindPad(){
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   for(const p of pads){ if(p && p.connected) return p; }
@@ -303,6 +309,11 @@ function pollGamepad(dt){
   gpSprint = gpButtonVal(gp, 12) > 0;  // L3 = sprint
   gpCrouch = gpButtonVal(gp, 13) > 0;  // R3 = crouch
   gpAds    = gpButtonVal(gp, 6) > 0;   // LT = ADS
+
+  // Explicit edge-triggered sprint fallback (L3 = button 12):
+  // press starts sprinting, release stops it immediately.
+  if(gpRising(gp, 12)){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
+  if(gpFalling(gp, 12)){ if(window._touchSprint !== undefined) window._touchSprint = false; }
 
   // Discrete actions — rising edge only (call the same paths the keys use)
   if(gpRising(gp, 0)) tryJump();                 // A = jump
@@ -364,9 +375,9 @@ function applyGamepad(dt){
       player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
     }
   }
-  // Sprint: hold L3 (mirror the touch sprint flag so isSprinting() reads it)
-  if(gpSprint){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
-  else if(window._touchSprint) window._touchSprint = false;
+  // Sprint: hold L3 (direct assignment so isSprinting() always reads the right value)
+  if(window._touchSprint === undefined) window._touchSprint = false;
+  window._touchSprint = gpSprint;
 
   // Crouch: hold R3 (toggle on while held, release when not)
   if(gpCrouch && !crouching) setCrouch(true);
