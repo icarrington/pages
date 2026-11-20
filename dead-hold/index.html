@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795137973 -->
+<!-- page-version: 1795138658 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1686,44 +1686,106 @@ function buildDoubleShotgun(){
 
 function buildRifle(){
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.5), gunOlive); body.position.set(0,0,0); g.add(body);
-  const handguard = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.08,0.2), gunDark);
-  handguard.position.set(0,0,-0.2); g.add(handguard);
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.2,8), gunMetal);
-  barrel.rotation.x = Math.PI/2; barrel.position.set(0,0.02,-0.35); g.add(barrel);
-  const mag = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.16,0.08), gunDark);
-  mag.position.set(0,-0.12,0.08); mag.rotation.x = 0.1; g.add(mag);
-  const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.09,0.18), gunOlive);
-  stock.position.set(0,-0.02,0.28); g.add(stock);
-  const carryHandle = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.04,0.12), gunDark);
-  carryHandle.position.set(0,0.07,0.1); g.add(carryHandle);
-  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.1,0.07), gunDark);
-  grip.position.set(0,-0.09,0.15); grip.rotation.x = 0.25; g.add(grip);
 
-  // === FRONT IRON SIGHT: thin vertical blade post on a low base, at the muzzle ===
-  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.018,0.010,0.022), gunDark);
-  fsBase.position.set(0,0.065,-0.30); g.add(fsBase);
-  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.036,0.006), gunMetal);
-  fsPost.position.set(0,0.090,-0.30); g.add(fsPost);
-  const fsTip = new THREE.Mesh(new THREE.BoxGeometry(0.009,0.006,0.009), gunDark);
-  fsTip.position.set(0,0.112,-0.30); g.add(fsTip);
-  // Lateral guard wings flanking the blade
-  const fsWingL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.020,0.008), gunDark);
-  fsWingL.position.set(-0.011,0.085,-0.30); g.add(fsWingL);
-  const fsWingR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.020,0.008), gunDark);
-  fsWingR.position.set(0.011,0.085,-0.30); g.add(fsWingR);
+  // === RECEIVER BODY (AK-47: dark metal, slightly tapered) ===
+  const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.08,0.32), gunMetal);
+  receiver.position.set(0,0,0); g.add(receiver);
+  // Receiver top plate (slightly darker)
+  const recvTop = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.015,0.30), gunDark);
+  recvTop.position.set(0,0.045,0); g.add(recvTop);
+  // Side panels (darker, inset)
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.06,0.28), gunBlack);
+  sideL.position.set(-0.048,0,0); g.add(sideL);
+  const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.06,0.28), gunBlack);
+  sideR.position.set(0.048,0,0); g.add(sideR);
 
-  // === REAR IRON SIGHT: two ears with a center notch (aperture), on the receiver ===
-  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.018), gunDark);
-  rsEarL.position.set(-0.013,0.085,0.10); g.add(rsEarL);
-  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.018), gunDark);
-  rsEarR.position.set(0.013,0.085,0.10); g.add(rsEarR);
-  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.030,0.006,0.016), gunMetal);
-  rsBridge.position.set(0,0.098,0.10); g.add(rsBridge);
-  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.014,0.014), gunBlack);
-  rsNotch.position.set(0,0.088,0.10); g.add(rsNotch);
-  const rsBase = new THREE.Mesh(new THREE.BoxGeometry(0.034,0.006,0.022), gunDark);
-  rsBase.position.set(0,0.074,0.10); g.add(rsBase);
+  // === WOODEN BUTTSTOCK (long, at rear, gunWood) ===
+  const stock = new THREE.Mesh(new THREE.BoxGeometry(0.07,0.09,0.22), gunWood);
+  stock.position.set(0,-0.01,0.26); g.add(stock);
+  // Stock comb (top edge, slightly wider)
+  const stockComb = new THREE.Mesh(new THREE.BoxGeometry(0.075,0.025,0.10), gunWood);
+  stockComb.position.set(0,0.04,0.32); g.add(stockComb);
+  // Stock pad (rear end, darker wood)
+  const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.075,0.095,0.03), gunDark);
+  stockPad.position.set(0,-0.01,0.37); g.add(stockPad);
+  // Stock hinge (metal pin)
+  const stockHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.07,8), gunMetal);
+  stockHinge.rotation.z = Math.PI/2; stockHinge.position.set(0,-0.01,0.15); g.add(stockHinge);
+
+  // === WOODEN HANDGUARD / FOREND (wraps front of barrel, gunWood) ===
+  const handguard = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.07,0.22), gunWood);
+  handguard.position.set(0,0,-0.22); g.add(handguard);
+  // Handguard top (slightly inset, darker)
+  const hgTop = new THREE.Mesh(new THREE.BoxGeometry(0.075,0.012,0.20), gunDark);
+  hgTop.position.set(0,0.04,-0.22); g.add(hgTop);
+  // Handguard bottom (slightly inset)
+  const hgBot = new THREE.Mesh(new THREE.BoxGeometry(0.075,0.012,0.20), gunDark);
+  hgBot.position.set(0,-0.04,-0.22); g.add(hgBot);
+
+  // === BARREL (protruding forward, gunMetal) ===
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.014,0.22,10), gunMetal);
+  barrel.rotation.x = Math.PI/2; barrel.position.set(0,0.01,-0.38); g.add(barrel);
+  // Muzzle tip (slightly wider)
+  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.03,10), gunDark);
+  muzzle.rotation.x = Math.PI/2; muzzle.position.set(0,0.01,-0.50); g.add(muzzle);
+
+  // === GAS TUBE / CYLINDER (running parallel ABOVE the barrel, gunMetal) ===
+  const gasTube = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.20,8), gunMetal);
+  gasTube.rotation.x = Math.PI/2; gasTube.position.set(0,0.045,-0.32); g.add(gasTube);
+  // Gas block (small block at front of gas tube)
+  const gasBlock = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.025,0.03), gunDark);
+  gasBlock.position.set(0,0.045,-0.42); g.add(gasBlock);
+
+  // === CURVED BANANA MAGAZINE (3-4 angled box segments, gunDark) ===
+  // Segment 1: top, nearly vertical
+  const mag1 = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.10,0.06), gunDark);
+  mag1.position.set(0,-0.10,0.06); mag1.rotation.x = 0.15; g.add(mag1);
+  // Segment 2: middle, more angled
+  const mag2 = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.10,0.06), gunDark);
+  mag2.position.set(0,-0.18,0.09); mag2.rotation.x = 0.45; g.add(mag2);
+  // Segment 3: bottom, most angled (banana curve)
+  const mag3 = new THREE.Mesh(new THREE.BoxGeometry(0.055,0.09,0.06), gunDark);
+  mag3.position.set(0,-0.24,0.14); mag3.rotation.x = 0.75; g.add(mag3);
+  // Magazine base plate (lighter, flat)
+  const magBase = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.015,0.065), gunLight);
+  magBase.position.set(0,-0.27,0.17); magBase.rotation.x = 0.75; g.add(magBase);
+
+  // === PISTOL GRIP (angled back, gunDark) ===
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.12,0.07), gunDark);
+  grip.position.set(0,-0.10,0.14); grip.rotation.x = 0.35; g.add(grip);
+  // Grip texture (horizontal lines)
+  for(let i=0;i<3;i++){
+    const gripLine = new THREE.Mesh(new THREE.BoxGeometry(0.052,0.004,0.065), gunLight);
+    gripLine.position.set(0,-0.10,0.14); gripLine.rotation.x = 0.35;
+    gripLine.position.y += (i-1)*0.035; g.add(gripLine);
+  }
+
+  // === TRIGGER GUARD (small loop) ===
+  const triggerGuard = new THREE.Mesh(new THREE.TorusGeometry(0.022,0.006,8,12), gunDark);
+  triggerGuard.position.set(0,-0.065,0.04); triggerGuard.rotation.x = Math.PI/2; g.add(triggerGuard);
+  // Trigger (lighter)
+  const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.025,0.010), gunLight);
+  trigger.position.set(0,-0.055,0.04); g.add(trigger);
+
+  // === FRONT IRON SIGHT (small post + base at muzzle, gunDark) ===
+  const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.016,0.008,0.020), gunDark);
+  fsBase.position.set(0,0.065,-0.44); g.add(fsBase);
+  const fsPost = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.030,0.005), gunMetal);
+  fsPost.position.set(0,0.085,-0.44); g.add(fsPost);
+  const fsTip = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.005,0.008), gunDark);
+  fsTip.position.set(0,0.105,-0.44); g.add(fsTip);
+
+  // === REAR IRON SIGHT (block with notch near back of receiver, gunMetal) ===
+  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.030,0.018,0.020), gunMetal);
+  rsBody.position.set(0,0.065,0.12); g.add(rsBody);
+  // Notch (dark recess)
+  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.012,0.016), gunBlack);
+  rsNotch.position.set(0,0.072,0.12); g.add(rsNotch);
+  // Two ears flanking the notch
+  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.016,0.018), gunMetal);
+  rsEarL.position.set(-0.010,0.068,0.12); g.add(rsEarL);
+  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.008,0.016,0.018), gunMetal);
+  rsEarR.position.set(0.010,0.068,0.12); g.add(rsEarR);
 
   return g;
 }
@@ -4800,6 +4862,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
