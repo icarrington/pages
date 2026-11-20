@@ -70,6 +70,8 @@ function loop(){
   gun.add(model);
   // Optic remains rigidly mounted in gun-local coordinates. ADS only moves gun.
   // The scope is kept as a child through weapon swaps (never reposition it here).
+  // The 3D scope housing is only shown when a red dot is installed; the
+  // screen-centered reticle (all weapons) is handled in lerpAds().
   scopeGroup.visible = wbGet(activeWeapon).redDot;
 
   state.seconds += dt;
