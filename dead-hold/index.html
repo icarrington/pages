@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795136745 -->
+<!-- page-version: 1795137056 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1928,26 +1928,7 @@ function buildM4A1(){
   hoodArc2.rotation.y = Math.PI/2;
   hoodArc2.position.set(0,0.090,-0.34); hoodArc2.rotation.z = Math.PI; g.add(hoodArc2);
 
-  // === REAR IRON SIGHT (M4-style: crisp narrow aperture notch, beveled edges, on centerline x=0) ===
-  // Rear sight body: a low, wide plate near the receiver (dark, distinct from gun body)
-  const rsBody = new THREE.Mesh(new THREE.BoxGeometry(0.038,0.018,0.024), gunBlack);
-  rsBody.position.set(0,0.072,0.16); g.add(rsBody);
-  // Beveled top edge (thin dark rim reads as a machined bevel)
-  const rsBevel = new THREE.Mesh(new THREE.BoxGeometry(0.040,0.003,0.026), gunLight);
-  rsBevel.position.set(0,0.0815,0.16); g.add(rsBevel);
-  // Crisp narrow aperture notch: a dark recessed slot cut across the top
-  const rsNotch = new THREE.Mesh(new THREE.BoxGeometry(0.010,0.014,0.018), gunBlack);
-  rsNotch.position.set(0,0.080,0.16); g.add(rsNotch);
-  // Two thin dark ears flanking the notch (the U-shape walls)
-  const rsEarL = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), gunDark);
-  rsEarL.position.set(-0.0085,0.078,0.16); g.add(rsEarL);
-  const rsEarR = new THREE.Mesh(new THREE.BoxGeometry(0.005,0.018,0.018), gunDark);
-  rsEarR.position.set(0.0085,0.078,0.16); g.add(rsEarR);
-  // Thin top bridge over the notch (closes the U at the top)
-  // Narrowed so it's a small central bar rather than a full-width bar
-  const rsBridge = new THREE.Mesh(new THREE.BoxGeometry(0.014,0.004,0.016), gunDark);
-  rsBridge.position.set(0,0.088,0.16); g.add(rsBridge);
-  
+
   // === SIDE PANELS (textured, on receiver) ===
   const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.09,0.32), gunDark);
   sideL.position.set(-0.056,0,0); g.add(sideL);
@@ -4831,6 +4812,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
