@@ -10,7 +10,7 @@ let fpsFrames = 0, fpsAccum = 0, fpsLow = 0;
 function adaptQuality(fps){
   if(fps < 30 && fpsLow < 1){
     fpsLow = 1;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.0));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,0.6));
     // Reduce fog density by 20%
     if(scene.fog) scene.fog.density *= 0.8;
     // Drop one more light if any remain
