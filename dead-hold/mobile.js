@@ -253,7 +253,7 @@ let gpToastShown = false;
 
 function gpDeadzone(v){
   if(Math.abs(v) < GP_DEADZONE) return 0;
-  return (Math.abs(v) - GP_DEADZONE) / (1 - GP_DEADZONE);
+  return Math.sign(v) * (Math.abs(v) - GP_DEADZONE) / (1 - GP_DEADZONE);
 }
 function gpButtonVal(gp, i){
   const b = gp.buttons[i];
