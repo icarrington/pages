@@ -143,10 +143,11 @@ const ADS_PROFILES = {
   // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
   // Now moved UP by 1%: -0.16656255 * 0.99 = -0.1648969245
   awp: { pos: new THREE.Vector3(0, -0.1648969245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 },
-  // Deagle: lowered by 10% from default ADS Y position, then an additional 3%
+  // Deagle: lowered by 10% from default ADS Y position, then an additional 3%,
+  // then an additional 1% on top of all previous adjustments.
   // (default adsPos.y = -0.234*0.7225 = -0.169065; lowered 10%: -0.169065 * 1.10 = -0.1859715;
-  //  additional 3%: -0.1859715 * 1.03 = -0.191550645)
-  deagle: { pos: new THREE.Vector3(0, -0.191550645, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 60 }
+  //  additional 3%: -0.1859715 * 1.03 = -0.191550645; additional 1%: -0.191550645 * 1.01 = -0.19346615145)
+  deagle: { pos: new THREE.Vector3(0, -0.19346615145, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 60 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
