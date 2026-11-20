@@ -62,7 +62,7 @@ function resetGame(){
   // Reset to base state
   ownedWeapons.length = 0; ownedWeapons.push('pistol'); // start with pistol only
   Object.keys(MAGS).forEach(w=>{
-    mags[w]=MAGS[w] + getMagSizeBonus();
+    mags[w]=Math.floor(MAGS[w] + getMagSizeBonus());
     if(w === 'pistol') reserves[w] = 116 + (getStartAmmoBonus() * MAGS[w]);
     else reserves[w]=(MAGS[w]*10) + (getStartAmmoBonus() * MAGS[w]); // 10 full magazines + starting ammo bonus
   });
@@ -142,8 +142,8 @@ function updateHUD(){
   setNum('kills', state.kills);
   setNum('headshots', state.headshots);
   setNum('zombiesLeft', zombies.filter(z=>z.alive).length + (state.boss && state.boss.alive ? 1 : 0));
-  const mag = mags[activeWeapon];
-  const cap = wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.3) : MAGS[activeWeapon];
+  const mag = Math.floor(mags[activeWeapon]);
+  const cap = Math.floor((wbGet(activeWeapon).extMag ? Math.ceil(MAGS[activeWeapon]*1.3) : MAGS[activeWeapon]) + getMagSizeBonus());
   setNum('mag', mag);
   setNum('reserve', reserves[activeWeapon]);
   const ammoEl = document.getElementById('ammo');
