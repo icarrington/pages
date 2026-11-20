@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795134307 -->
+<!-- page-version: 1795134531 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -570,18 +570,7 @@ function wallSeg(x,z,thick,depth,rotY){
   if(rotY) m.rotation.y = rotY;
   return m;
 }
-// North wall (z=-45): two segments + gap center
-wallSeg(-24.75,-45,0.5,40.5,0); addCollider(-24.75,-45,24.75,0.5,4.2);
-wallSeg( 24.75,-45,0.5,40.5,0); addCollider( 24.75,-45,24.75,0.5,4.2);
-// South wall (z=45): gap center
-wallSeg(-24.75,45,0.5,40.5,0); addCollider(-24.75,45,24.75,0.5,4.2);
-wallSeg( 24.75,45,0.5,40.5,0); addCollider( 24.75,45,24.75,0.5,4.2);
-// West wall (x=-45): gap center
-wallSeg(-45,-24.75,40.5,0.5,0); addCollider(-45,-24.75,0.5,24.75,4.2);
-wallSeg(-45, 24.75,40.5,0.5,0); addCollider(-45, 24.75,0.5,24.75,4.2);
-// East wall (x=45): gap center
-wallSeg(45,-24.75,40.5,0.5,0); addCollider(45,-24.75,0.5,24.75,4.2);
-wallSeg(45, 24.75,40.5,0.5,0); addCollider(45, 24.75,0.5,24.75,4.2);
+// Inner walls at ±45 removed: player can walk freely to the outer fence at ±60
 
 // ============================ VISIBLE FENCE (border) ============================
 // The player is clamped to +/-60 in resolveCollision(). This fence is a purely
@@ -3600,15 +3589,6 @@ function rayHitWalls(origin, dir, maxDist){
   if(tW < best && tW <= maxDist) best = tW;
   let tE = rayHitAABB(origin, dir, ARENA-0.5, ARENA+0.5, -ARENA-1, ARENA+1);
   if(tE < best && tE <= maxDist) best = tE;
-  // also check inner walls at ±45
-  tN = rayHitAABB(origin, dir, -45.5, 45.5, -45.5, -44.5);
-  if(tN < best && tN <= maxDist) best = tN;
-  tS = rayHitAABB(origin, dir, -45.5, 45.5, 44.5, 45.5);
-  if(tS < best && tS <= maxDist) best = tS;
-  tW = rayHitAABB(origin, dir, -45.5, -44.5, -45.5, 45.5);
-  if(tW < best && tW <= maxDist) best = tW;
-  const tE2 = rayHitAABB(origin, dir, 44.5, 45.5, -45.5, 45.5);
-  if(tE2 < best && tE2 <= maxDist) best = tE2;
   return best;
 }
 function killZombie(z, isHead){
@@ -4833,6 +4813,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
