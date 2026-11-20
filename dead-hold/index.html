@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795135137 -->
+<!-- page-version: 1795135474 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -554,12 +554,46 @@ function box(w,h,d,mat,x,y,z){
 
 // Floor — sized to extend well beyond the outer walls (±60) so the grass
 // covers the ENTIRE playable area and beyond with no gaps or bare ground.
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(320,320), concreteDark);
-floor.rotation.x = -Math.PI/2; scene.add(floor);
-// Grass ring around the perimeter: a slightly lower, larger ground plane so the
-// floor edge is never visible even when the camera looks down along the walls.
+/* ---- Terrain heightmap: gentle rolling hills over the arena ---- */
+const TERRAIN_SIZE = 160; // covers the whole arena + margin
+const TERRAIN_RES = 128;  // grid resolution (128x128 vertices)
+function terrainHeight(x, z){
+  // Layered sine waves create smooth, natural-looking rolling hills
+  const h1 = Math.sin(x * 0.08) * Math.cos(z * 0.06) * 1.8;
+  const h2 = Math.sin(x * 0.15 + 1.3) * Math.sin(z * 0.12 + 0.7) * 1.2;
+  const h3 = Math.cos(x * 0.04 + 2.1) * Math.sin(z * 0.05 + 1.5) * 2.5;
+  const h4 = Math.sin(x * 0.25 + 0.5) * Math.cos(z * 0.22 + 2.0) * 0.6;
+  // Flatten near the center (workbench area) so it sits on stable ground
+  const centerDist = Math.hypot(x, z);
+  const flatten = Math.max(0, 1 - centerDist / 8);
+  const raw = h1 + h2 + h3 + h4;
+  return raw * (1 - flatten * 0.85);
+}
+// Build terrain geometry with vertex colors for subtle variation
+const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_RES, TERRAIN_RES);
+terrainGeo.rotateX(-Math.PI / 2);
+const tPos = terrainGeo.attributes.position;
+const tColors = new Float32Array(tPos.count * 3);
+const grassBase = new THREE.Color(0x3a7a30);
+const grassLight = new THREE.Color(0x5a9a48);
+const grassDark = new THREE.Color(0x2a5a22);
+for(let i = 0; i < tPos.count; i++){
+  const x = tPos.getX(i), z = tPos.getZ(i);
+  const h = terrainHeight(x, z);
+  tPos.setY(i, h);
+  // Color variation based on height: higher = lighter, lower = darker
+  const t = Math.max(0, Math.min(1, (h + 2) / 5));
+  const c = grassDark.clone().lerp(grassLight, t);
+  tColors[i*3] = c.r; tColors[i*3+1] = c.g; tColors[i*3+2] = c.b;
+}
+terrainGeo.setAttribute('color', new THREE.BufferAttribute(tColors, 3));
+terrainGeo.computeVertexNormals();
+const terrainMat = new THREE.MeshLambertMaterial({vertexColors: true});
+const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+scene.add(terrain);
+// Grass ring extends beyond the terrain for visual continuity
 const grassRing = new THREE.Mesh(new THREE.PlaneGeometry(420,420), concreteDark);
-grassRing.rotation.x = -Math.PI/2; grassRing.position.y = -0.02; scene.add(grassRing);
+grassRing.rotation.x = -Math.PI/2; grassRing.position.y = -3.5; scene.add(grassRing);
 // Sky (inverted plane above)
 const ceil = new THREE.Mesh(new THREE.PlaneGeometry(HALF*2,HALF*2), ceilMat);
 ceil.rotation.x = -Math.PI/2; ceil.position.y = 25; scene.add(ceil);
@@ -597,8 +631,9 @@ const bunkerDefs = [
 ];
 bunkerDefs.forEach(c=>{
   const s=c[2], h=s*0.5;
+  const gy = terrainHeight(c[0], c[1]);
   const m = new THREE.Mesh(new THREE.CylinderGeometry(s*0.6, s*0.85, h, 18), c[5]);
-  m.position.set(c[0], h/2, c[1]); scene.add(m);
+  m.position.set(c[0], gy + h/2, c[1]); scene.add(m);
   addCollider(c[0],c[1],s*0.6+0.2,s*0.6+0.2,h);
 });
 // Stylized trees (green canopy + brown trunk) scattered around the edges of the larger arena
@@ -619,10 +654,11 @@ const treeDefs = [
   [-52,36],[52,36],[-52,-36],[52,-36]
 ];
 treeDefs.forEach(p=>{
+  const groundY = terrainHeight(p[0], p[1]);
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,2.2,10), trunkMat);
-  trunk.position.set(p[0],1.1,p[1]); scene.add(trunk);
+  trunk.position.set(p[0], groundY + 1.1, p[1]); scene.add(trunk);
   const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.6,2.6,12), canopyMat);
-  canopy.position.set(p[0],3.4,p[1]); scene.add(canopy);
+  canopy.position.set(p[0], groundY + 3.4, p[1]); scene.add(canopy);
   addCollider(p[0],p[1],0.5,0.5,4.2);
 });
 
@@ -638,7 +674,8 @@ const debrisDefs = [
   [-20,-30,0.4,0.3,0.5],[30,-20,0.6,0.5,0.7],[-30,20,0.4,0.35,0.5]
 ];
 debrisDefs.forEach(d=>{
-  const m = box(d[2],d[3],d[4],debrisMat,d[0],d[3]/2,d[1]);
+  const groundY = terrainHeight(d[0], d[1]);
+  const m = box(d[2],d[3],d[4],debrisMat,d[0],groundY + d[3]/2,d[1]);
   m.rotation.y = Math.random()*Math.PI;
   // Low collision footprint so the player can jump over the debris
   addCollider(d[0],d[1],Math.max(d[2],d[4])/2+0.15,Math.max(d[2],d[4])/2+0.15,d[3]);
@@ -650,6 +687,7 @@ const wbWoodDark = new THREE.MeshLambertMaterial({color:0x4a3320});
 // Workbench position: center of arena, in front of player spawn (0,0,0)
 // Placed at (0, 0, 5) so it's immediately visible when the game starts
 const WB = {x:0, z:5};
+const WB_GROUND_Y = terrainHeight(WB.x, WB.z);
 const wbMetalMat = new THREE.MeshLambertMaterial({color:0x555c66});
 const wbMetalDark = new THREE.MeshLambertMaterial({color:0x33383f});
 const wbToolMat = new THREE.MeshLambertMaterial({color:0x8890a0});
@@ -696,6 +734,8 @@ const wbSignTex = new THREE.CanvasTexture((function(){
 const wbSignMat2 = new THREE.MeshLambertMaterial({map:wbSignTex, emissive:0x334422, emissiveIntensity:0.8});
 const wbSign = new THREE.Mesh(new THREE.PlaneGeometry(1.8,0.45), wbSignMat2); wbSign.position.set(0,1.6,0.78); wbGroup.add(wbSign);
 // Warm point light for the workbench
+wbGroup.position.set(WB.x, WB_GROUND_Y, WB.z);
+scene.add(wbGroup);
 const wbLight = new THREE.PointLight(0xffd98a, 12.0, 15, 2);
 wbLight.castShadow = false;
 wbLight.position.set(0, 2.2, 0);
@@ -708,11 +748,12 @@ scene.add(wbGroup);
 
 // Golf flag landmark — placed at (-30, -30), visible from spawn, in an open spot
 const flagPoleMat = new THREE.MeshLambertMaterial({color:0xcccccc});
+const flagGroundY = terrainHeight(-10, -10);
 const flagPole = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,4,8), flagPoleMat);
-flagPole.position.set(-10,2,-10); scene.add(flagPole);
+flagPole.position.set(-10, flagGroundY + 2, -10); scene.add(flagPole);
 const flagMat = new THREE.MeshLambertMaterial({color:0xff3333, side:THREE.DoubleSide});
 const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.5), flagMat);
-flag.position.set(-9.6,3.7,-10); flag.rotation.y = Math.PI/4; scene.add(flag);
+flag.position.set(-9.6, flagGroundY + 3.7, -10); flag.rotation.y = Math.PI/4; scene.add(flag);
 const flagBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,0.15,12), new THREE.MeshLambertMaterial({color:0x3a8a30}));
 flagBase.position.set(-30,0.075,-30); scene.add(flagBase);
 // Workbench attachment state: { weaponName: { redDot, extMag, suppressor, vGrip } }
@@ -4410,17 +4451,18 @@ function loop(){
   resolveCollision(newPos);
   player.pos.copy(newPos);
 
-  // jump: gravity pulls the player back down to the floor (eye height EYE)
+  // jump: gravity pulls the player back down to the terrain surface
+  const groundY = terrainHeight(player.pos.x, player.pos.z);
   if(!player.grounded){
     player.vel.y -= GRAVITY*dt;
     player.pos.y += player.vel.y*dt;
-    if(player.pos.y <= EYE){
-      player.pos.y = EYE;
+    if(player.pos.y <= groundY + EYE){
+      player.pos.y = groundY + EYE;
       player.vel.y = 0;
       player.grounded = true;
     }
   } else {
-    player.pos.y = EYE;
+    player.pos.y = groundY + EYE;
   }
 
   // head bob (subtle vertical bob only while moving)
@@ -4595,6 +4637,8 @@ function loop(){
       if(!zombieBlocked(nx, nz)){
         z.group.position.x = nx;
         z.group.position.z = nz;
+        // Update zombie Y position to follow terrain
+        z.group.position.y = terrainHeight(nx, nz);
         moved = true;
       } else {
         // Slide along obstacle: try perpendicular and axis-aligned directions
@@ -4784,6 +4828,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
