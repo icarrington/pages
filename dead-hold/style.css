@@ -140,6 +140,7 @@
 
   #wbHint{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--accent);background:var(--panel);border:1px solid var(--accent);padding:10px 18px;opacity:0;transition:opacity .15s;white-space:nowrap;z-index:6}
   #wbHint.show{opacity:1}
+  .gp-btn-icon{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;background:#4cff4c;color:#000;font-family:var(--mono);font-size:10px;font-weight:800;margin-left:4px;vertical-align:middle}
   /* ---------- Dev Menu tab ---------- */
   .wb-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .wb-tabs::-webkit-scrollbar{display:none}
@@ -201,7 +202,8 @@
   #btnReload{right:20px;bottom:272px;width:64px;height:48px;font-size:11px;border-radius:10px}
   #btnDash{right:120px;bottom:272px;width:64px;height:48px;font-size:11px;border-radius:10px}
   #btnScope{right:20px;bottom:330px;width:64px;height:48px;font-size:11px;border-radius:10px}
-  #btnWorkbench{right:120px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
+  #btnWorkbench{right:120px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:4px}
+  .gp-btn-icon{width:16px;height:16px;border-radius:50%;background:#4cff4c;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#000;flex-shrink:0}
   #btnCycle{right:200px;bottom:330px;width:64px;height:48px;font-size:10px;border-radius:10px}
   #btnCrouch{right:200px;bottom:272px;width:64px;height:48px;font-size:10px;border-radius:10px}
   #tSlots{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}
