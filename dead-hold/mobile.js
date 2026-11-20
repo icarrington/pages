@@ -307,7 +307,7 @@ function pollGamepad(dt){
   // Discrete actions — rising edge only (call the same paths the keys use)
   if(gpRising(gp, 0)) tryJump();                 // A = jump
   if(gpRising(gp, 1)) startReload();             // B = reload
-  if(gpRising(gp, 2)) setCrouch(!crouching);     // X = crouch toggle
+  if(gpRising(gp, 2)) startReload();             // X = reload (same as R key)
   if(gpRising(gp, 3)) cycleWeapon();             // Y = cycle weapon
   if(gpRising(gp, 4)){                           // LB = previous weapon
     const list = weaponList();
@@ -322,9 +322,6 @@ function pollGamepad(dt){
   if(gpRising(gp, 9)){                           // Start = open/close calibration (or close workbench)
     if(wbMenuOpen) wbCloseMenu();
     else if(typeof calibToggleMenu === 'function') calibToggleMenu();
-  }
-  if(gpRising(gp, 2) && typeof calibOpen !== 'undefined' && calibOpen){              // X = close calibration menu (only when open)
-    if(typeof calibCloseMenu === 'function') calibCloseMenu();
   }
   // Fire: RT (button 7) — for semi-auto weapons, fire on rising edge
   if(gpRising(gp, 7) && state.running && !wbMenuOpen && !isAuto()){
@@ -370,6 +367,21 @@ function applyGamepad(dt){
   // Sprint: hold L3 (mirror the touch sprint flag so isSprinting() reads it)
   if(gpSprint){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
   else if(window._touchSprint) window._touchSprint = false;
+  // LEFT STICK pushed DOWN (analog, past deadzone) = SPRINT (like holding Shift).
+  // Runs after the L3 block so it takes precedence. "Down" is negative Y in
+  // standard mapping; respect the user's flipLY setting.
+  {
+    const rawLY = gp.axes[1] || 0;
+    const downDir = (typeof calib !== 'undefined' && calib && calib.flipLY) ? 1 : -1;
+    const stickDown = (rawLY * downDir) < -GP_DEADZONE;
+    if(stickDown){
+      if(window._touchSprint === undefined) window._touchSprint = false;
+      window._touchSprint = true;
+    } else if(!gpSprint){
+      // Neutral stick and L3 not held -> clear the sprint flag (normal walk)
+      if(window._touchSprint) window._touchSprint = false;
+    }
+  }
   // Crouch: hold R3 (toggle on while held, release when not)
   if(gpCrouch && !crouching) setCrouch(true);
   else if(!gpCrouch && crouching) setCrouch(false);
