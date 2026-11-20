@@ -134,7 +134,7 @@ function updateHUD(){
   if(crouchEl) crouchEl.classList.toggle('show', crouching);
   const h = Math.max(0,Math.round(state.health));
   const s = Math.max(0,Math.round(state.stamina));
-  document.getElementById('healthFill').style.transform = 'scaleX('+(h/100)+')';
+  document.getElementById('healthFill').style.transform = 'scaleX('+(h/Math.max(1, getMaxHealth()))+')';
   document.getElementById('stamFill').style.transform = 'scaleX('+(s/100)+')';
   setNum('healthNum', h);
   setNum('wave', state.wave);
