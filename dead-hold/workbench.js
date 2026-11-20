@@ -83,6 +83,8 @@ flagBase.position.set(-30,0.075,-30); scene.add(flagBase);
 // Workbench attachment state: { weaponName: { redDot, extMag, suppressor, vGrip } }
 const wbAttachments = {};
 function wbGet(w){ if(!wbAttachments[w]) wbAttachments[w] = {redDot:false, extMag:false, suppressor:false, vGrip:false}; return wbAttachments[w]; }
+// NOTE: all per-weapon attachment effects are nerfed ~40% (see the getters below and the
+// extMag multiplier in refillMag/startReload/updateHUD/addWeapon).
 let wbMenuOpen = false;
 let wbNear = false;
 const WB_ATTACH_DEFS = [
@@ -94,27 +96,27 @@ const WB_ATTACH_DEFS = [
 
 // Player stat upgrades (multi-level)
 const WB_STAT_UPGRADES = [
-  {key:'defense', name:'Defense Plating', baseCost:240, costMult:1.5, maxLevel:5, desc:'-10% damage taken per level'},
-  {key:'speed', name:'Speed Boost', baseCost:300, costMult:1.5, maxLevel:5, desc:'+8% movement speed per level'},
-  {key:'damage', name:'Damage Boost', baseCost:360, costMult:1.6, maxLevel:5, desc:'+15% weapon damage per level'},
-  {key:'fireRate', name:'Fire Rate', baseCost:300, costMult:1.6, maxLevel:5, desc:'+12% trigger speed per level'},
-  {key:'magSize', name:'Mag Size', baseCost:270, costMult:1.5, maxLevel:5, desc:'+2 rounds per level'},
-  {key:'reloadSpeed', name:'Reload Speed', baseCost:240, costMult:1.5, maxLevel:5, desc:'-12% reload time per level'},
-  {key:'headshot', name:'Headshot Bonus', baseCost:450, costMult:1.7, maxLevel:5, desc:'+1x headshot multiplier per level (base 2x)'},
-  {key:'critChance', name:'Crit Chance', baseCost:390, costMult:1.6, maxLevel:5, desc:'+8% crit chance per level (2x damage)'},
-  {key:'maxHealth', name:'Max Health', baseCost:300, costMult:1.5, maxLevel:5, desc:'+20 max HP per level'},
-  {key:'regen', name:'Regen', baseCost:270, costMult:1.5, maxLevel:5, desc:'+4 HP/s regen per level'},
-  {key:'armor', name:'Armor', baseCost:330, costMult:1.6, maxLevel:5, desc:'-3 flat damage per level'},
-  {key:'staminaPool', name:'Stamina Pool', baseCost:240, costMult:1.5, maxLevel:5, desc:'+20 max stamina per level'},
-  {key:'staminaRegen', name:'Stamina Regen', baseCost:210, costMult:1.5, maxLevel:5, desc:'+5 stamina/s regen per level'},
-  {key:'pointMult', name:'Point Multiplier', baseCost:420, costMult:1.6, maxLevel:5, desc:'+20% points per kill per level'},
+  {key:'defense', name:'Defense Plating', baseCost:240, costMult:1.5, maxLevel:5, desc:'-6% damage taken per level'},
+  {key:'speed', name:'Speed Boost', baseCost:300, costMult:1.5, maxLevel:5, desc:'+4.8% movement speed per level'},
+  {key:'damage', name:'Damage Boost', baseCost:360, costMult:1.6, maxLevel:5, desc:'+9% weapon damage per level'},
+  {key:'fireRate', name:'Fire Rate', baseCost:300, costMult:1.6, maxLevel:5, desc:'+7.2% trigger speed per level'},
+  {key:'magSize', name:'Mag Size', baseCost:270, costMult:1.5, maxLevel:5, desc:'+1 round per level'},
+  {key:'reloadSpeed', name:'Reload Speed', baseCost:240, costMult:1.5, maxLevel:5, desc:'-7.2% reload time per level'},
+  {key:'headshot', name:'Headshot Bonus', baseCost:450, costMult:1.7, maxLevel:5, desc:'+0.6x headshot multiplier per level (base 2x)'},
+  {key:'critChance', name:'Crit Chance', baseCost:390, costMult:1.6, maxLevel:5, desc:'+4.8% crit chance per level (2x damage)'},
+  {key:'maxHealth', name:'Max Health', baseCost:300, costMult:1.5, maxLevel:5, desc:'+12 max HP per level'},
+  {key:'regen', name:'Regen', baseCost:270, costMult:1.5, maxLevel:5, desc:'+2.4 HP/s regen per level'},
+  {key:'armor', name:'Armor', baseCost:330, costMult:1.6, maxLevel:5, desc:'-1.8 flat damage per level'},
+  {key:'staminaPool', name:'Stamina Pool', baseCost:240, costMult:1.5, maxLevel:5, desc:'+12 max stamina per level'},
+  {key:'staminaRegen', name:'Stamina Regen', baseCost:210, costMult:1.5, maxLevel:5, desc:'+3 stamina/s regen per level'},
+  {key:'pointMult', name:'Point Multiplier', baseCost:420, costMult:1.6, maxLevel:5, desc:'+12% points per kill per level'},
 
-  {key:'discount', name:'Workbench Discount', baseCost:600, costMult:1.8, maxLevel:5, desc:'-10% upgrade cost per level'},
-  {key:'startAmmo', name:'Starting Ammo', baseCost:300, costMult:1.5, maxLevel:5, desc:'+1 extra magazine per level'},
-  {key:'zombieSlow', name:'Zombie Slow', baseCost:390, costMult:1.6, maxLevel:5, desc:'-10% zombie speed per level'},
-  {key:'grenade', name:'Grenade Count', baseCost:480, costMult:1.7, maxLevel:5, desc:'+1 grenade per wave per level'},
-  {key:'medkit', name:'Medkit Count', baseCost:450, costMult:1.7, maxLevel:5, desc:'+1 medkit per wave per level'},
-  {key:'spawnShield', name:'Spawn Shield', baseCost:540, costMult:1.8, maxLevel:5, desc:'+0.5s invulnerability after hit per level'}
+  {key:'discount', name:'Workbench Discount', baseCost:600, costMult:1.8, maxLevel:5, desc:'-6% upgrade cost per level'},
+  {key:'startAmmo', name:'Starting Ammo', baseCost:300, costMult:1.5, maxLevel:5, desc:'+0.6 extra magazine per level'},
+  {key:'zombieSlow', name:'Zombie Slow', baseCost:390, costMult:1.6, maxLevel:5, desc:'-6% zombie speed per level'},
+  {key:'grenade', name:'Grenade Count', baseCost:480, costMult:1.7, maxLevel:5, desc:'+0.6 grenade per wave per level'},
+  {key:'medkit', name:'Medkit Count', baseCost:450, costMult:1.7, maxLevel:5, desc:'+0.6 medkit per wave per level'},
+  {key:'spawnShield', name:'Spawn Shield', baseCost:540, costMult:1.8, maxLevel:5, desc:'+0.3s invulnerability after hit per level'}
 ];
 const statUpgrades = {defense:0, speed:0, damage:0, fireRate:0, magSize:0, reloadSpeed:0, headshot:0, critChance:0, maxHealth:0, regen:0, armor:0, staminaPool:0, staminaRegen:0, pointMult:0, discount:0, startAmmo:0, zombieSlow:0, grenade:0, medkit:0, spawnShield:0};
 function getUpgradeCost(def, level){
@@ -123,26 +125,27 @@ function getUpgradeCost(def, level){
   cost = Math.floor(cost * (1 - disc));
   return Math.max(1, cost);
 }
-function getDefenseReduction(){ return statUpgrades.defense * 0.10; }
-function getSpeedMultiplier(){ return 1 + statUpgrades.speed * 0.08; }
-function getDamageMultiplier(){ return 1 + statUpgrades.damage * 0.15; }
-function getFireRateMultiplier(){ return 1 + statUpgrades.fireRate * 0.12; }
-function getMagSizeBonus(){ return statUpgrades.magSize * 2; }
-function getReloadSpeedMultiplier(){ return Math.max(0.2, 1 - statUpgrades.reloadSpeed * 0.12); }
-function getHeadshotMultiplier(){ return 2 + statUpgrades.headshot; }
-function getCritChance(){ return statUpgrades.critChance * 0.08; }
-function getMaxHealth(){ return 100 + statUpgrades.maxHealth * 20; }
-function getRegenRate(){ return 10 + statUpgrades.regen * 4; }
-function getArmorReduction(){ return statUpgrades.armor * 3; }
-function getMaxStamina(){ return 100 + statUpgrades.staminaPool * 20; }
-function getStaminaRegenRate(){ return 15 + statUpgrades.staminaRegen * 5; }
-function getPointMultiplier(){ return 1 + statUpgrades.pointMult * 0.20; }
+// NOTE: every per-level effect below is nerfed ~40% (e.g. 0.10 -> 0.06, 0.15 -> 0.09, 2 -> 1, 0.12 -> 0.07, 20 -> 12, 4 -> 2.4, 3 -> 1.8, 5 -> 3, 0.20 -> 0.12).
+function getDefenseReduction(){ return statUpgrades.defense * 0.036; }
+function getSpeedMultiplier(){ return 1 + statUpgrades.speed * 0.0288; }
+function getDamageMultiplier(){ return 1 + statUpgrades.damage * 0.054; }
+function getFireRateMultiplier(){ return 1 + statUpgrades.fireRate * 0.0432; }
+function getMagSizeBonus(){ return statUpgrades.magSize * 0.6; }
+function getReloadSpeedMultiplier(){ return Math.max(0.2, 1 - statUpgrades.reloadSpeed * 0.0432); }
+function getHeadshotMultiplier(){ return 2 + statUpgrades.headshot * 0.36; }
+function getCritChance(){ return statUpgrades.critChance * 0.0288; }
+function getMaxHealth(){ return 100 + statUpgrades.maxHealth * 7.2; }
+function getRegenRate(){ return 10 + statUpgrades.regen * 1.44; }
+function getArmorReduction(){ return statUpgrades.armor * 1.08; }
+function getMaxStamina(){ return 100 + statUpgrades.staminaPool * 7.2; }
+function getStaminaRegenRate(){ return 15 + statUpgrades.staminaRegen * 1.8; }
+function getPointMultiplier(){ return 1 + statUpgrades.pointMult * 0.072; }
 
-function getZombieSlowMultiplier(){ return Math.max(0.2, 1 - statUpgrades.zombieSlow * 0.10); }
-function getGrenadeCount(){ return statUpgrades.grenade; }
-function getMedkitCount(){ return statUpgrades.medkit; }
-function getSpawnShieldDuration(){ return statUpgrades.spawnShield * 0.5; }
-function getStartAmmoBonus(){ return statUpgrades.startAmmo; }
+function getZombieSlowMultiplier(){ return Math.max(0.2, 1 - statUpgrades.zombieSlow * 0.036); }
+function getGrenadeCount(){ return statUpgrades.grenade * 0.6; }
+function getMedkitCount(){ return statUpgrades.medkit * 0.6; }
+function getSpawnShieldDuration(){ return statUpgrades.spawnShield * 0.3; }
+function getStartAmmoBonus(){ return statUpgrades.startAmmo * 0.6; }
 function weaponIcon(w){
   const icons = {
     pistol:'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px;margin-right:6px;flex:none"><path d="M3 8h13v3H9l-1 6H5l1-6H3z"/></svg>',
@@ -249,7 +252,7 @@ function wbOpenMenu(){
   
   const menu = document.getElementById('wbMenu');
   menu.querySelector('.wb-weapon').textContent = w.charAt(0).toUpperCase()+w.slice(1);
-  menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.floor(cap*1.5) : cap) + ' rounds';
+  menu.querySelector('.wb-mag').textContent = 'Mag: ' + (att.extMag ? Math.ceil(cap*1.3) : cap) + ' rounds';
   menu.querySelector('.wb-pts').textContent = 'Points: ' + state.points;
   menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line);width:100%"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div><div class="wb-weapon-grid" style="width:100%">' + weaponRowsHTML + '</div></div>' + statRowsHTML;
   // Ensure all weapon rows have proper event listeners
