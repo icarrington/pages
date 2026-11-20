@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795135474 -->
+<!-- page-version: 1795135701 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -559,10 +559,11 @@ const TERRAIN_SIZE = 160; // covers the whole arena + margin
 const TERRAIN_RES = 128;  // grid resolution (128x128 vertices)
 function terrainHeight(x, z){
   // Layered sine waves create smooth, natural-looking rolling hills
-  const h1 = Math.sin(x * 0.08) * Math.cos(z * 0.06) * 1.8;
-  const h2 = Math.sin(x * 0.15 + 1.3) * Math.sin(z * 0.12 + 0.7) * 1.2;
-  const h3 = Math.cos(x * 0.04 + 2.1) * Math.sin(z * 0.05 + 1.5) * 2.5;
-  const h4 = Math.sin(x * 0.25 + 0.5) * Math.cos(z * 0.22 + 2.0) * 0.6;
+  // Exaggerated amplitudes for steeper, more dramatic slopes
+  const h1 = Math.sin(x * 0.08) * Math.cos(z * 0.06) * 3.2;
+  const h2 = Math.sin(x * 0.15 + 1.3) * Math.sin(z * 0.12 + 0.7) * 2.2;
+  const h3 = Math.cos(x * 0.04 + 2.1) * Math.sin(z * 0.05 + 1.5) * 4.5;
+  const h4 = Math.sin(x * 0.25 + 0.5) * Math.cos(z * 0.22 + 2.0) * 1.1;
   // Flatten near the center (workbench area) so it sits on stable ground
   const centerDist = Math.hypot(x, z);
   const flatten = Math.max(0, 1 - centerDist / 8);
@@ -582,7 +583,8 @@ for(let i = 0; i < tPos.count; i++){
   const h = terrainHeight(x, z);
   tPos.setY(i, h);
   // Color variation based on height: higher = lighter, lower = darker
-  const t = Math.max(0, Math.min(1, (h + 2) / 5));
+  // Adjusted range for the steeper terrain (hills now span roughly -8 to +8)
+  const t = Math.max(0, Math.min(1, (h + 8) / 16));
   const c = grassDark.clone().lerp(grassLight, t);
   tColors[i*3] = c.r; tColors[i*3+1] = c.g; tColors[i*3+2] = c.b;
 }
@@ -4828,6 +4830,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
