@@ -141,7 +141,8 @@ const ADS_PROFILES = {
   rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
   // AWP (sniper): scope view lowered by 10% from its current ADS position
   // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
-  awp: { pos: new THREE.Vector3(0, -0.16656255, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 },
+  // Now moved UP by 1%: -0.16656255 * 0.99 = -0.1648969245
+  awp: { pos: new THREE.Vector3(0, -0.1648969245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 },
   // Deagle: lowered by 10% from default ADS Y position, then an additional 3%
   // (default adsPos.y = -0.234*0.7225 = -0.169065; lowered 10%: -0.169065 * 1.10 = -0.1859715;
   //  additional 3%: -0.1859715 * 1.03 = -0.191550645)
