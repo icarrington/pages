@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795137056 -->
+<!-- page-version: 1795137378 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -1895,19 +1895,6 @@ function buildM4A1(){
   // Rubber butt pad at the very back (slightly larger, darker)
   const buttPad = new THREE.Mesh(new THREE.BoxGeometry(0.09,0.12,0.04), gunBlack);
   buttPad.position.set(0,-0.01,0.44); g.add(buttPad);
-  
-  // === CARRY HANDLE (slim M4-style carry handle arcing over the rear sight) ===
-  // Two slim vertical supports (steel sheen so it reads as machined metal)
-  const handleSupportL = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.05,0.006), sightSteel);
-  handleSupportL.position.set(-0.022,0.085,0.12); g.add(handleSupportL);
-  const handleSupportR = new THREE.Mesh(new THREE.BoxGeometry(0.006,0.05,0.006), sightSteel);
-  handleSupportR.position.set(0.022,0.085,0.12); g.add(handleSupportR);
-  // Horizontal top bar (slim, polished)
-  const handleTop = new THREE.Mesh(new THREE.BoxGeometry(0.056,0.010,0.052), sightSteel);
-  handleTop.position.set(0,0.11,0.12); g.add(handleTop);
-  // Subtle rim/edge highlight along the top bar (reads as a beveled edge)
-  const handleRim = new THREE.Mesh(new THREE.BoxGeometry(0.058,0.003,0.054), gunLight);
-  handleRim.position.set(0,0.1155,0.12); g.add(handleRim);
   
   // === FRONT IRON SIGHT (M4-style: slim post + protective hood, on barrel centerline x=0) ===
   // Low cradle base the post rises out of (dark, distinct from gun body)
@@ -4812,6 +4799,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
