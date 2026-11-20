@@ -367,21 +367,7 @@ function applyGamepad(dt){
   // Sprint: hold L3 (mirror the touch sprint flag so isSprinting() reads it)
   if(gpSprint){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
   else if(window._touchSprint) window._touchSprint = false;
-  // LEFT STICK pushed DOWN (analog, past deadzone) = SPRINT (like holding Shift).
-  // Runs after the L3 block so it takes precedence. "Down" is negative Y in
-  // standard mapping; respect the user's flipLY setting.
-  {
-    const rawLY = gp.axes[1] || 0;
-    const downDir = (typeof calib !== 'undefined' && calib && calib.flipLY) ? 1 : -1;
-    const stickDown = (rawLY * downDir) < -GP_DEADZONE;
-    if(stickDown){
-      if(window._touchSprint === undefined) window._touchSprint = false;
-      window._touchSprint = true;
-    } else if(!gpSprint){
-      // Neutral stick and L3 not held -> clear the sprint flag (normal walk)
-      if(window._touchSprint) window._touchSprint = false;
-    }
-  }
+
   // Crouch: hold R3 (toggle on while held, release when not)
   if(gpCrouch && !crouching) setCrouch(true);
   else if(!gpCrouch && crouching) setCrouch(false);
