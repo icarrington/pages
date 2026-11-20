@@ -171,8 +171,8 @@ function rpgExplode(pos, firedByPlayer, rocketVel){
         impulseDir = new THREE.Vector3(0, 1, 0);
       }
       
-      // Main impulse: STRONG directional boost along rocket trajectory (18.0 * 0.75 * 1.5 = 20.25)
-      const mainImpulse = 18.0 * 0.75 * 1.5 * falloff;
+      // Main impulse: directional boost along rocket trajectory (reduced ~50% for weaker recoil)
+      const mainImpulse = 18.0 * 0.75 * 1.5 * 0.5 * falloff;
       player.vel.addScaledVector(impulseDir, mainImpulse);
       player.grounded = false;
       // Set rocket jump state (3 seconds of enhanced air control)
