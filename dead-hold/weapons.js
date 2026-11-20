@@ -141,7 +141,10 @@ const ADS_PROFILES = {
   rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
   // AWP (sniper): scope view lowered by 10% from its current ADS position
   // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
-  awp: { pos: new THREE.Vector3(0, -0.16656255, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
+  awp: { pos: new THREE.Vector3(0, -0.16656255, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 },
+  // Deagle: lowered by 10% from default ADS Y position
+  // (default adsPos.y = -0.234*0.7225 = -0.169065; lowered 10%: -0.169065 * 1.10 = -0.1859715)
+  deagle: { pos: new THREE.Vector3(0, -0.1859715, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 60 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
