@@ -237,6 +237,118 @@ window.addEventListener('orientationchange', ()=>{ setTimeout(onResize, 120); })
 if(window.visualViewport){ window.visualViewport.addEventListener('resize', onResize); }
 initTouch();
 
+/* ============================ GAMEPAD / CONTROLLER ============================ */
+// Standard Xbox-style layout. Combines with (never replaces) keyboard/mouse/touch.
+// Hold-state (fire/sprint/crouch/ADS) uses the current button value; discrete
+// actions (reload/jump/cycle/pause) fire only on the rising edge.
+const GP_DEADZONE = 0.15;
+const GP_LOOK_SENS = 0.0038; // radians per unit of stick (≈2.2° per full unit)
+let gpFire = false;      // current held fire (A)
+let gpSprint = false;    // current held sprint (L3)
+let gpCrouch = false;    // current held crouch (R3)
+let gpAds = false;       // current held ADS (RT)
+let gpPrev = {};         // previous frame button states (for rising edges)
+let gpConnected = false; // a pad was seen
+let gpToastShown = false;
+
+function gpDeadzone(v){
+  if(Math.abs(v) < GP_DEADZONE) return 0;
+  return (Math.abs(v) - GP_DEADZONE) / (1 - GP_DEADZONE);
+}
+function gpButtonVal(gp, i){
+  const b = gp.buttons[i];
+  return b ? (b.pressed ? 1 : (b.value || 0)) : 0;
+}
+function gpRising(gp, i){
+  const now = gpButtonVal(gp, i) > 0;
+  const was = !!gpPrev[i];
+  gpPrev[i] = now;
+  return now && !was;
+}
+function gpFindPad(){
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+  for(const p of pads){ if(p && p.connected) return p; }
+  return null;
+}
+function gpAnyActive(gp){
+  for(let i=0;i<gp.axes.length;i++){ if(Math.abs(gp.axes[i]) > GP_DEADZONE) return true; }
+  for(let i=0;i<gp.buttons.length;i++){ if(gp.buttons[i].pressed) return true; }
+  return false;
+}
+function gpClear(){
+  gpFire = false; gpSprint = false; gpCrouch = false; gpAds = false;
+  gpPrev = {};
+  if(window._touchSprint !== undefined) window._touchSprint = false;
+  if(crouching) setCrouch(false);
+  if(adsActive) adsActive = false;
+}
+function gpToast(){
+  if(!gpToastShown){
+    gpToastShown = true;
+    showToast('Controller connected', 2.5);
+  }
+}
+function pollGamepad(dt){
+  if(!navigator.getGamepads) return;
+  const gp = gpFindPad();
+  if(!gp){
+    if(gpConnected){ gpConnected = false; gpClear(); }
+    return;
+  }
+  if(!gpConnected){ gpConnected = true; gpPrev = {}; }
+  if(gpAnyActive(gp)) gpToast();
+
+  // Hold-state (continuous)
+  gpFire   = gpButtonVal(gp, 0) > 0;   // A
+  gpSprint = gpButtonVal(gp, 12) > 0;  // L3
+  gpCrouch = gpButtonVal(gp, 13) > 0;  // R3
+  gpAds    = gpButtonVal(gp, 7) > 0;   // RT
+
+  // Discrete actions — rising edge only (call the same paths the keys use)
+  if(gpRising(gp, 1)) startReload();                 // B
+  if(gpRising(gp, 2)) tryJump();                     // X
+  if(gpRising(gp, 3)) cycleWeapon();                 // Y
+  if(gpRising(gp, 4)) cycleWeapon();                 // D-pad up
+  if(gpRising(gp, 5)) cycleWeapon();                 // D-pad down
+  if(gpRising(gp, 9)){                               // Start → same as Esc
+    if(wbMenuOpen) wbCloseMenu();
+  }
+}
+function applyGamepad(dt){
+  if(!gpConnected) return;
+  const gp = gpFindPad();
+  if(!gp) return;
+  // Movement (analog magnitude preserved)
+  const mx = gpDeadzone(gp.axes[0] || 0);
+  const my = gpDeadzone(gp.axes[1] || 0);
+  if(mx || my){
+    // Combine with keyboard: whichever axis value is larger in magnitude wins.
+    const kx = (keys['d']?1:0) - (keys['a']?1:0);
+    const ky = (keys['s']?1:0) - (keys['w']?1:0);
+    if(Math.abs(mx) > Math.abs(kx)) keys['gpX'] = mx; else keys['gpX'] = kx;
+    if(Math.abs(my) > Math.abs(ky)) keys['gpY'] = my; else keys['gpY'] = ky;
+  } else {
+    keys['gpX'] = 0; keys['gpY'] = 0;
+  }
+  // Look (yaw + pitch), clamped the same way mouse look is
+  const rx = gpDeadzone(gp.axes[2] || 0);
+  const ry = gpDeadzone(gp.axes[3] || 0);
+  if(rx || ry){
+    player.yaw   -= rx * GP_LOOK_SENS;
+    player.pitch -= ry * GP_LOOK_SENS;
+    player.pitch = Math.max(-1.45, Math.min(1.45, player.pitch));
+  }
+  // Sprint: hold L3 (mirror the touch sprint flag so isSprinting() reads it)
+  if(gpSprint){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
+  else if(window._touchSprint) window._touchSprint = false;
+  // Crouch: hold R3 (toggle on while held, release when not)
+  if(gpCrouch && !crouching) setCrouch(true);
+  else if(!gpCrouch && crouching) setCrouch(false);
+  // ADS: hold RT
+  if(gpAds) adsActive = true;
+  else adsActive = false;
+}
+
 // (The render loop is started once, at the end of start-up in main.js.)
 
 document.addEventListener('keydown', e=>{
