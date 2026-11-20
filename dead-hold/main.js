@@ -155,7 +155,7 @@ function loop(){
       // Refill RPG magazine
       if(mags['rpg'] === 0 && reserves['rpg'] > 0){
         mags['rpg'] = 3;
-        reserves['rpg'] -= 3;
+        reserves['rpg'] = Math.floor(Math.max(0, reserves['rpg'] - 3));
       }
       // Reset rocket position
       const rpgModel = weaponModels['rpg'];
