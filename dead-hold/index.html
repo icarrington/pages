@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795135701 -->
+<!-- page-version: 1795135862 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3668,7 +3668,7 @@ function showBanner(text, boss){
 function spawnZombie(data){
   if(zombies.length >= 20) return;
   const z = makeZombie();
-  z.group.position.set(data.x, 0, data.z);
+  z.group.position.set(data.x, terrainHeight(data.x, data.z), data.z);
   z.speed = data.speed;
   z.hp = data.hp;
   z.alive = true; z.dying = false; z.deathT = 0;
@@ -4559,7 +4559,7 @@ function loop(){
       z.deathT += dt;
       const p = Math.min(1, z.deathT/0.6);
       z.group.rotation.x = p*Math.PI/2;
-      z.group.position.y = -p*0.4;
+      z.group.position.y = terrainHeight(z.group.position.x, z.group.position.z) - p*0.4;
       if(p>=1) toRemove.push(z);
       continue;
     }
@@ -4687,9 +4687,9 @@ function loop(){
       if(z.group.position.z < -_B) z.group.position.z = -_B;
       else if(z.group.position.z > _B) z.group.position.z = _B;
       
-      // Bob animation
+      // Bob animation (relative to terrain height)
       z.bobPhase += dt*6;
-      z.group.position.y = Math.abs(Math.sin(z.bobPhase))*0.06;
+      z.group.position.y = terrainHeight(z.group.position.x, z.group.position.z) + Math.abs(Math.sin(z.bobPhase))*0.06;
       z.aL.rotation.x = -0.5 + Math.sin(z.bobPhase)*0.2;
       z.aR.rotation.x = -0.5 - Math.sin(z.bobPhase)*0.2;
     } else {
@@ -4830,6 +4830,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
