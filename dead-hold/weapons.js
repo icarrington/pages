@@ -116,24 +116,13 @@ const ADS_BLEND_SPEED = 1/0.12;
 // Per-weapon ADS profiles. The default (hipPos/adsPos/adsRot) is tuned for the
 // red-dot optic. Iron-sight weapons (rifle) need their own values so the FRONT
 // POST lands exactly on screen-center when aiming down sights.
-const ADS_PROFILES = {
-  // NOTE: the M4A1 is registered under the weapon key 'rifle' (see isAuto/fireRate/MAGS/wnames),
-  // so the M4's ADS profile MUST live here, not under 'm4a1'.
-  // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
-  // Rifle ADS position lowered by 15% (-0.16 * 1.15 = -0.184), then an additional 10%
-  // (-0.184 * 1.10 = -0.2024)
-  rifle: { pos: new THREE.Vector3(0, -0.2024, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
-  // AWP (sniper): scope view lowered by 10% from its current ADS position
-  // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
-  // Now moved UP by 1%: -0.16656255 * 0.99 = -0.1648969245
-  awp: { pos: new THREE.Vector3(0, -0.1648969245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 },
-  // Deagle: lowered by 10% from default ADS Y position, then an additional 3%,
-  // then an additional 1% on top of all previous adjustments.
-  // (default adsPos.y = -0.234*0.7225 = -0.169065; lowered 10%: -0.169065 * 1.10 = -0.1859715;
-  //  additional 3%: -0.1859715 * 1.03 = -0.191550645; additional 1%: -0.191550645 * 1.01 = -0.19346615145)
-  // Now raised by 20% of the previous offset: -0.255858985292625 * 0.80 = -0.2046871882341
-  deagle: { pos: new THREE.Vector3(0, -0.2046871882341, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 60 }
-};
+// Per-weapon ADS profiles are intentionally EMPTY. The sight-centering guarantee
+// ("the center of the sight on ALL weapon models lines up with the center of the
+// player's view") is provided by the screen-centered 2D reticle overlay, not by
+// nudging the 3D weapon model. So every weapon shares the same ADS position/FOV,
+// and the reticle sits exactly at 50% width / 50% height for red dot, iron sights
+// and scope alike.
+const ADS_PROFILES = {};
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
 /* ---- Sprint state: Shift boosts speed, gun rotates to a side pose, shooting blocked ---- */
@@ -210,26 +199,30 @@ function lerpAds(dt){
   // sprintTilt: pistol pitches UP (negative X lifts the muzzle toward the sky);
   // other weapons use sprintYaw (sideways sweep) instead.
   gun.rotation.set(_tmpE.x + (state.recoil>0 ? state.recoil*0.1 : 0) + dipRot - sprintTilt, sprintYaw, sprintLean);
-  // With a red dot installed, the center of the optic becomes the reticle at ADS.
-  // The standard green crosshair stays available while aiming from the hip.
+  // The aiming reticle is a screen-centered 2D overlay for EVERY weapon.
+  // While ADS is active the 3D crosshair is hidden and the screen-centered
+  // reticle (red dot / iron-sight crosshair / scope reticle) is shown at exactly
+  // 50% width / 50% height, so the sight center always coincides with the center
+  // of the player's view regardless of weapon model, bob, or ADS offset.
   const wantScope = wbGet(activeWeapon).redDot;
+  const adsOn = b > 0.88;
   const hud = document.getElementById('hud');
-  hud.classList.toggle('ads-active', wantScope && b > 0.88);
+  hud.classList.toggle('ads-active', adsOn);
+  // The 3D scope housing is only visible when a red dot is actually installed.
   scopeGroup.visible = wantScope;
-  // Show the screen-centered scope crosshair overlay when ADS is active with a red dot.
-  // The dot is ALWAYS at exact screen center (50% width, 50% height), regardless of
-  // weapon bob, ADS offsets, or weapon model position.
+  // The screen-centered reticle shows for ALL weapons while ADS is active.
   const scopeCrossEl = document.getElementById('scopeCrosshair');
-  scopeCrossEl.classList.toggle('show', wantScope && b > 0.88);
+  scopeCrossEl.classList.toggle('show', adsOn);
 }
 function resetAds(){
   adsActive = false;
   adsBlend = 0;
-  const prof = adsProfileFor(activeWeapon);
-  camera.fov = prof ? prof.fov : ADS_FOV;
+  camera.fov = ADS_FOV;
   camera.updateProjectionMatrix();
   const hud = document.getElementById('hud');
   hud.classList.remove('ads-active');
+  const scopeCrossEl = document.getElementById('scopeCrosshair');
+  if(scopeCrossEl) scopeCrossEl.classList.remove('show');
 }
 
 function shoot(){
