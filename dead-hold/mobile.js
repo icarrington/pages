@@ -326,7 +326,10 @@ function pollGamepad(dt){
 
   // Discrete actions — rising edge only (call the same paths the keys use)
   if(gpRising(gp, 0)) tryJump();                 // A = jump
-  if(gpRising(gp, 1)) startReload();             // B = reload
+  if(gpRising(gp, 1)){                           // B = toggle workbench menu (no proximity needed)
+    if(wbMenuOpen) wbCloseMenu();
+    else wbOpenMenu();
+  }
   if(gpRising(gp, 2)) startReload();             // X = reload (same as R key)
   if(gpRising(gp, 3)) cycleWeapon();             // Y = cycle weapon
   if(gpRising(gp, 4)){                           // LB = previous weapon
@@ -343,6 +346,8 @@ function pollGamepad(dt){
     if(wbMenuOpen) wbCloseMenu();
     else if(typeof calibToggleMenu === 'function') calibToggleMenu();
   }
+  // NOTE: Gamepad workbench navigation (stick/D-pad move, A activate, B close)
+  // is handled in main.js inside the main loop, guarded by wbMenuOpen.
   // Fire: RT (button 7) — for semi-auto weapons, fire on rising edge
   if(gpRising(gp, 7) && state.running && !wbMenuOpen && !isAuto()){
     shoot();
