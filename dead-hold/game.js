@@ -11,11 +11,12 @@ function damagePlayer(amount){
     state.health = getMaxHealth();
     return;
   }
-  // Spawn shield: brief invulnerability after taking a hit
-  if(state.spawnShieldT > 0) return;
+  // Spawn shield: reduces incoming damage by 50% (not full invulnerability)
+  let shieldMultiplier = 1.0;
+  if(state.spawnShieldT > 0) shieldMultiplier = 0.5;
   // Apply defense reduction
   const reduction = getDefenseReduction();
-  let finalDamage = amount * (1 - reduction);
+  let finalDamage = amount * (1 - reduction) * shieldMultiplier;
   // Apply armor (flat reduction)
   finalDamage = Math.max(1, finalDamage - getArmorReduction());
   state.health -= finalDamage;
