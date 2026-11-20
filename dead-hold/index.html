@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795134185 -->
+<!-- page-version: 1795134307 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2893,9 +2893,9 @@ document.addEventListener('wheel', e=>{
 /* ============================ COLLISION ============================ */
 function resolveCollision(pos){
   const r = player.radius;
-  // walls (arena boundary) — always block, no height check
-  pos.x = Math.max(-60+r, Math.min(60-r, pos.x));
-  pos.z = Math.max(-60+r, Math.min(60-r, pos.z));
+  // walls (arena boundary) — removed: player can walk freely to the edge
+  // pos.x = Math.max(-60+r, Math.min(60-r, pos.x));
+  // pos.z = Math.max(-60+r, Math.min(60-r, pos.z));
   // crates/pillars — two passes for corner robustness, height-aware
   const playerFeetY = player.pos.y - EYE; // feet relative to ground (0 when standing)
   for(let pass=0; pass<2; pass++){
@@ -2919,7 +2919,8 @@ function resolveCollision(pos){
 }
 function zombieBlocked(x,z){
   const r=0.4;
-  if(x<-60+r||x>60-r||z<-60+r||z>60-r) return true;
+  // boundary check removed: zombies can also reach the edge
+  // if(x<-60+r||x>60-r||z<-60+r||z>60-r) return true;
   for(const c of colliders){
     if(x>c.minX-r && x<c.maxX+r && z>c.minZ-r && z<c.maxZ+r) return true;
   }
@@ -4832,6 +4833,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
