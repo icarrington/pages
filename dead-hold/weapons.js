@@ -139,9 +139,9 @@ const ADS_PROFILES = {
   // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
   // Rifle ADS position lowered by 15% (-0.16 * 1.15 = -0.184)
   rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
-  // AWP (sniper): scope view lowered by another 15% from its current ADS position
-  // (Y lowered by 15% of its offset from center: -0.1463 * 1.15 = -0.168245)
-  awp: { pos: new THREE.Vector3(0, -0.1514205, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
+  // AWP (sniper): scope view lowered by 10% from its current ADS position
+  // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
+  awp: { pos: new THREE.Vector3(0, -0.16656255, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
