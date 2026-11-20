@@ -212,9 +212,10 @@ function loop(){
   if(keys['d']) move.add(right);
   if(keys['a']) move.sub(right);
   // Gamepad left stick movement (analog)
+  // X: positive = right, negative = left (strafe). Y: positive = up/forward, negative = down/backward.
   if(keys['gpX'] || keys['gpY']){
     move.add(right.clone().multiplyScalar(keys['gpX'] || 0));
-    move.add(forward.clone().multiplyScalar(-(keys['gpY'] || 0)));
+    move.add(forward.clone().multiplyScalar(keys['gpY'] || 0));
   }
   // Mobile joystick input
   if(isTouch && (joyVec.x !== 0 || joyVec.y !== 0)){
