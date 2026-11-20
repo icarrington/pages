@@ -299,26 +299,39 @@ function pollGamepad(dt){
   if(gpAnyActive(gp)) gpToast();
 
   // Hold-state (continuous)
-  gpFire   = gpButtonVal(gp, 0) > 0;   // A
-  gpSprint = gpButtonVal(gp, 12) > 0;  // L3
-  gpCrouch = gpButtonVal(gp, 13) > 0;  // R3
-  gpAds    = gpButtonVal(gp, 7) > 0;   // RT
+  gpFire   = gpButtonVal(gp, 7) > 0;   // RT = FIRE
+  gpSprint = gpButtonVal(gp, 12) > 0;  // L3 = sprint
+  gpCrouch = gpButtonVal(gp, 13) > 0;  // R3 = crouch
+  gpAds    = gpButtonVal(gp, 6) > 0;   // LT = ADS
 
   // Discrete actions — rising edge only (call the same paths the keys use)
-  if(gpRising(gp, 1)) startReload();                 // B
-  if(gpRising(gp, 2)) tryJump();                     // X
-  if(gpRising(gp, 3)) cycleWeapon();                 // Y
-  if(gpRising(gp, 4)) cycleWeapon();                 // D-pad up
-  if(gpRising(gp, 5)) cycleWeapon();                 // D-pad down
-  if(gpRising(gp, 9)){                               // Start → same as Esc
+  if(gpRising(gp, 0)) tryJump();                 // A = jump
+  if(gpRising(gp, 1)) startReload();             // B = reload
+  if(gpRising(gp, 2)) setCrouch(!crouching);     // X = crouch toggle
+  if(gpRising(gp, 3)) cycleWeapon();             // Y = cycle weapon
+  if(gpRising(gp, 4)){                           // LB = previous weapon
+    const list = weaponList();
+    let i = list.indexOf(activeWeapon);
+    switchWeapon(list[(i-1+list.length)%list.length]);
+  }
+  if(gpRising(gp, 5)){                           // RB = next weapon
+    const list = weaponList();
+    let i = list.indexOf(activeWeapon);
+    switchWeapon(list[(i+1)%list.length]);
+  }
+  if(gpRising(gp, 9)){                           // Start = pause
     if(wbMenuOpen) wbCloseMenu();
+  }
+  // Fire: RT (button 7) — for semi-auto weapons, fire on rising edge
+  if(gpRising(gp, 7) && state.running && !wbMenuOpen && !isAuto()){
+    shoot();
   }
 }
 function applyGamepad(dt){
   if(!gpConnected) return;
   const gp = gpFindPad();
   if(!gp) return;
-  // Movement (analog magnitude preserved)
+  // LEFT STICK (axes 0,1) = MOVEMENT: X=strafe, Y=forward/back
   const mx = gpDeadzone(gp.axes[0] || 0);
   const my = gpDeadzone(gp.axes[1] || 0);
   if(mx || my){
@@ -330,7 +343,7 @@ function applyGamepad(dt){
   } else {
     keys['gpX'] = 0; keys['gpY'] = 0;
   }
-  // Look (yaw + pitch), clamped the same way mouse look is
+  // RIGHT STICK (axes 2,3) = LOOK: X=yaw, Y=pitch
   const rx = gpDeadzone(gp.axes[2] || 0);
   const ry = gpDeadzone(gp.axes[3] || 0);
   if(rx || ry){
@@ -344,9 +357,18 @@ function applyGamepad(dt){
   // Crouch: hold R3 (toggle on while held, release when not)
   if(gpCrouch && !crouching) setCrouch(true);
   else if(!gpCrouch && crouching) setCrouch(false);
-  // ADS: hold RT
+  // LEFT TRIGGER (button 6) = ADS: hold to aim, release to un-aim
   if(gpAds) adsActive = true;
   else adsActive = false;
+  // RIGHT TRIGGER (button 7) = FIRE: hold to keep firing
+  if(gpFire && state.running && !wbMenuOpen){
+    if(isAuto()){
+      // Auto weapons: fire continuously
+      shoot();
+    } else {
+      // Semi-auto: fire on press (already handled by rising edge in pollGamepad)
+    }
+  }
 }
 
 // (The render loop is started once, at the end of start-up in main.js.)
