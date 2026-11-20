@@ -211,6 +211,11 @@ function loop(){
   if(keys['s']) move.sub(forward);
   if(keys['d']) move.add(right);
   if(keys['a']) move.sub(right);
+  // Gamepad left stick movement (analog)
+  if(keys['gpX'] || keys['gpY']){
+    move.add(right.clone().multiplyScalar(keys['gpX'] || 0));
+    move.add(forward.clone().multiplyScalar(-(keys['gpY'] || 0)));
+  }
   // Mobile joystick input
   if(isTouch && (joyVec.x !== 0 || joyVec.y !== 0)){
     const jf = new THREE.Vector3(0,0,-1).applyQuaternion(_q);
