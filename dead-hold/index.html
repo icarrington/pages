@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795134851 -->
+<!-- page-version: 1795135137 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -578,41 +578,9 @@ function wallSeg(x,z,thick,depth,rotY){
 // fence instead of an invisible wall. It is NOT added to `colliders` (the
 // existing boundary clamp already blocks movement), so it never changes gameplay.
 // Low-poly flat-shaded boxes to match the rest of the scene.
-(function buildFence(){
-  const B = 60;                // boundary line (matches resolveCollision clamp exactly: ±60)
-  const postMat = new THREE.MeshLambertMaterial({color:0x3a2a18}); // dark wood
-  const railMat = new THREE.MeshLambertMaterial({color:0x4a3620}); // slightly lighter wood
-  const postGeo = new THREE.BoxGeometry(0.55, 2.8, 0.55);
-  const railGeo = new THREE.BoxGeometry(1, 0.22, 0.22);
-  const spacing = 6;
-  const railYs = [0.7, 1.5, 2.3]; // three horizontal rails
-  // One post per boundary point (corners shared, no duplicates)
-  const pts = [];
-  for(let x=-B; x<=B; x+=spacing){ pts.push([x,-B]); pts.push([x,B]); }
-  for(let z=-B+spacing; z<=B-spacing; z+=spacing){ pts.push([-B,z]); pts.push([B,z]); }
-  // Posts
-  for(const p of pts){
-    const m = new THREE.Mesh(postGeo, postMat);
-    m.position.set(p[0], 1.4, p[1]);
-    scene.add(m);
-  }
-  // Rails: one long box per side per height (cheap, reads as a continuous rail)
-  const sides = [
-    [0,-B, 2*B, 0],   // north  (z=-B), runs along x
-    [0, B, 2*B, 0],   // south  (z= B), runs along x
-    [-B,0, 2*B, 1],   // west   (x=-B), runs along z
-    [ B,0, 2*B, 1]    // east   (x= B), runs along z
-  ];
-  for(const s of sides){
-    for(const ry of railYs){
-      const m = new THREE.Mesh(railGeo, railMat);
-      m.scale.x = s[2];
-      if(s[3]===0){ m.position.set(s[0], ry, s[1]); }
-      else        { m.rotation.y = Math.PI/2; m.position.set(s[0], ry, s[1]); }
-      scene.add(m);
-    }
-  }
-})();
+// FENCE REMOVED (dead hold): the visible perimeter fence is no longer rendered.
+// It was purely visual (never added to `colliders`), so no collision changes are
+// needed — the player already moves freely to the map edge.
 
 
 
@@ -4816,6 +4784,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
