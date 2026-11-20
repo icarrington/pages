@@ -82,12 +82,12 @@ function addWeapon(w){
     ownedWeapons.push(w);
     // Give full magazine and full reserve ammo for this weapon
     mags[w] = cap;
-    reserves[w] = (w === 'pistol') ? 116 : (MAGS[w] * 10);
+    reserves[w] = Math.floor(Math.max(0, (w === 'pistol') ? 116 : (MAGS[w] * 10)));
   } else {
     // Already owned: top off to full mag and full reserve
     mags[w] = cap;
-    if(w === 'pistol') reserves[w] = Math.max(reserves[w], 116);
-    else reserves[w] = Math.max(reserves[w], MAGS[w] * 10);
+    if(w === 'pistol') reserves[w] = Math.floor(Math.max(0, Math.max(reserves[w], 116)));
+    else reserves[w] = Math.floor(Math.max(0, Math.max(reserves[w], MAGS[w] * 10)));
   }
 }
 function weaponList(){
