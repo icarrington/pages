@@ -172,11 +172,15 @@ function loop(){
   /* ---- gamepad: poll + edge-triggered actions ---- */
   pollGamepad(dt);
 
-  /* ---- gamepad: workbench menu navigation (only while the menu is open) ---- */
+  /* ---- gamepad: workbench menu navigation (only while the menu is open) ----
+     pollGamepad() early-returns while the menu is open, so A (0) does NOT jump
+     here and instead activates the selected row. Left-stick Y / D-pad move the
+     cursor; A activates; B (1) / Start (9) close. */
   if(wbMenuOpen){
     const _gp = gpFindPad();
     if(_gp){
-      // Left stick / D-pad up-down (deadzone ~0.4) moves the selection cursor.
+      if(!wbNavEls.length) wbNavBuild();
+      // Left stick UP/DOWN (axis Y) or D-pad up/down moves the selection cursor.
       const _ly = _gp.axes[1] || 0;
       const _dpUp = _gp.buttons[12] && _gp.buttons[12].pressed;
       const _dpDn = _gp.buttons[13] && _gp.buttons[13].pressed;
@@ -184,7 +188,7 @@ function loop(){
       if(_ly < -0.4 || _dpUp) _dir = -1;
       else if(_ly > 0.4 || _dpDn) _dir = 1;
       if(_dir) wbNavMove(_dir, dt);
-      // A (0) = activate selected; B (1) / Start (9) = close the menu.
+      // A (0) = activate the selected row (click it); B (1) / Start (9) = close.
       if(gpRising(_gp, 0)) wbNavActivate();
       if(gpRising(_gp, 1) || gpRising(_gp, 9)) wbNavClose();
     }
