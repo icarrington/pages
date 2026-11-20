@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795138658 -->
+<!-- page-version: 1795140628 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -3026,7 +3026,8 @@ const ADS_PROFILES = {
   // NOTE: the M4A1 is registered under the weapon key 'rifle' (see isAuto/fireRate/MAGS/wnames),
   // so the M4's ADS profile MUST live here, not under 'm4a1'.
   // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
-  rifle: { pos: new THREE.Vector3(0, -0.16, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
+  // Rifle ADS position lowered by 15% (-0.16 * 1.15 = -0.184)
+  rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
   // AWP (sniper): scope view lowered by another 15% from its current ADS position
   // (Y lowered by 15% of its offset from center: -0.1463 * 1.15 = -0.168245)
   awp: { pos: new THREE.Vector3(0, -0.168245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
@@ -4862,6 +4863,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
