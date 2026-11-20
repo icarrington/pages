@@ -166,7 +166,7 @@ let swayX = 0, swayY = 0, kickY = 0, kickZ = 0, dipY = 0, dipRot = 0;
 let sprintBobX = 0, sprintBobY = 0, sprintLean = 0, sprintTilt = 0;
 // ADS: push the weapon FARther back (-Z) and slightly down so it reads as
 // smaller / farther away and more of the scene is visible around it.
-const adsPos = new THREE.Vector3(0,-0.234*0.7225,-0.9);
+const adsPos = new THREE.Vector3(0,-0.234*0.7225 - 0.035,-0.9);
 const hipRot = new THREE.Euler(0.1,0,0);
 const adsRot = new THREE.Euler(0,0,0);
 const _tmpV = new THREE.Vector3();
