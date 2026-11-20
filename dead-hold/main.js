@@ -201,6 +201,8 @@ function loop(){
 
   /* ---- gamepad: apply movement + look (combines with keyboard) ---- */
   applyGamepad(dt);
+  /* ---- calibration: refresh live stick readout while the menu is open ---- */
+  calibUpdateSticks();
 
   /* ---- movement ---- */
   const _q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0,player.yaw,0));
