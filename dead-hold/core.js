@@ -74,9 +74,9 @@ const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20,
 function refillMag(w){
   const cap = Math.floor((wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus());
   const need = cap - mags[w];
-  const take = Math.min(need, reserves[w]);
+  const take = Math.floor(Math.min(need, reserves[w]));
   mags[w] = Math.floor(mags[w] + take);
-  reserves[w] -= take;
+  reserves[w] = Math.floor(Math.max(0, reserves[w] - take));
 }
 function startReload(){
   const w = activeWeapon;
