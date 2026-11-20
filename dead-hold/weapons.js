@@ -141,7 +141,7 @@ const ADS_PROFILES = {
   rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
   // AWP (sniper): scope view lowered by another 15% from its current ADS position
   // (Y lowered by 15% of its offset from center: -0.1463 * 1.15 = -0.168245)
-  awp: { pos: new THREE.Vector3(0, -0.168245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
+  awp: { pos: new THREE.Vector3(0, -0.1514205, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
