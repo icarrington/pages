@@ -15,11 +15,11 @@ if(!window.botScore){
 const canvas = document.getElementById('game');
 canvas.style.touchAction = 'none';
 const renderer = new THREE.WebGLRenderer({canvas, antialias:false, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.0));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,0.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = false;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.NoToneMapping;
 renderer.toneMappingExposure = 1.6;
 
 const scene = new THREE.Scene();
