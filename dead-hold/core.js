@@ -72,15 +72,15 @@ const RELOAD_TIME = { pistol:1.0, smg:1.4, shotgun:1.1, rifle:1.4, doubleShotgun
 const mags = { pistol:12, smg:30, shotgun:2, rifle:30, doubleShotgun:2, uzi:32, m4a1:30, awp:5, deagle:6, minigun:200, rpg:3 };
 const reserves = { pistol:120, smg:300, shotgun:20, rifle:300, doubleShotgun:20, uzi:320, m4a1:300, awp:50, deagle:60, minigun:2000, rpg:12 };
 function refillMag(w){
-  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus();
+  const cap = Math.floor((wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus());
   const need = cap - mags[w];
   const take = Math.min(need, reserves[w]);
-  mags[w] += take;
+  mags[w] = Math.floor(mags[w] + take);
   reserves[w] -= take;
 }
 function startReload(){
   const w = activeWeapon;
-  const cap = wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w];
+  const cap = Math.floor((wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus());
   if(mags[w] >= cap) return;
   if(reserves[w] <= 0) return;
   state.reloading = true;
