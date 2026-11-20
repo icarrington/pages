@@ -310,6 +310,10 @@ function pollGamepad(dt){
   if(typeof wbMenuOpen !== 'undefined' && wbMenuOpen){
     gpFire = false; gpSprint = false; gpCrouch = false; gpAds = false;
     if(window._touchSprint !== undefined) window._touchSprint = false;
+    // B (button 1) closes the workbench menu when it is open (edge-triggered)
+    if(gpRising(gp, 1)){
+      wbCloseMenu();
+    }
     return;
   }
 
@@ -326,10 +330,7 @@ function pollGamepad(dt){
 
   // Discrete actions — rising edge only (call the same paths the keys use)
   if(gpRising(gp, 0)) tryJump();                 // A = jump
-  if(gpRising(gp, 1)){                           // B = toggle workbench menu (no proximity needed)
-    if(wbMenuOpen) wbCloseMenu();
-    else wbOpenMenu();
-  }
+  if(gpRising(gp, 1)) startReload();             // B = reload (same as X / R key)
   if(gpRising(gp, 2)) startReload();             // X = reload (same as R key)
   if(gpRising(gp, 3)) cycleWeapon();             // Y = cycle weapon
   if(gpRising(gp, 4)){                           // LB = previous weapon
