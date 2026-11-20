@@ -94,7 +94,7 @@ function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
 function spawnWeaponDrop(x,z,weapon){ /* loot drops removed - no-op */ }
 function clearWeaponDrops(){ /* loot drops removed - no-op */ }
 function addWeapon(w){
-  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.5) : MAGS[w]) + getMagSizeBonus();
+  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus();
   if(ownedWeapons.indexOf(w) < 0){
     ownedWeapons.push(w);
     // Give full magazine and full reserve ammo for this weapon
@@ -318,7 +318,7 @@ function shoot(){
     }
     mags[activeWeapon]--;
     state.shotsFired++;
-    const _vg2 = wbGet('doubleShotgun').vGrip ? 0.7 : 1;
+    const _vg2 = wbGet('doubleShotgun').vGrip ? 0.86 : 1;
     state.recoil = 1.5 * _vg2; state.muzzleT = 0.08;
     playShot();
     // 10 pellets per barrel, 2 barrels = 20 pellets total.
@@ -330,7 +330,7 @@ function shoot(){
     for(const z of zombies) if(z.alive){ targets.push(z.group); }
     if(state.boss && state.boss.alive) targets.push(state.boss.group);
     let anyHit = false;
-    const vGripDmg = wbGet('doubleShotgun').vGrip ? 0.7 : 1;
+    const vGripDmg = wbGet('doubleShotgun').vGrip ? 0.86 : 1;
     for(let p=0;p<20;p++){
       const spread = 0.04 * vGripDmg;
       const dx = (Math.random()-0.5)*spread;
@@ -364,7 +364,7 @@ function shoot(){
 
   mags[activeWeapon]--;
   state.shotsFired++;
-  const _vg = wbGet(activeWeapon).vGrip ? 0.7 : 1;
+  const _vg = wbGet(activeWeapon).vGrip ? 0.86 : 1;
   state.recoil = 1 * _vg; state.muzzleT = 0.06;
   playShot();
   // hitscan — PENETRATES every object; damages EVERY zombie in the line.
