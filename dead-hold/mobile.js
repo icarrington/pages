@@ -306,14 +306,14 @@ function pollGamepad(dt){
 
   // Hold-state (continuous)
   gpFire   = gpButtonVal(gp, 7) > 0;   // RT = FIRE
-  gpSprint = gpButtonVal(gp, 12) > 0;  // L3 = sprint
-  gpCrouch = gpButtonVal(gp, 13) > 0;  // R3 = crouch
+  gpSprint = gpButtonVal(gp, 10) > 0;  // L3 = sprint
+  gpCrouch = gpButtonVal(gp, 11) > 0;  // R3 = crouch
   gpAds    = gpButtonVal(gp, 6) > 0;   // LT = ADS
 
-  // Explicit edge-triggered sprint fallback (L3 = button 12):
+  // Explicit edge-triggered sprint fallback (L3 = button 10):
   // press starts sprinting, release stops it immediately.
-  if(gpRising(gp, 12)){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
-  if(gpFalling(gp, 12)){ if(window._touchSprint !== undefined) window._touchSprint = false; }
+  if(gpRising(gp, 10)){ if(window._touchSprint === undefined) window._touchSprint = false; window._touchSprint = true; }
+  if(gpFalling(gp, 10)){ if(window._touchSprint !== undefined) window._touchSprint = false; }
 
   // Discrete actions — rising edge only (call the same paths the keys use)
   if(gpRising(gp, 0)) tryJump();                 // A = jump
