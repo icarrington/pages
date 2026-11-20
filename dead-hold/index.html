@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795134023 -->
+<!-- page-version: 1795134185 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2994,9 +2994,9 @@ const ADS_PROFILES = {
   // so the M4's ADS profile MUST live here, not under 'm4a1'.
   // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
   rifle: { pos: new THREE.Vector3(0, -0.16, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
-  // AWP (sniper): scope positioned 20% higher than default ADS for better screen placement
-  // (Y raised by 20% of its offset from center: -0.159 * 0.8 = -0.1272)
-  awp: { pos: new THREE.Vector3(0, -0.1463, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
+  // AWP (sniper): scope view lowered by another 15% from its current ADS position
+  // (Y lowered by 15% of its offset from center: -0.1463 * 1.15 = -0.168245)
+  awp: { pos: new THREE.Vector3(0, -0.168245, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 50 }
 };
 function adsProfileFor(w){ return ADS_PROFILES[w] || null; }
 
@@ -4832,6 +4832,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
