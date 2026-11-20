@@ -94,7 +94,7 @@ function isOwned(w){ return ownedWeapons.indexOf(w) >= 0; }
 function spawnWeaponDrop(x,z,weapon){ /* loot drops removed - no-op */ }
 function clearWeaponDrops(){ /* loot drops removed - no-op */ }
 function addWeapon(w){
-  const cap = (wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus();
+  const cap = Math.floor((wbGet(w).extMag ? Math.ceil(MAGS[w]*1.3) : MAGS[w]) + getMagSizeBonus());
   if(ownedWeapons.indexOf(w) < 0){
     ownedWeapons.push(w);
     // Give full magazine and full reserve ammo for this weapon
@@ -298,7 +298,7 @@ function shoot(){
 
   // RPG: fire a rocket projectile
   if(activeWeapon === 'rpg'){
-    mags[activeWeapon]--;
+    mags[activeWeapon] = Math.floor(mags[activeWeapon]) - 1;
     state.shotsFired++;
     state.recoil = 2.0; state.muzzleT = 0.1;
     playRPGShot();
@@ -324,7 +324,7 @@ function shoot(){
       updateHUD();
       return;
     }
-    mags[activeWeapon]--;
+    mags[activeWeapon] = Math.floor(mags[activeWeapon]) - 1;
     state.shotsFired++;
     const _vg2 = wbGet('doubleShotgun').vGrip ? 0.86 : 1;
     state.recoil = 1.5 * _vg2; state.muzzleT = 0.08;
@@ -370,7 +370,7 @@ function shoot(){
     return;
   }
 
-  mags[activeWeapon]--;
+  mags[activeWeapon] = Math.floor(mags[activeWeapon]) - 1;
   state.shotsFired++;
   const _vg = wbGet(activeWeapon).vGrip ? 0.86 : 1;
   state.recoil = 1 * _vg; state.muzzleT = 0.06;
