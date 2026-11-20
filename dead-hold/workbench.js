@@ -168,6 +168,10 @@ function wbToggleMenu(){
   else if(wbNear){ wbOpenMenu(); }
 }
 function wbOpenMenu(){
+  // Rebuild + reset the gamepad/keyboard nav cursor to the first row on open.
+  wbNavReset();
+  wbNavBuild();
+  wbNavApply();
   wbMenuOpen = true;
   state.running = false;
   if(document.pointerLockElement === canvas) document.exitPointerLock();
@@ -608,11 +612,14 @@ function wbNavReset(){
 function wbNavBuild(){
   const menu = document.getElementById('wbMenu');
   if(!menu) return;
+  // Rebuild from the live DOM each time the menu opens so the list always
+  // matches the current rows (weapon rows + stat rows + upgrade buttons + close).
   const rows = Array.prototype.slice.call(menu.querySelectorAll('.wb-row'));
   const btns = Array.prototype.slice.call(menu.querySelectorAll('.wb-upgrade-btn'));
   const close = menu.querySelector('#wbCloseBtn');
   wbNavEls = rows.concat(btns);
   if(close) wbNavEls.push(close);
+  if(wbNavIdx < 0) wbNavIdx = 0;
   if(wbNavIdx >= wbNavEls.length) wbNavIdx = wbNavEls.length - 1;
 }
 function wbNavApply(){
@@ -645,7 +652,10 @@ function wbNavActivate(){
   if(!wbMenuOpen) return;
   if(wbNavIdx < 0 || wbNavIdx >= wbNavEls.length) return;
   const el = wbNavEls[wbNavIdx];
-  if(el && typeof el.click === 'function') el.click();
+  if(!el) return;
+  // Activate the selected row/button by clicking it — reuses all existing
+  // buy / upgrade / close logic. (A button = activate, not jump.)
+  if(typeof el.click === 'function') el.click();
 }
 function wbNavClose(){
   if(!wbMenuOpen) return;
