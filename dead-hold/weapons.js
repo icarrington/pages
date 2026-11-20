@@ -137,8 +137,9 @@ const ADS_PROFILES = {
   // NOTE: the M4A1 is registered under the weapon key 'rifle' (see isAuto/fireRate/MAGS/wnames),
   // so the M4's ADS profile MUST live here, not under 'm4a1'.
   // Tuned so the M4 front post (built at local y≈0.092, z≈-0.34) lands on the crosshair.
-  // Rifle ADS position lowered by 15% (-0.16 * 1.15 = -0.184)
-  rifle: { pos: new THREE.Vector3(0, -0.184, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
+  // Rifle ADS position lowered by 15% (-0.16 * 1.15 = -0.184), then an additional 10%
+  // (-0.184 * 1.10 = -0.2024)
+  rifle: { pos: new THREE.Vector3(0, -0.2024, -0.90), rot: new THREE.Euler(0, 0, 0), fov: 58 },
   // AWP (sniper): scope view lowered by 10% from its current ADS position
   // (Y lowered by 10% of its offset from center: -0.1514205 * 1.10 = -0.16656255)
   // Now moved UP by 1%: -0.16656255 * 0.99 = -0.1648969245
