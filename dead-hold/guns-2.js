@@ -233,30 +233,35 @@ function buildAWP(){
   cheekRest.position.set(0,0.04,0.38); g.add(cheekRest);
   const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.11,0.03), gunDark);
   stockPad.position.set(0,-0.02,0.49); g.add(stockPad);
-  // Scope: red-dot-sight-style tube with crosshair lines in the center
+  // Scope: red-dot-sight-style tube with crosshair lines in the center.
+  // All scope parts are grouped so they can be raised together during ADS.
   const awpScopeMat = new THREE.MeshLambertMaterial({color:0x14191e, side:THREE.DoubleSide});
-  const awpScopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.081,0.081,0.22,24,1,true), awpScopeMat);
-  awpScopeTube.rotation.x = Math.PI/2; awpScopeTube.position.set(0,0.10,0.05); g.add(awpScopeTube);
   const awpScopeRimMat = new THREE.MeshLambertMaterial({color:0x343d45});
+  const awpScope = new THREE.Group();
+  // 20% higher than the original scope center (0.10) relative to the weapon model.
+  const awpScopeLift = 0.10 * 0.20; // = 0.02
+  const awpScopeTube = new THREE.Mesh(new THREE.CylinderGeometry(0.081,0.081,0.22,24,1,true), awpScopeMat);
+  awpScopeTube.rotation.x = Math.PI/2; awpScopeTube.position.set(0,0.12+awpScopeLift,0.05); awpScope.add(awpScopeTube);
   for(const rz of [-0.11, 0.11]){
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.081,0.012,10,28), awpScopeRimMat);
-    rim.position.set(0,0.10,0.05+rz); g.add(rim);
+    rim.position.set(0,0.10+awpScopeLift,0.05+rz); awpScope.add(rim);
   }
   const awpScopeFoot = new THREE.Mesh(new THREE.BoxGeometry(0.095,0.018,0.12), awpScopeRimMat);
-  awpScopeFoot.position.set(0,0.10-0.105,0.05); g.add(awpScopeFoot);
+  awpScopeFoot.position.set(0,0.10-0.105+awpScopeLift,0.05); awpScope.add(awpScopeFoot);
   const awpScopePost = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.057,0.060), awpScopeMat);
-  awpScopePost.position.set(0,0.10-0.072,0.05); g.add(awpScopePost);
+  awpScopePost.position.set(0,0.10-0.072+awpScopeLift,0.05); awpScope.add(awpScopePost);
   const awpScopeGlass = new THREE.Mesh(new THREE.CircleGeometry(0.076,28),
     new THREE.MeshBasicMaterial({color:0x508a80, transparent:true, opacity:0.07, side:THREE.DoubleSide, depthWrite:false}));
-  awpScopeGlass.position.set(0,0.10,0.05-0.065-0.004); g.add(awpScopeGlass);
+  awpScopeGlass.position.set(0,0.10+awpScopeLift,0.05-0.065-0.004); awpScope.add(awpScopeGlass);
   // Crosshair lines (red, additive) in the center of the scope
   const awpCrossMat = new THREE.MeshBasicMaterial({color:0xff2a1e, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false});
   const awpCrossV = new THREE.Mesh(new THREE.BoxGeometry(0.002,0.06,0.001), awpCrossMat);
-  awpCrossV.position.set(0,0.10,0.05-0.065); g.add(awpCrossV);
+  awpCrossV.position.set(0,0.10+awpScopeLift,0.05-0.065); awpScope.add(awpCrossV);
   const awpCrossH = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.002,0.001), awpCrossMat);
-  awpCrossH.position.set(0,0.10,0.05-0.065); g.add(awpCrossH);
+  awpCrossH.position.set(0,0.10+awpScopeLift,0.05-0.065); awpScope.add(awpCrossH);
   const awpCrossDot = new THREE.Mesh(new THREE.SphereGeometry(0.003,8,8), awpCrossMat);
-  awpCrossDot.position.set(0,0.10,0.05-0.065); g.add(awpCrossDot);
+  awpCrossDot.position.set(0,0.10+awpScopeLift,0.05-0.065); awpScope.add(awpCrossDot);
+  g.add(awpScope);
   // Grip
   const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.10,0.07), gunDark);
   grip.position.set(0,-0.09,0.18); grip.rotation.x = 0.25; g.add(grip);
