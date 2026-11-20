@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795134531 -->
+<!-- page-version: 1795134851 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -2816,8 +2816,8 @@ function isAuto(){ return activeWeapon==='smg' || activeWeapon==='rifle' || acti
 function fireRate(){
   // Automatic weapons: significantly faster — 20-25 shots/sec (40-50ms between shots)
   // Semi-auto weapons: 8 shots/sec (unchanged)
-  // Rifles (rifle, m4a1) slowed by ~35% for balance
-  const base = {smg:22, rifle:8, uzi:25, m4a1:8, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:12};
+  // Rifles (rifle, m4a1) slowed further for balance
+  const base = {smg:22, rifle:5, uzi:25, m4a1:5, minigun:25, pistol:8, shotgun:8, doubleShotgun:8, awp:8, deagle:8, rpg:12};
   const rate = (base[activeWeapon] || 8) * getFireRateMultiplier();
   return rate;
 }
@@ -4726,7 +4726,10 @@ function loop(){
     // Beacons only on a small subset: show when fewer than 3 remain, or on the
     // no-kill timer — but cap the number of beacons to at most 2 so that on a
     // large wave (e.g. wave 6) not every zombie gets a beacon.
-    const _showBeacons = (_aliveCount > 0 && _aliveCount < 3) || _noKillBeacon;
+    // Beacons only show when fewer than 3 zombies remain (to help locate the last few)
+    // Do NOT show beacons based on the no-kill timer — that was causing all zombies
+    // to get beacons on large waves like wave 6.
+    const _showBeacons = (_aliveCount > 0 && _aliveCount < 3);
     const _maxBeacons = 2;
     // Ensure beacon pool exists (created once)
     if(!_beaconPool) {
@@ -4813,6 +4816,8 @@ updateHUD();
 updateHint();
 requestAnimationFrame(loop);
 </script>
+
+
 
 
 
