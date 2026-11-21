@@ -517,7 +517,30 @@ document.addEventListener('keydown', e=>{
     if(wbMenuOpen){ wbCloseMenu(); }
     else if(wbNear){ wbOpenMenu(); }
   }
-  if(k==='escape' && wbMenuOpen){ wbCloseMenu(); }
+  if(k==='escape'){
+    if(wbMenuOpen){
+      wbCloseMenu();
+    } else if(state.running){
+      // Pause the game
+      state.running = false;
+      if(document.pointerLockElement) document.exitPointerLock();
+      // Show pause overlay
+      let overlay = document.getElementById('pauseOverlay');
+      if(!overlay){
+        overlay = document.createElement('div');
+        overlay.id = 'pauseOverlay';
+        overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:20px 40px;border-radius:8px;font-size:18px;z-index:1000;';
+        overlay.textContent = 'PAUSED — press Escape to resume';
+        document.body.appendChild(overlay);
+      }
+      overlay.style.display = 'block';
+    } else if(!wbMenuOpen){
+      // Resume the game
+      state.running = true;
+      const overlay = document.getElementById('pauseOverlay');
+      if(overlay) overlay.style.display = 'none';
+    }
+  }
   if(k==='1'){ switchWeapon('pistol'); }
   if(k==='2'){ switchWeapon('smg'); }
   if(k==='3'){ switchWeapon('shotgun'); }
