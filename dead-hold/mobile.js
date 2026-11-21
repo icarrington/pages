@@ -517,7 +517,7 @@ document.addEventListener('keydown', e=>{
     if(wbMenuOpen){ wbCloseMenu(); }
     else if(wbNear){ wbOpenMenu(); }
   }
-  if(k==='escape'){
+  if(k==='p'){
     if(wbMenuOpen){
       wbCloseMenu();
     } else if(state.running){
@@ -530,7 +530,7 @@ document.addEventListener('keydown', e=>{
         overlay = document.createElement('div');
         overlay.id = 'pauseOverlay';
         overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:20px 40px;border-radius:8px;font-size:18px;z-index:1000;';
-        overlay.textContent = 'PAUSED — press Escape to resume';
+        overlay.textContent = 'PAUSED — press P to resume';
         document.body.appendChild(overlay);
       }
       overlay.style.display = 'block';
@@ -539,6 +539,8 @@ document.addEventListener('keydown', e=>{
       state.running = true;
       const overlay = document.getElementById('pauseOverlay');
       if(overlay) overlay.style.display = 'none';
+      // Re-request pointer lock when resuming
+      canvas.requestPointerLock && canvas.requestPointerLock();
     }
   }
   if(k==='1'){ switchWeapon('pistol'); }
