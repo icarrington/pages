@@ -314,12 +314,10 @@ function pollGamepad(dt){
     gpFire = false; gpSprint = false; gpCrouch = false; gpAds = false;
     if(window._touchSprint !== undefined) window._touchSprint = false;
     // B (button 1) and Start (button 9) close the workbench menu when it is open.
-    // Detect the rising edge HERE (before the early return) and set a shared flag
-    // so the main loop's existing close check can also see it.
+    // Detect the rising edge HERE (before the early return) so the previous-state
+    // inside gpRising() is refreshed while the menu is open and the edge is captured.
     if(gpRising(gp, 1) || gpRising(gp, 9)){
-      window._gpClosePressed = true;
-      if(typeof wbNavClose === 'function') wbNavClose();
-      else if(typeof wbCloseMenu === 'function') wbCloseMenu();
+      wbCloseMenu();
     }
     return;
   }
