@@ -704,7 +704,7 @@ function wbUpdateNear(){
     wbNear = near;
     const hint = document.getElementById('wbHint');
     if(near && state.running && !wbMenuOpen){
-      hint.textContent = '[E] Open Workbench';
+      hint.textContent = '[E / B] Open Workbench';
       hint.classList.add('show');
     } else if(!near){
       hint.classList.remove('show');
