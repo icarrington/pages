@@ -76,7 +76,12 @@ function loop(){
       // !state.running early exit) so it works even when the game is paused.
       // pollGamepad() also detects this edge, but gpPrev is shared so it won't
       // double-fire.
-      if(gpRising(_gp, 1) || gpRising(_gp, 9)) wbCloseMenu();
+      if(gpRising(_gp, 1) || gpRising(_gp, 9)){
+        wbCloseMenu();
+        // Hide pause overlay when closing workbench
+        const overlay = document.getElementById('pauseOverlay');
+        if(overlay) overlay.style.display = 'none';
+      }
     }
   }
 
