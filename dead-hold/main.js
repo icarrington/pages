@@ -190,7 +190,13 @@ function loop(){
       if(_dir) wbNavMove(_dir, dt);
       // A (0) = activate the selected row (click it); B (1) / Start (9) = close.
       if(gpRising(_gp, 0)) wbNavActivate();
-      if(gpRising(_gp, 1) || gpRising(_gp, 9)) wbNavClose();
+      // Close on a fresh B/Start press: either the shared flag set by pollGamepad()
+      // (which already called wbNavClose) or a direct edge detected here.
+      if(window._gpClosePressed){
+        window._gpClosePressed = false;
+      } else if(gpRising(_gp, 1) || gpRising(_gp, 9)){
+        wbNavClose();
+      }
     }
   }
 
