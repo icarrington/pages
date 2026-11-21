@@ -260,6 +260,37 @@ function wbOpenMenu(){
   menu.querySelector('.wb-rows').innerHTML = '<div style="margin-top:clamp(8px,1.5vw,12px);padding-top:clamp(8px,1.5vw,12px);border-top:1px solid var(--line);width:100%"><div class="wb-name" style="margin-bottom:clamp(4px,1vw,8px);color:var(--accent)">WEAPONS</div><div class="wb-weapon-grid" style="width:100%">' + weaponRowsHTML + '</div></div>' + statRowsHTML;
   // Ensure all weapon rows have proper event listeners
   menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
+    // Add direct click handler to upgrade buttons so gamepad/keyboard nav works
+    const upgBtn = r.querySelector('.wb-upgrade-btn');
+    if(upgBtn && !upgBtn._directHandler){
+      upgBtn._directHandler = true;
+      upgBtn.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        const uw = upgBtn.dataset.upgrade;
+        if(!uw) return;
+        const UPGRADE_COST = 750;
+        const att = wbGet(uw);
+        const missing = WB_ATTACH_DEFS.filter(d=>!att[d.key]);
+        if(missing.length === 0) return;
+        if(state.points < UPGRADE_COST) return;
+        state.points -= UPGRADE_COST;
+        for(const d of WB_ATTACH_DEFS){
+          if(!att[d.key]){
+            att[d.key] = true;
+            if(d.key==='extMag'){ mags[uw] = Math.floor(MAGS[uw]*1.5); }
+          }
+        }
+        ensureAudio();
+        if(audioCtx){ const t=now(); const o=audioCtx.createOscillator(); o.type='square'; o.frequency.setValueAtTime(900,t); const g=audioCtx.createGain(); g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.10); o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+0.11); }
+        const wnames = {smg:'SMG',shotgun:'Shotgun',rifle:'Rifle',uzi:'Uzi',m4a1:'M4A1',awp:'AWP',deagle:'Deagle',minigun:'Minigun',rpg:'RPG-7',doubleShotgun:'Double Shotgun'};
+        showToast('Upgraded ' + (wnames[uw] || uw) + ' with all attachments!', 2200);
+        updateRedDot();
+        updateHUD();
+        wbOpenMenu(); // refresh
+      });
+    }
+  });
+  menu.querySelectorAll('.wb-row[data-weapon]').forEach(r=>{
     r.addEventListener('click', (ev)=>{
       // If the click was on the UPGRADE button, handle it separately
       const upgBtn = ev.target.closest('.wb-upgrade-btn');
@@ -582,11 +613,6 @@ function wbOpenMenu(){
       updateHUD();
     });
   });
-  // Build and apply the gamepad/keyboard navigation cursor NOW that the DOM is fully rendered.
-  // This ensures wbNavEls contains the actual .wb-row, .wb-upgrade-btn, and #wbCloseBtn elements.
-  wbNavBuild();
-  wbNavApply();
-  
   menu.classList.remove('hidden');
   
   // Build and apply the gamepad/keyboard navigation cursor NOW that the DOM is fully rendered.
