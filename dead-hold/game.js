@@ -87,6 +87,9 @@ function resetGame(){
   updateHUD();
 }
 function startGame(){
+  // Hide pause overlay if visible
+  const overlay = document.getElementById('pauseOverlay');
+  if(overlay) overlay.style.display = 'none';
   ensureAudio();
   resetGame();
   document.getElementById('startScreen').classList.add('hidden');
@@ -99,6 +102,9 @@ function startGame(){
   }
 }
 function endGame(){
+  // Hide pause overlay if visible
+  const overlay = document.getElementById('pauseOverlay');
+  if(overlay) overlay.style.display = 'none';
   state.running=false; state.over=true;
   resetAds();
   if(state.boss){ scene.remove(state.boss.group); state.boss=null; }
