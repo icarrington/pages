@@ -179,8 +179,3 @@ function updateHUD(){
     }
   }
 }
-function updateHint(){
-  const hint = document.getElementById('hint');
-  if(state.running && !pointerLocked){ hint.classList.add('show'); }
-  else hint.classList.remove('show');
-}
