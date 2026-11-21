@@ -188,15 +188,10 @@ function loop(){
       if(_ly < -0.4 || _dpUp) _dir = -1;
       else if(_ly > 0.4 || _dpDn) _dir = 1;
       if(_dir) wbNavMove(_dir, dt);
-      // A (0) = activate the selected row (click it); B (1) / Start (9) = close.
+      // A (0) = activate the selected row (click it).
+      // B (1) / Start (9) = close is handled in pollGamepad() (mobile.js), so it is
+      // not repeated here to avoid double-firing.
       if(gpRising(_gp, 0)) wbNavActivate();
-      // Close on a fresh B/Start press: either the shared flag set by pollGamepad()
-      // (which already called wbNavClose) or a direct edge detected here.
-      if(window._gpClosePressed){
-        window._gpClosePressed = false;
-      } else if(gpRising(_gp, 1) || gpRising(_gp, 9)){
-        wbNavClose();
-      }
     }
   }
 
