@@ -168,14 +168,12 @@ function wbToggleMenu(){
   else if(wbNear){ wbOpenMenu(); }
 }
 function wbOpenMenu(){
-  // Rebuild + reset the gamepad/keyboard nav cursor to the first row on open.
+  // Reset the gamepad/keyboard nav cursor to clear stale state.
+  // The actual build/apply happens at the END of this function, after the DOM is ready.
   wbNavReset();
-  wbNavBuild();
-  wbNavApply();
   wbMenuOpen = true;
   state.running = false;
   if(document.pointerLockElement === canvas) document.exitPointerLock();
-  wbNavReset();
   const w = activeWeapon;
   const att = wbGet(w);
   const cap = MAGS[w];
@@ -584,7 +582,17 @@ function wbOpenMenu(){
       updateHUD();
     });
   });
+  // Build and apply the gamepad/keyboard navigation cursor NOW that the DOM is fully rendered.
+  // This ensures wbNavEls contains the actual .wb-row, .wb-upgrade-btn, and #wbCloseBtn elements.
+  wbNavBuild();
+  wbNavApply();
+  
   menu.classList.remove('hidden');
+  
+  // Build and apply the gamepad/keyboard navigation cursor NOW that the DOM is fully rendered.
+  // This ensures wbNavEls contains the actual .wb-row, .wb-upgrade-btn, and #wbCloseBtn elements.
+  wbNavBuild();
+  wbNavApply();
 }
 function wbCloseMenu(){
   wbMenuOpen = false;
