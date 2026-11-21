@@ -488,7 +488,6 @@ document.getElementById('restartBtn').addEventListener('click', startGame);
 
 /* ============================ INIT ============================ */
 updateHUD();
-updateHint();
 // Start the render loop once (it used to be started twice, which drew every frame twice)
 if(!window._loopStarted){
   window._loopStarted = true;
