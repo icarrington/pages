@@ -303,6 +303,9 @@ function pollGamepad(dt){
   }
   if(!gpConnected){ gpConnected = true; gpPrev = {}; }
   if(gpAnyActive(gp)) gpToast();
+  // Reset the shared close flag each frame; it is set below (and consumed by the
+  // main loop) only on a fresh B/Start press while the workbench menu is open.
+  window._gpClosePressed = false;
 
   // While the workbench menu is open, the gamepad drives MENU navigation only.
   // Suppress all normal gameplay actions (fire, jump, reload, cycle, ADS, sprint)
@@ -310,9 +313,13 @@ function pollGamepad(dt){
   if(typeof wbMenuOpen !== 'undefined' && wbMenuOpen){
     gpFire = false; gpSprint = false; gpCrouch = false; gpAds = false;
     if(window._touchSprint !== undefined) window._touchSprint = false;
-    // B (button 1) closes the workbench menu when it is open (edge-triggered)
-    if(gpRising(gp, 1)){
-      wbCloseMenu();
+    // B (button 1) and Start (button 9) close the workbench menu when it is open.
+    // Detect the rising edge HERE (before the early return) and set a shared flag
+    // so the main loop's existing close check can also see it.
+    if(gpRising(gp, 1) || gpRising(gp, 9)){
+      window._gpClosePressed = true;
+      if(typeof wbNavClose === 'function') wbNavClose();
+      else if(typeof wbCloseMenu === 'function') wbCloseMenu();
     }
     return;
   }
