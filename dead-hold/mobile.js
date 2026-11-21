@@ -638,7 +638,6 @@ window.addEventListener('blur', ()=>{ mouseDown=false; adsActive=false; });
 canvas.addEventListener('contextmenu', e=>{ e.preventDefault(); });
 document.addEventListener('pointerlockchange', ()=>{
   pointerLocked = (document.pointerLockElement === canvas);
-  updateHint();
 });
 document.addEventListener('mousemove', e=>{
   if(!pointerLocked || !state.running) return;
