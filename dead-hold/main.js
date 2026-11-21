@@ -71,9 +71,12 @@ function loop(){
       else if(_ly > 0.4 || _dpDn) _dir = 1;
       if(_dir) wbNavMove(_dir, dt);
       // A (0) = activate the selected row (click it).
-      // B (1) / Start (9) = close is handled in pollGamepad() (mobile.js), so it is
-      // not repeated here to avoid double-firing.
       if(gpRising(_gp, 0)) wbNavActivate();
+      // B (1) / Start (9) = close the workbench menu. Detected here (before the
+      // !state.running early exit) so it works even when the game is paused.
+      // pollGamepad() also detects this edge, but gpPrev is shared so it won't
+      // double-fire.
+      if(gpRising(_gp, 1) || gpRising(_gp, 9)) wbCloseMenu();
     }
   }
 
