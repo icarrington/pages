@@ -80,6 +80,18 @@ function loop(){
     }
   }
 
+  /* ---- gamepad: A button starts/restarts game from menu screens ---- */
+  {
+    const _gp = gpFindPad();
+    if(_gp){
+      const _startVis = !document.getElementById('startScreen').classList.contains('hidden');
+      const _overVis = !document.getElementById('overScreen').classList.contains('hidden');
+      if((_startVis || _overVis) && gpRising(_gp, 0)){
+        startGame();
+      }
+    }
+  }
+
   if(!state.running){
     // still render
     renderer.render(scene, camera);
