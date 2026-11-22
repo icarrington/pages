@@ -483,7 +483,26 @@ window.addEventListener('resize', ()=>{
 });
 
 /* ============================ BUTTONS ============================ */
-document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('startBtn').addEventListener('click', function(){
+  // If the game is paused (not on start screen, not game over), resume it
+  const startScreen = document.getElementById('startScreen');
+  const overScreen = document.getElementById('overScreen');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const onMenu = !startScreen.classList.contains('hidden') || !overScreen.classList.contains('hidden');
+  // Paused = game already started, not on a menu screen, and either the loop is
+  // stopped OR pointer lock was released (ESC) OR the pause overlay is showing.
+  const isPaused = !onMenu && !state.over &&
+    (!state.running || document.pointerLockElement !== canvas ||
+     (pauseOverlay && pauseOverlay.style.display !== 'none'));
+  if(isPaused){
+    // Resume the game
+    state.running = true;
+    if(pauseOverlay) pauseOverlay.style.display = 'none';
+    canvas.requestPointerLock && canvas.requestPointerLock();
+  } else {
+    startGame();
+  }
+});
 document.getElementById('restartBtn').addEventListener('click', startGame);
 document.getElementById('calibStartBtn').addEventListener('click', function(){
   ensureAudio();
