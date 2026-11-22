@@ -354,6 +354,7 @@ function pollGamepad(dt){
     else if(state.running){
       // Pause the game
       state.running = false;
+      window._gpStartPrev = true;
       if(document.pointerLockElement) document.exitPointerLock();
       // Show pause overlay
       let overlay = document.getElementById('pauseOverlay');
