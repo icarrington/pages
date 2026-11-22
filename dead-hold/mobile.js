@@ -247,6 +247,7 @@ let gpFire = false;      // current held fire (A)
 let gpSprint = false;    // current held sprint (L3)
 let gpCrouch = false;    // current held crouch (R3)
 let gpAds = false;       // current held ADS (RT)
+let gpPause = false;     // rising edge of Start button (index 9)
 let gpPrev = {};         // previous frame button states (for rising edges)
 let gpConnected = false; // a pad was seen
 let gpToastShown = false;
@@ -348,8 +349,30 @@ function pollGamepad(dt){
     let i = list.indexOf(activeWeapon);
     switchWeapon(list[(i+1)%list.length]);
   }
-  if(gpRising(gp, 9)){                           // Start = open/close calibration (or close workbench)
+  if(gpRising(gp, 9)){                           // Start = pause/resume, or open/close calibration, or close workbench
     if(wbMenuOpen) wbCloseMenu();
+    else if(state.running){
+      // Pause the game
+      state.running = false;
+      if(document.pointerLockElement) document.exitPointerLock();
+      // Show pause overlay
+      let overlay = document.getElementById('pauseOverlay');
+      if(!overlay){
+        overlay = document.createElement('div');
+        overlay.id = 'pauseOverlay';
+        overlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#fff;padding:20px 40px;border-radius:8px;font-size:18px;z-index:1000;';
+        overlay.textContent = 'PAUSED — press P or Start to resume';
+        document.body.appendChild(overlay);
+      }
+      overlay.style.display = 'block';
+    } else if(!wbMenuOpen){
+      // Resume the game
+      state.running = true;
+      const overlay = document.getElementById('pauseOverlay');
+      if(overlay) overlay.style.display = 'none';
+      // Re-request pointer lock when resuming
+      canvas.requestPointerLock && canvas.requestPointerLock();
+    }
     else if(typeof calibToggleMenu === 'function') calibToggleMenu();
   }
   // NOTE: Gamepad workbench navigation (stick/D-pad move, A activate, B close)
