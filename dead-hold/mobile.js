@@ -349,7 +349,7 @@ function pollGamepad(dt){
     let i = list.indexOf(activeWeapon);
     switchWeapon(list[(i+1)%list.length]);
   }
-  if(gpRising(gp, 9)){                           // Start = pause/resume, or open/close calibration, or close workbench
+    if(gpRising(gp, 9)){                           // Start = pause/resume, or open/close calibration, or close workbench
     if(wbMenuOpen) wbCloseMenu();
     else if(state.running){
       // Pause the game
