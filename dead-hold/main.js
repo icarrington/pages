@@ -98,6 +98,26 @@ function loop(){
   }
 
   if(!state.running){
+    // Allow gamepad Start (button 9) to resume the game.
+    // Use a dedicated previous-state flag because pollGamepad() already
+    // consumed the rising edge via the shared gpPrev, so gpRising() here
+    // would always return false.
+    if(!wbMenuOpen){
+      const _gp = gpFindPad();
+      if(_gp){
+        const _b9 = _gp.buttons[9] && _b9.pressed;
+        if(_b9 && !window._gpStartPrev){
+          state.running = true;
+          const overlay = document.getElementById('pauseOverlay');
+          if(overlay) overlay.style.display = 'none';
+          // Re-lock pointer
+          canvas.requestPointerLock && canvas.requestPointerLock();
+          // Call any resume-specific logic (audio, timers) if it exists
+          if(typeof onResume === 'function') onResume();
+        }
+        window._gpStartPrev = _b9;
+      }
+    }
     // still render
     renderer.render(scene, camera);
     return;
