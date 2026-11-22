@@ -485,6 +485,10 @@ window.addEventListener('resize', ()=>{
 /* ============================ BUTTONS ============================ */
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
+document.getElementById('calibStartBtn').addEventListener('click', function(){
+  ensureAudio();
+  calibOpenMenu();
+});
 
 /* ============================ INIT ============================ */
 updateHUD();
