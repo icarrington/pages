@@ -272,13 +272,6 @@ function updateZombies(dt){
         z._moveTrack.dist = 0;
       }
       
-      // Hard clamp inside arena
-      const _B = 59.4;
-      if(z.group.position.x < -_B) z.group.position.x = -_B;
-      else if(z.group.position.x > _B) z.group.position.x = _B;
-      if(z.group.position.z < -_B) z.group.position.z = -_B;
-      else if(z.group.position.z > _B) z.group.position.z = _B;
-      
       // Update zombie Y position to follow terrain
       z.group.position.y = terrainHeight(z.group.position.x, z.group.position.z);
       
