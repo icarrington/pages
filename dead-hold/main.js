@@ -105,7 +105,11 @@ function loop(){
     if(!wbMenuOpen){
       const _gp = gpFindPad();
       if(_gp){
-        const _b9 = _gp.buttons[9] && _b9.pressed;
+        // TDZ-safe: read button 9 into a temp first, then read .pressed.
+        // (A self-referencing initializer like `const _b9 = _gp.buttons[9] && _b9.pressed`
+        //  would throw a ReferenceError; the two-line form below avoids that.)
+        const _btn9 = _gp.buttons[9];
+        const _b9 = _btn9 ? _btn9.pressed : false;
         if(_b9 && !window._gpStartPrev){
           state.running = true;
           const overlay = document.getElementById('pauseOverlay');
