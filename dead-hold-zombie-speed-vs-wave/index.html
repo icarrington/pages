@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<!-- page-version: 1795554086 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Hold: Zombie Speed vs Wave</title>
+<style>
+  :root{
+    --bg:#0a0b0d;
+    --panel:#101216;
+    --panel2:#14171d;
+    --line:#232833;
+    --line-soft:#1a1e26;
+    --text:#e9ecf1;
+    --muted:#8b93a1;
+    --faint:#5b6270;
+    --grid:#1c212b;
+    --cap:#f5c451;
+    --runner:#ff5d6c;
+    --crawler:#37d67a;
+    --mutant:#b98cff;
+    --walker:#46b6ff;
+    --tank:#ffb020;
+    --max:100;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
+  /* faint blueprint grid */
+  body::before{
+    content:"";
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(var(--line-soft) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:46px 46px;
+    opacity:.35;
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 0%,#000 30%,transparent 78%);
+            mask-image:radial-gradient(120% 90% at 50% 0%,#000 30%,transparent 78%);
+  }
+  .wrap{
+    position:relative;z-index:1;
+    max-width:1080px;
+    margin:0 auto;
+    padding:clamp(28px,6vw,64px) clamp(18px,4vw,40px) 40px;
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--faint);
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--runner);box-shadow:0 0 12px var(--runner)}
+  h1{
+    font-size:clamp(30px,6.4vw,52px);
+    line-height:1.02;letter-spacing:-.02em;font-weight:800;
+    margin:0 0 14px;
+  }
+  h1 .accent{color:var(--runner)}
+  .lede{
+    color:var(--muted);max-width:60ch;font-size:clamp(15px,2.4vw,17px);
+    margin:0 0 34px;
+  }
+  .lede b{color:var(--text);font-weight:600}
+
+  .panel{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:clamp(14px,2.6vw,22px);
+    box-shadow:0 24px 60px -30px rgba(0,0,0,.9);
+  }
+  .panel-head{
+    display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .panel-title{font-size:15px;font-weight:600;letter-spacing:.01em}
+  .panel-sub{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:3px}
+  .hint{font-family:var(--mono);font-size:11.5px;color:var(--faint);display:flex;gap:8px;align-items:center}
+  .hint kbd{
+    font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;
+    padding:1px 6px;background:#0c0e12;
+  }
+
+  .chart-scroll{overflow-x:auto;overflow-y:hidden;margin:0 -4px;padding:0 4px}
+  svg#chart{display:block;width:100%;min-width:560px;height:auto}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:18px;
+    padding-top:16px;border-top:1px solid var(--line-soft);
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:7px 12px;border:1px solid var(--line);border-radius:999px;
+    background:#0d0f14;cursor:pointer;user-select:none;
+    font-size:13px;color:var(--text);
+    transition:transform .18s ease,border-color .18s ease,opacity .18s ease,box-shadow .18s ease;
+  }
+  .chip:hover{transform:translateY(-1px);border-color:var(--c)}
+  .chip:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+  .chip .swatch{width:11px;height:11px;border-radius:3px;background:var(--c);box-shadow:0 0 10px var(--c)}
+  .chip .name{font-weight:600}
+  .chip .base{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .chip.off{opacity:.42}
+  .chip.off .swatch{box-shadow:none;background:var(--faint)}
+  .chip.dim{opacity:.32}
+
+  .section{margin-top:44px}
+  .section h2{
+    font-size:clamp(19px,3.4vw,24px);font-weight:700;letter-spacing:-.01em;margin:0 0 6px;
+  }
+  .section .sub{color:var(--faint);font-family:var(--mono);font-size:12px;margin:0 0 20px}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .fact{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;
+    position:relative;overflow:hidden;
+  }
+  .fact::after{content:"";position:absolute;left:0;top:0;width:100%;height:3px;background:var(--c,var(--runner))}
+  .fact .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+  .fact .v{font-size:15px;color:var(--text);line-height:1.5}
+  .fact .v b{color:var(--c,var(--text))}
+  .fact .big{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.02em;color:var(--c,var(--text));display:block;margin-bottom:4px}
+
+  .callout{
+    margin-top:16px;display:flex;gap:14px;align-items:flex-start;
+    background:linear-gradient(90deg,rgba(255,93,108,.08),transparent 70%);
+    border:1px solid var(--line);border-left:3px solid var(--runner);
+    border-radius:12px;padding:16px 18px;
+  }
+  .callout .tag{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--runner);white-space:nowrap;padding-top:2px}
+  .callout .txt{color:var(--muted);font-size:14.5px}
+  .callout .txt b{color:var(--text)}
+  .callout .txt .num{font-family:var(--mono);color:var(--text)}
+
+  .source{
+    margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--faint);
+    display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;
+  }
+  .source .path{color:var(--muted);background:#0d0f14;border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+
+  footer{
+    margin-top:44px;padding-top:22px;border-top:1px solid var(--line-soft);
+    color:var(--faint);font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+  footer .mark{color:var(--muted)}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion:reduce){
+    .reveal{opacity:1;transform:none;transition:none}
+    .chip{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="reveal">
+    <div class="eyebrow"><span class="dot"></span> Dead Hold · live data</div>
+    <h1>Zombie Speed <span class="accent">vs</span> Wave Number</h1>
+    <p class="lede">Every zombie type accelerates on the same curve — a <b>linear ramp</b> that hits a hard ceiling at <b>wave 60</b>. After that the speed is frozen; the difficulty comes from somewhere else. Hover the chart to read exact values.</p>
+  </header>
+
+  <section class="panel reveal" aria-label="Speed chart">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Speed (m/s) by wave, 1 → 100</div>
+        <div class="panel-sub">speed = base × min(1.35, 1 + (wave − 1) × 0.006)</div>
+      </div>
+      <div class="hint"><kbd>hover</kbd> / <kbd>touch</kbd> to inspect</div>
+    </div>
+    <div class="chart-scroll">
+      <svg id="chart" viewBox="0 0 1000 540" role="img" aria-label="Line chart of zombie speed in metres per second versus wave number 1 to 100, five lines rising linearly and plateauing at wave 60.">
+        <defs>
+          <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff5d6c" stop-opacity="0.16"/>
+            <stop offset="1" stop-color="#ff5d6c" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3.2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="g-grid"></g>
+        <g id="g-axes"></g>
+        <g id="g-cap"></g>
+        <g id="g-area"></g>
+        <g id="g-lines"></g>
+        <g id="g-guide"></g>
+        <g id="g-dots"></g>
+      </svg>
+    </div>
+    <div class="legend" id="legend" role="group" aria-label="Zombie types and base speeds"></div>
+  </section>
+
+  <section class="section reveal">
+    <h2>What the numbers mean</h2>
+    <p class="sub">Reading the curve, and what actually changes after the cap.</p>
+
+    <div class="facts">
+      <div class="fact" style="--c:var(--runner)">
+        <div class="k">Speed scaling</div>
+        <div class="v">Zombie speed scales <b>linearly</b> with wave: <b>+0.006× per wave</b>, capped at <b>1.35×</b> from wave 60 onward. After wave 60 zombies do <b>not</b> get faster.</div>
+      </div>
+      <div class="fact" style="--c:var(--crawler)">
+        <div class="k">HP scaling</div>
+        <span class="big">10.33×</span>
+        <div class="v">The real difficulty after wave 60 comes from <b>HP scaling</b> — reaching <b>10.33×</b> at wave 100.</div>
+      </div>
+      <div class="fact" style="--c:var(--mutant)">
+        <div class="k">Damage scaling</div>
+        <span class="big">4.96×</span>
+        <div class="v">…and <b>damage scaling</b> — reaching <b>4.96×</b> at wave 100.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="tag">Server high score</div>
+      <div class="txt"><b>ce</b> — <span class="num">Wave 47</span>, <span class="num">296,015</span> points.</div>
+    </div>
+
+    <div class="source">
+      <span>Source:</span>
+      <span>Dead Hold game code</span>
+      <span class="path">Gobpox/deadhold</span>
+      <span class="path">game/src/config.js</span>
+    </div>
+  </section>
+
+  <footer class="reveal">
+    <span class="mark">Dead Hold — speed data page</span>
+    <span>computed from config.js · no live data</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- data (exact formula) ----
+  var CAP = 1.35, RATE = 0.006, MAXW = 100;
+  var ZOMBIES = [
+    {name:"Runner",  base:2.09, color:"var(--runner)",  hex:"#ff5d6c"},
+    {name:"Crawler", base:1.28, color:"var(--crawler)", hex:"#37d67a"},
+    {name:"Mutant",  base:1.22, color:"var(--mutant)",  hex:"#b98cff"},
+    {name:"Walker",  base:0.74, color:"var(--walker)",  hex:"#46b6ff"},
+    {name:"Tank",    base:0.54, color:"var(--tank)",    hex:"#ffb020"}
+  ];
+  function speed(base, wave){ return base * Math.min(CAP, 1 + (wave - 1) * RATE); }
+
+  // ---- geometry ----
+  var W=1000, H=540, M={l:66, r:24, t:30, b:54};
+  var PW = W - M.l - M.r, PH = H - M.t - M.b;
+  var YMAX = 3.0;
+  var x = function(w){ return M.l + (w - 1) / (MAXW - 1) * PW; };
+  var y = function(v){ return M.t + (1 - v / YMAX) * PH; };
+
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){
+    var e = document.createElementNS(NS, tag);
+    if(attrs) for(var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  var svg = document.getElementById("chart");
+  var gGrid = document.getElementById("g-grid");
+  var gAxes = document.getElementById("g-axes");
+  var gCap  = document.getElementById("g-cap");
+  var gArea = document.getElementById("g-area");
+  var gLines= document.getElementById("g-lines");
+  var gGuide= document.getElementById("g-guide");
+  var gDots = document.getElementById("g-dots");
+
+  // ---- grid + axes ----
+  var yTicks = [0,0.5,1.0,1.5,2.0,2.5,3.0];
+  yTicks.forEach(function(v){
+    var yy = y(v);
+    gGrid.appendChild(el("line",{x1:M.l,y1:yy,x2:W-M.r,y2:yy,stroke:"var(--grid)","stroke-width":1}));
+    var t = el("text",{x:M.l-12,y:yy+4,"text-anchor":"end","font-size":12,fill:"var(--faint)","font-family":"var(--mono)"});
+    t.textContent = v.toFixed(1);
+    gAxes.appendChild(t);
+  });
+  [1,10,20,30,40,50,60,70,80,90,100].forEach(function(w){
+    var xx = x(w);
+    gGrid.appendChild(el("line",{x1:xx,y1:M.t,x2:xx,y2:H-M.b,stroke:"var(--grid)","stroke-width":1,opacity:w%10===0?0.9:0.55}));
+    var t = el("text",{x:xx,y:H-M.b+22,"text-anchor":"middle","font-size":12,fill:"var(--faint)","font-family":"var(--mono)"});
+    t.textContent = w;
+    gAxes.appendChild(t);
+  });
+  // axis titles
+  var xt = el("text",{x:M.l+PW/2,y:H-8,"text-anchor":"middle","font-size":12.5,fill:"var(--muted)","font-family":"var(--mono)","letter-spacing":"1"});
+  xt.textContent = "WAVE NUMBER";
+  gAxes.appendChild(xt);
+  var yt = el("text",{x:18,y:M.t+PH/2,"text-anchor":"middle","font-size":12.5,fill:"var(--muted)","font-family":"var(--mono)","letter-spacing":"1",transform:"rotate(-90 18 "+(M.t+PH/2)+")"});
+  yt.textContent = "SPEED (m/s)";
+  gAxes.appendChild(yt);
+
+  // ---- cap line at wave 60 ----
+  var capX = x(60);
+  gCap.appendChild(el("line",{x1:capX,y1:M.t,x2:capX,y2:H-M.b,stroke:"var(--cap)","stroke-width":1.5,"stroke-dasharray":"5 5",opacity:.9}));
+  var capTag = el("g",{});
+  capTag.appendChild(el("rect",{x:capX-118,y:M.t-2,width:236,height:22,rx:6,fill:"#0d0f14",stroke:"var(--cap)","stroke-width":1,opacity:.96}));
+  var capTxt = el("text",{x:capX,y:M.t+13,"text-anchor":"middle","font-size":11.5,fill:"var(--cap)","font-family":"var(--mono)","letter-spacing":".5"});
+  capTxt.textContent = "SPEED CAP (1.35×) AT WAVE 60";
+  capTag.appendChild(capTxt);
+  gCap.appendChild(capTag);
+
+  // ---- lines + area ----
+  function pathFor(base){
+    var d = "";
+    for(var w=1; w<=MAXW; w++){
+      d += (w===1?"M":"L") + x(w).toFixed(2) + " " + y(speed(base,w)).toFixed(2) + " ";
+    }
+    return d.trim();
+  }
+  function areaFor(base){
+    var d = "M " + x(1).toFixed(2) + " " + y(0).toFixed(2) + " ";
+    for(var w=1; w<=MAXW; w++){ d += "L " + x(w).toFixed(2) + " " + y(speed(base,w)).toFixed(2) + " "; }
+    d += "L " + x(MAXW).toFixed(2) + " " + y(0).toFixed(2) + " Z";
+    return d;
+  }
+  // Runner area (top line) for depth
+  gArea.appendChild(el("path",{d:areaFor(2.09),fill:"url(#area)"}));
+
+  var lineEls = [];
+  ZOMBIES.forEach(function(z, i){
+    var p = el("path",{
+      d:pathFor(z.base), fill:"none", stroke:z.hex, "stroke-width":2.6,
+      "stroke-linecap":"round","stroke-linejoin":"round", filter:"url(#glow)",
+      "data-i":i
+    });
+    gLines.appendChild(p);
+    lineEls.push(p);
+  });
+
+  // ---- hover guide + dots ----
+  var guide = el("line",{x1:0,y1:M.t,x2:0,y2:H-M.b,stroke:"var(--muted)","stroke-width":1,"stroke-dasharray":"3 4",opacity:0});
+  gGuide.appendChild(guide);
+  var guideLabel = el("g",{opacity:0});
+  var glRect = el("rect",{x:0,y:0,width:52,height:20,rx:5,fill:"#0d0f14",stroke:"var(--line)"});
+  var glTxt  = el("text",{x:0,y:0,"text-anchor":"middle","font-size":11.5,fill:"var(--text)","font-family":"var(--mono)"});
+  guideLabel.appendChild(glRect); guideLabel.appendChild(glTxt);
+  gGuide.appendChild(guideLabel);
+
+  var dots = [];
+  ZOMBIES.forEach(function(z){
+    var d = el("circle",{r:4.5,fill:"#0a0b0d",stroke:z.hex,"stroke-width":2.5,opacity:0,filter:"url(#glow)"});
+    gDots.appendChild(d);
+    dots.push(d);
+  });
+
+  // ---- tooltip (HTML) ----
+  var tip = document.createElement("div");
+  tip.style.cssText = "position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .12s ease;background:#0d0f14;border:1px solid var(--line);border-radius:10px;padding:9px 11px;box-shadow:0 14px 40px -12px rgba(0,0,0,.8);font-family:var(--mono);font-size:12px;min-width:150px";
+  document.body.appendChild(tip);
+
+  var active = new Array(ZOMBIES.length).fill(true);
+  var hoverIdx = -1;
+
+  function setHover(clientX){
+    var rect = svg.getBoundingClientRect();
+    var px = (clientX - rect.left) * (W / rect.width);
+    var w = Math.round(1 + (px - M.l) / PW * (MAXW - 1));
+    w = Math.max(1, Math.min(MAXW, w));
+    var gx = x(w);
+    guide.setAttribute("x1",gx); guide.setAttribute("x2",gx);
+    guide.setAttribute("opacity",.7);
+    // dots
+    ZOMBIES.forEach(function(z,i){
+      if(active[i]){
+        dots[i].setAttribute("cx",gx);
+        dots[i].setAttribute("cy",y(speed(z.base,w)));
+        dots[i].setAttribute("opacity", hoverIdx===-1 || hoverIdx===i ? 1 : .25);
+      } else {
+        dots[i].setAttribute("opacity",0);
+      }
+    });
+    // guide label
+    var ly = M.t + 4;
+    glRect.setAttribute("x",gx-26); glRect.setAttribute("y",ly);
+    glTxt.setAttribute("x",gx); glTxt.setAttribute("y",ly+14);
+    glTxt.textContent = "W "+w;
+    guideLabel.setAttribute("opacity",1);
+    // tooltip
+    var rows = ZOMBIES.map(function(z,i){
+      if(!active[i]) return "";
+      var on = (hoverIdx===-1 || hoverIdx===i);
+      return '<div style="display:flex;justify-content:space-between;gap:14px;'+(on?'':'opacity:.4')+'"><span style="color:'+z.hex+'">'+z.name+'</span><span>'+speed(z.base,w).toFixed(2)+'</span></div>';
+    }).join("");
+    tip.innerHTML = '<div style="color:var(--faint);margin-bottom:6px;letter-spacing:.1em">WAVE '+w+'</div>'+rows;
+    tip.style.opacity = 1;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var tx = clientX + 16, ty = clientY - th - 14;
+    if(tx + tw > window.innerWidth - 8) tx = clientX - tw - 16;
+    if(tx < 8) tx = 8;
+    if(ty < 8) ty = clientY + 18;
+    tip.style.left = tx + "px";
+    tip.style.top = ty + "px";
+  }
+  function clearHover(){
+    guide.setAttribute("opacity",0);
+    guideLabel.setAttribute("opacity",0);
+    dots.forEach(function(d){ d.setAttribute("opacity",0); });
+    tip.style.opacity = 0;
+    hoverIdx = -1;
+    applyDim();
+  }
+
+  svg.addEventListener("pointermove", function(e){
+    var rect = svg.getBoundingClientRect();
+    if(e.clientX < rect.left || e.clientX > rect.right){ clearHover(); return; }
+    setHover(e.clientX, e.clientY);
+  });
+  svg.addEventListener("pointerleave", clearHover);
+
+  // ---- legend ----
+  var legend = document.getElementById("legend");
+  function applyDim(){
+    lineEls.forEach(function(p,i){
+      var on = active[i];
+      p.style.opacity = (hoverIdx===-1 || hoverIdx===i) ? (on?1:0) : (on?.28:0);
+      p.style.transition = "opacity .2s ease";
+    });
+  }
+  ZOMBIES.forEach(function(z,i){
+    var c = document.createElement("button");
+    c.type = "button";
+    c.className = "chip";
+    c.style.setProperty("--c", z.hex);
+    c.setAttribute("aria-pressed","true");
+    c.innerHTML = '<span class="swatch"></span><span class="name">'+z.name+'</span><span class="base">'+z.base.toFixed(2)+' m/s</span>';
+    c.addEventListener("mouseenter", function(){ hoverIdx = i; applyDim(); });
+    c.addEventListener("mouseleave", function(){ hoverIdx = -1; applyDim(); });
+    c.addEventListener("focus", function(){ hoverIdx = i; applyDim(); });
+    c.addEventListener("blur", function(){ hoverIdx = -1; applyDim(); });
+    c.addEventListener("click", function(){
+      active[i] = !active[i];
+      c.classList.toggle("off", !active[i]);
+      c.setAttribute("aria-pressed", active[i] ? "true" : "false");
+      applyDim();
+    });
+    legend.appendChild(c);
+  });
+
+  // ---- draw-in animation (single rAF loop, delta time clamped) ----
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var len = 0;
+  lineEls.forEach(function(p){ len = Math.max(len, p.getTotalLength()); });
+  var animDone = false, animStarted = false, animPaused = false;
+  var animElapsed = 0, lastTs = null, DUR = 1500;
+
+  function finishAnim(){
+    animDone = true;
+    lineEls.forEach(function(p){ p.style.strokeDasharray="none"; p.style.strokeDashoffset="0"; });
+  }
+  function stepAnim(){
+    var e = 1 - Math.pow(1 - Math.min(1, animElapsed / DUR), 3);
+    var off = len * (1 - e);
+    lineEls.forEach(function(p){ p.style.strokeDashoffset = off; });
+  }
+  function startAnim(){
+    if(animStarted || animDone) return;
+    animStarted = true;
+    lastTs = null;
+    requestAnimationFrame(function loop(ts){
+      if(animDone) return;
+      if(document.hidden){ animPaused = true; return; } // pause when tab hidden
+      if(animPaused){ animPaused = false; lastTs = ts; requestAnimationFrame(loop); return; }
+      if(lastTs === null) lastTs = ts;
+      var dt = (ts - lastTs) / 1000; lastTs = ts;
+      if(dt > 0.05) dt = 0.05; // clamp delta so speed is frame-rate independent
+      animElapsed += dt * 1000;
+      stepAnim();
+      if(animElapsed >= DUR){ finishAnim(); return; }
+      requestAnimationFrame(loop);
+    });
+  }
+  if(reduce){
+    finishAnim();
+  } else {
+    lineEls.forEach(function(p){ p.style.strokeDasharray = len; p.style.strokeDashoffset = len; });
+    // Start only once the chart is actually on screen (it begins hidden via .reveal).
+    var chartPanel = svg.closest(".panel") || svg.parentElement;
+    if("IntersectionObserver" in window){
+      var aio = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if(en.isIntersecting){ startAnim(); aio.disconnect(); } });
+      }, {threshold:.12});
+      aio.observe(chartPanel);
+    } else {
+      startAnim();
+    }
+  }
+
+  // ---- scroll reveal ----
+  var reveals = document.querySelectorAll(".reveal");
+  if("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, {threshold:.12});
+    reveals.forEach(function(r){ io.observe(r); });
+  } else {
+    reveals.forEach(function(r){ r.classList.add("in"); });
+  }
+})();
+</script>
+
+<!-- bot-score-helper --><script>
+(function(){
+  function fnv(s){ var h=0x811c9dc5; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return h; }
+  function game(){ var p=location.pathname.split('/').filter(function(x){return x&&x!=='index.html';}); return (p[p.length-1]||'game').toLowerCase().replace(/[^a-z0-9-]/g,''); }
+  window.botScore=function(st){
+    st=st||{}; var g=game(), v={}, parts=[], sum=[g];
+    ['wave','kills','points','headshots','time'].forEach(function(k){
+      var x=st[k]; if(k==='time') x=(st.time!=null?st.time:st.seconds);
+      x=Math.max(0,Math.floor(+x||0)); v[k]=x; sum.push(x);
+      if(st[k]!=null||(k==='time'&&st.seconds!=null)) parts.push(k==='time'?'time '+Math.floor(x/60)+':'+('0'+x%60).slice(-2):k+' '+x);
+    });
+    var line='SCORE '+g+' '+parts.join(' \u00b7 ')+' #'+fnv(sum.join('|')+'|isaiahgpt-scores-v1').toString(36);
+    try{ document.exitPointerLock&&document.exitPointerLock(); }catch(e){}
+    var old=document.getElementById('bot-score'); if(old) old.remove();
+    var d=document.createElement('div'); d.id='bot-score';
+    d.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;max-width:92vw;background:rgba(10,14,12,.94);color:#dfe;border:1px solid #4a7;border-radius:10px;padding:10px 12px;font:13px/1.4 monospace;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.6)';
+    d.innerHTML='<div style="opacity:.8;margin-bottom:6px">Paste this in Discord to get on the leaderboard</div>';
+    var t=document.createElement('div'); t.textContent=line; t.style.cssText='user-select:all;word-break:break-all;margin-bottom:8px;color:#fff';
+    var b=document.createElement('button'); b.textContent='Copy';
+    b.style.cssText='font:inherit;padding:5px 14px;border-radius:6px;border:0;background:#3c9;color:#021;cursor:pointer';
+    b.onclick=function(e){ e.stopPropagation(); (navigator.clipboard?navigator.clipboard.writeText(line):Promise.reject()).then(function(){ b.textContent='Copied \u2713'; },function(){ b.textContent='Select the line and copy it'; }); };
+    var x=document.createElement('button'); x.textContent='\u2715'; x.title='Close';
+    x.style.cssText='font:inherit;margin-left:8px;padding:5px 9px;border-radius:6px;border:0;background:#333;color:#ccc;cursor:pointer';
+    x.onclick=function(e){ e.stopPropagation(); d.remove(); };
+    d.appendChild(t); d.appendChild(b); d.appendChild(x); document.body.appendChild(d);
+    return line;
+  };
+})();
+</script><!-- /bot-score-helper -->
+</body>
+</html>
