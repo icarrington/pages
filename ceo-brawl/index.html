@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795557674 -->
+<!-- page-version: 1795558531 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -363,13 +363,27 @@ function hide(el){ el.classList.add('hidden'); }
 function spriteSVG(c){
   const b=c.build, skin=b.skin, hair=b.hair, suit=b.suit, pants=b.pants, shoe=b.shoe, accent=c.accent;
   const slim=b.slim?0.86:1;
-  const hairTop = `<path d="M-15,-104 Q0,-118 15,-104 L15,-94 Q0,-102 -15,-94 Z" fill="${hair}"/>`;
-  const glasses = b.glasses ? `<g stroke="#1a2233" stroke-width="2" fill="none"><circle cx="-6" cy="-96" r="5.5"/><circle cx="6" cy="-96" r="5.5"/><path d="M-0.5,-96 L0.5,-96"/></g>` : '';
+  // hair: density controls how much of the scalp is covered
+  const hairTop = `<path d="M-15,-104 Q0,-118 15,-104 L15,-94 Q0,-102 -15,-94 Z" fill="${hair}" opacity="${0.4+b.hairDensity*0.6}"/>`;
+  // glasses: rect vs round vs none, matching the build
+  let glasses='';
+  if(b.glasses==='rect'){
+    glasses = `<g stroke="#1a2233" stroke-width="2" fill="rgba(255,255,255,.12)"><rect x="-11" y="-101" width="9" height="8" rx="1.5"/><rect x="2" y="-101" width="9" height="8" rx="1.5"/><path d="M-2,-97 L2,-97" stroke="#1a2233" stroke-width="2" fill="none"/></g>`;
+  } else if(b.glasses==='round'){
+    glasses = `<g stroke="#1a2233" stroke-width="2" fill="rgba(255,255,255,.12)"><circle cx="-6" cy="-96" r="5.5"/><circle cx="6" cy="-96" r="5.5"/><path d="M-0.5,-96 L0.5,-96" stroke="#1a2233" stroke-width="2" fill="none"/></g>`;
+  }
   let extra='';
-  if(b.tie) extra += `<path d="M-3,-78 L3,-78 L0,-52 Z" fill="${accent}"/><path d="M-3,-78 L3,-78 L0,-74 Z" fill="${accent}"/>`;
+  // tie: use the per-character tieColor when set, else the accent
+  const tieCol = b.tieColor || accent;
+  if(b.tie) extra += `<path d="M-3,-78 L3,-78 L0,-52 Z" fill="${tieCol}"/><path d="M-3,-78 L3,-78 L0,-74 Z" fill="${tieCol}"/>`;
+  // hoodie: drawstrings + hood seam
   if(b.hoodie) extra += `<path d="M-13,-78 Q0,-70 13,-78" fill="none" stroke="#6d727c" stroke-width="3"/><path d="M-3,-76 L-3,-60 M3,-76 L3,-60" stroke="#6d727c" stroke-width="2"/>`;
+  // turtleneck collar (Cook, Huang)
   if(b.turtleneck) extra += `<path d="M-6,-84 Q0,-88 6,-84 L6,-76 Q0,-72 -6,-76 Z" fill="${suit}"/>`;
+  // open shirt collar (Pichai)
   if(b.openCollar) extra += `<path d="M-5,-80 L0,-72 L5,-80" fill="none" stroke="#eef2f8" stroke-width="2"/>`;
+  // mustache (Pichai)
+  const mustache = b.mustache ? `<path d="M-4,-88 Q0,-90 4,-88 Q0,-86 -4,-88 Z" fill="${b.browColor||hair}"/>` : '';
   return `<svg viewBox="-40 -124 80 132" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <radialGradient id="sk_${c.id}" cx="42%" cy="38%" r="72%">
@@ -403,14 +417,18 @@ function spriteSVG(c){
       <!-- HEAD -->
       <rect x="-4" y="-84" width="8" height="8" rx="2" fill="url(#sk_${c.id})"/>
       <ellipse cx="0" cy="-96" rx="14" ry="16" fill="url(#sk_${c.id})"/>
-      <path d="M-12,-99 Q-7,-102 -2,-99" stroke="${hair}" stroke-width="1.8" fill="none"/>
-      <path d="M12,-99 Q7,-102 2,-99" stroke="${hair}" stroke-width="1.8" fill="none"/>
-      <circle cx="-5" cy="-97" r="1.4" fill="#2a2018"/>
-      <circle cx="5" cy="-97" r="1.4" fill="#2a2018"/>
+      <path d="M-12,-99 Q-7,-102 -2,-99" stroke="${b.browColor||hair}" stroke-width="2" fill="none"/>
+      <path d="M12,-99 Q7,-102 2,-99" stroke="${b.browColor||hair}" stroke-width="2" fill="none"/>
+      <circle cx="-5" cy="-97" r="1.4" fill="${b.eyeColor||'#2a2018'}"/>
+      <circle cx="5" cy="-97" r="1.4" fill="${b.eyeColor||'#2a2018'}"/>
       <path d="M0,-95 L-1,-90 Q0,-89 2,-90 Z" fill="rgba(120,80,60,.5)"/>
       <path d="M-4,-86 Q0,-84 4,-86" stroke="#a06a55" stroke-width="1.4" fill="none"/>
+      ${mustache}
       ${glasses}
       ${hairTop}
+      <!-- hair sides (temples), scaled by hairSides -->
+      <path d="M-14,-100 Q-16,-92 -13,-86 L-11,-96 Z" fill="${hair}" opacity="${0.4+b.hairSides*0.6}"/>
+      <path d="M14,-100 Q16,-92 13,-86 L11,-96 Z" fill="${hair}" opacity="${0.4+b.hairSides*0.6}"/>
     </g>
   </svg>`;
 }
@@ -1265,6 +1283,8 @@ $('muteFab').addEventListener('click', e=>{ e.stopPropagation(); ensureAudio(); 
 /* pause when hidden */
 document.addEventListener('visibilitychange', ()=>{ last=performance.now(); });
 </script>
+
+
 
 
 
