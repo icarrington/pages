@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795556064 -->
+<!-- page-version: 1795556315 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -60,8 +60,8 @@
   .ceo{border:2px solid var(--line); background:transparent; border-radius:14px; padding:8px 4px 10px; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .12s, border-color .12s, background .12s}
   .ceo:hover{transform:translateY(-3px)}
-  .ceo .face{width:52px; height:58px; border-radius:12px; display:grid; place-items:center; font-size:30px;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--c) 26%, transparent), transparent)}
+  .ceo .face{width:80px; height:80px; border-radius:50%; display:grid; place-items:center; overflow:hidden;
+    border:3px solid var(--c); box-shadow:0 4px 12px rgba(0,0,0,.25); background:#fff}
   .ceo .nm{font-size:11px; font-weight:700; line-height:1.1; text-align:center}
   .ceo .co{font-size:9px; color:var(--ink-soft); text-align:center}
   .ceo.sel{border-color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent)}
@@ -185,21 +185,21 @@ window.addEventListener('resize', resize);
 
 /* ---------- Characters ---------- */
 const CHARS = [
-  {id:'cook', name:'Tim Cook', company:'Apple', accent:'#c9d2df', accent2:'#8b95a6',
+  {id:'cook', name:'Tim Cook', company:'Apple', accent:'#000000', accent2:'#8b95a6',
     speed:8, special:'Reality Distortion', specialDesc:'AoE knockback — blasts both rivals off the ground.',
-    draw:'cook'},
+    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Tim_Cook_(2017).jpg'},
   {id:'pichai', name:'Sundar Pichai', company:'Google', accent:'#4285f4', accent2:'#34a853',
     speed:7, special:'Gemini Beam', specialDesc:'Fires a multicolor beam projectile.',
-    draw:'pichai'},
+    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Sundar_Pichai.jpg'},
   {id:'nadella', name:'Satya Nadella', company:'Microsoft', accent:'#3b82f6', accent2:'#2563eb',
     speed:8, special:'Cloud Surge', specialDesc:'Heals 15 HP and stuns the rival.',
-    draw:'nadella'},
+    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Satya_Nadella.jpg'},
   {id:'zuck', name:'Mark Zuckerberg', company:'Meta', accent:'#2dd4bf', accent2:'#14b8a6',
     speed:7, special:'Hype Spam', specialDesc:'Rapid multi-hit flurry.',
-    draw:'zuck'},
+    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Mark-Zuckerberg-2019.jpg'},
   {id:'huang', name:'Jensen Huang', company:'Nvidia', accent:'#76b900', accent2:'#5a9400',
     speed:9, special:'Green Lightning', specialDesc:'Big damage + stun.',
-    draw:'huang'},
+    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg'},
 ];
 const PUNCH_DMG = 8, KICK_DMG = 12, SPECIAL_USES = 3;
 
@@ -242,6 +242,8 @@ let introT = 0, introStep = 0, roundEndT = 0, roundEndMsg = '';
 let last = performance.now();
 
 function makeFighter(c, x, facing, isPlayer){
+  const img = new Image();
+  img.src = c.photo;
   return {
     char:c, x, y:GROUND, vx:0, vy:0, facing, onGround:true, isPlayer,
     hp:100, specialUses:SPECIAL_USES, blocking:false,
@@ -249,6 +251,7 @@ function makeFighter(c, x, facing, isPlayer){
     specialAnim:0, specialType:c.special, hypeHits:0, hypeT:0,
     aiTimer:0, aiAction:'approach',
     w:46, h:96,
+    photoImg: img,
   };
 }
 
@@ -290,7 +293,7 @@ function buildRoster(){
   CHARS.forEach(c=>{
     const b = document.createElement('button');
     b.className='ceo'; b.style.setProperty('--c', c.accent);
-    b.innerHTML = `<span class="face">👔</span><span class="nm">${c.name}</span><span class="co">${c.company}</span>`;
+    b.innerHTML = `<span class="face"><img src="${c.photo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.3)"></span><span class="nm">${c.name}</span><span class="co">${c.company}</span>`;
     b.addEventListener('click', ()=>{
       ensureAudio();
       document.querySelectorAll('.ceo').forEach(x=>x.classList.remove('sel'));
@@ -623,10 +626,17 @@ function drawAvatar(f){
   ctx.scale(f.facing,1);
   if(f.flash>0){ ctx.globalAlpha = 0.6+0.4*Math.sin(time*60); }
   if(f.stun>0){ ctx.rotate(Math.sin(time*20)*0.05); }
+  
+  // Animation values
+  const punch = f.punchT>0 ? Math.sin((0.28-f.punchT)/0.28*Math.PI) : 0;
+  const kick = f.kickT>0 ? Math.sin((0.36-f.kickT)/0.36*Math.PI) : 0;
+  const hitSquash = f.hitstun>0 ? 0.85 : 1;
+  
+  ctx.scale(1, hitSquash);
+  if(punch>0) ctx.rotate(-punch*0.15);
+  if(kick>0) ctx.rotate(kick*0.1);
 
   const suit = '#2b3550';
-  const skin = '#e8c39e';
-  const hair = c.id==='huang'?'#5a3a1a':(c.id==='pichai'?'#2a2a2a':'#3a2a1a');
 
   // legs
   ctx.fillStyle='#1e2740';
@@ -654,15 +664,13 @@ function drawAvatar(f){
 
   // arms
   ctx.fillStyle=suit;
-  const punch = f.punchT>0 ? Math.sin((0.28-f.punchT)/0.28*Math.PI) : 0;
-  const kick = f.kickT>0 ? Math.sin((0.36-f.kickT)/0.36*Math.PI) : 0;
   // back arm
   rr(-26, -82, 11, 34, 5); ctx.fill();
   // front arm (punch extends)
   const armLen = 30 + punch*34;
   rr(14, -82, 11, armLen, 5); ctx.fill();
   // fist
-  ctx.fillStyle=skin;
+  ctx.fillStyle='#e8c39e';
   ctx.beginPath(); ctx.arc(19, -82+armLen, 7, 0, 7); ctx.fill();
 
   // kick leg (front)
@@ -674,44 +682,43 @@ function drawAvatar(f){
     ctx.beginPath(); ctx.arc(8, -34+kLen, 8, 0, 7); ctx.fill();
   }
 
-  // head
-  ctx.fillStyle=skin;
-  ctx.beginPath(); ctx.arc(0, -100, 15, 0, 7); ctx.fill();
-  // hair
-  ctx.fillStyle=hair;
-  ctx.beginPath(); ctx.arc(0, -104, 15, Math.PI, 0); ctx.fill();
-  if(c.id==='cook'){ ctx.fillStyle='#8b95a6'; ctx.beginPath(); ctx.arc(0,-104,15,Math.PI*0.9,Math.PI*0.1); ctx.fill(); }
+  // HEAD - draw photo
+  const headR = 34;
+  const headY = -104;
+  
+  // Draw circular photo
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, headY, headR, 0, Math.PI*2);
+  ctx.clip();
 
-  // face features per character
-  ctx.fillStyle='#1a1a1a';
-  if(c.id==='cook'){
-    // glasses
-    ctx.strokeStyle='#333'; ctx.lineWidth=2;
-    ctx.strokeRect(-10,-102,8,7); ctx.strokeRect(2,-102,8,7);
-    ctx.beginPath(); ctx.moveTo(-2,-99); ctx.lineTo(2,-99); ctx.stroke();
-  } else if(c.id==='pichai'){
-    // bindi
-    ctx.fillStyle='#e11d48'; ctx.beginPath(); ctx.arc(0,-108,1.8,0,7); ctx.fill();
-    ctx.fillStyle='#1a1a1a';
-    ctx.beginPath(); ctx.arc(-5,-100,1.6,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(5,-100,1.6,0,7); ctx.fill();
-  } else if(c.id==='nadella'){
-    ctx.fillStyle='#1a1a1a';
-    ctx.beginPath(); ctx.arc(-5,-100,1.7,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(5,-100,1.7,0,7); ctx.fill();
-  } else if(c.id==='zuck'){
-    ctx.fillStyle='#1a1a1a';
-    ctx.beginPath(); ctx.arc(-5,-100,1.7,0,7); ctx.fill();
-    ctx.beginPath(); ctx.arc(5,-100,1.7,0,7); ctx.fill();
-  } else if(c.id==='huang'){
-    // sunglasses
-    ctx.fillStyle='#111';
-    ctx.fillRect(-11,-102,9,6); ctx.fillRect(2,-102,9,6);
-    ctx.fillRect(-2,-101,4,2);
+  // Draw the photo image
+  const img = f.photoImg;
+  if(img && img.complete && img.naturalWidth>0){
+    // Calculate aspect ratio to fill circle
+    const aspect = img.naturalWidth / img.naturalHeight;
+    let dw, dh;
+    if(aspect > 1){
+      dh = headR*2;
+      dw = dh * aspect;
+    } else {
+      dw = headR*2;
+      dh = dw / aspect;
+    }
+    ctx.drawImage(img, -dw/2, headY-dh/2, dw, dh);
+  } else {
+    // Fallback: draw accent color circle
+    ctx.fillStyle = c.accent;
+    ctx.fillRect(-headR, headY-headR, headR*2, headR*2);
   }
-  // mouth
-  ctx.strokeStyle='#7a4a3a'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(-4,-92); ctx.lineTo(4,-92); ctx.stroke();
+  ctx.restore();
+
+  // Ring around head
+  ctx.strokeStyle = c.accent;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(0, headY, headR, 0, Math.PI*2);
+  ctx.stroke();
 
   // blocking shield
   if(f.blocking){
@@ -879,6 +886,8 @@ $('muteFab').addEventListener('click', e=>{ e.stopPropagation(); ensureAudio(); 
 /* pause when hidden */
 document.addEventListener('visibilitychange', ()=>{ last=performance.now(); });
 </script>
+
+
 
 <!-- bot-score-helper --><script>
 (function(){
