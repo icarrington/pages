@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795556679 -->
+<!-- page-version: 1795556982 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -62,9 +62,11 @@
   .ceo{border:2px solid var(--line); background:transparent; border-radius:14px; padding:8px 4px 10px; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .12s, border-color .12s, background .12s}
   .ceo:hover{transform:translateY(-3px)}
-  .ceo .face{width:80px; height:80px; border-radius:50%; display:grid; place-items:center; overflow:hidden;
-    border:3px solid var(--c); box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.08); background:#0c1322;
+  .ceo .face{width:80px; height:120px; border-radius:14px; display:grid; place-items:center; overflow:hidden;
+    border:2px solid var(--c); box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.08); background:linear-gradient(#16203a,#0c1322);
     filter:saturate(1.05) contrast(1.05)}
+  .ceo .face svg{width:100%; height:100%; display:block}
+  .ceo .face svg .fb{transform-origin:center bottom}
   .ceo .nm{font-size:11px; font-weight:700; line-height:1.1; text-align:center}
   .ceo .co{font-size:9px; color:var(--ink-soft); text-align:center}
   .ceo.sel{border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, rgba(10,16,30,.5)); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 40%, transparent), 0 0 22px color-mix(in srgb, var(--c) 55%, transparent)}
@@ -202,31 +204,31 @@ const CHARS = [
     skin:'#e8c39e', hair:'#d8d8d8', cloth:'#111318', cloth2:'#1c2029',
     photo:'https://upload.wikimedia.org/wikipedia/commons/9/9d/Tim_Cook_(2017).jpg',
     full:'https://upload.wikimedia.org/wikipedia/commons/9/9d/Tim_Cook_(2017).jpg',
-    build:{headR:26, shoulderW:64, torsoH:120, legH:150, armLen:95, pants:'#0f1116', shirt:'#0c0d11', bald:true, glasses:true}},
+    build:{skin:'#e8c39e', hair:'#d8d8d8', suit:'#0c0d11', pants:'#0f1116', shoe:'#111318', bald:true, glasses:true}},
   {id:'pichai', name:'Sundar Pichai', company:'Google', accent:'#4285f4', accent2:'#34a853',
     speed:7, special:'Gemini Beam', specialDesc:'Fires a multicolor beam projectile.',
     skin:'#e0b48c', hair:'#241a12', cloth:'#1a2233', cloth2:'#2a3550',
     photo:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Sundar_Pichai.jpg',
     full:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Sundar_Pichai.jpg',
-    build:{headR:25, shoulderW:66, torsoH:122, legH:152, armLen:96, pants:'#141a28', shirt:'#1a2233', bald:false, glasses:true}},
+    build:{skin:'#e0b48c', hair:'#241a12', suit:'#1a2233', pants:'#141a28', shoe:'#0f1420', bald:false, glasses:true}},
   {id:'nadella', name:'Satya Nadella', company:'Microsoft', accent:'#3b82f6', accent2:'#2563eb',
     speed:8, special:'Cloud Surge', specialDesc:'Heals 15 HP and stuns the rival.',
     skin:'#d9ad86', hair:'#2a2018', cloth:'#20283a', cloth2:'#2f3a55',
     photo:'https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella.jpg',
     full:'https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella.jpg',
-    build:{headR:25, shoulderW:68, torsoH:124, legH:150, armLen:96, pants:'#1c2436', shirt:'#20283a', bald:false, glasses:true, tie:true}},
+    build:{skin:'#d9ad86', hair:'#2a2018', suit:'#20283a', pants:'#1c2436', shoe:'#141a28', bald:false, glasses:true, tie:true}},
   {id:'zuck', name:'Mark Zuckerberg', company:'Meta', accent:'#2dd4bf', accent2:'#14b8a6',
     speed:7, special:'Hype Spam', specialDesc:'Rapid multi-hit flurry.',
     skin:'#e6c6a4', hair:'#5a4632', cloth:'#8a8f98', cloth2:'#6d727c',
     photo:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Mark-Zuckerberg-2019.jpg',
     full:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Mark-Zuckerberg-2019.jpg',
-    build:{headR:26, shoulderW:62, torsoH:118, legH:148, armLen:92, pants:'#2a2d33', shirt:'#8a8f98', bald:false, glasses:false}},
+    build:{skin:'#e6c6a4', hair:'#5a4632', suit:'#8a8f98', pants:'#2a2d33', shoe:'#1c1e24', bald:false, glasses:false, hoodie:true}},
   {id:'huang', name:'Jensen Huang', company:'Nvidia', accent:'#76b900', accent2:'#5a9400',
     speed:9, special:'Green Lightning', specialDesc:'Big damage + stun.',
     skin:'#e2b48c', hair:'#9a9a9a', cloth:'#14181f', cloth2:'#20262f',
     photo:'https://upload.wikimedia.org/wikipedia/commons/0/08/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg',
     full:'https://upload.wikimedia.org/wikipedia/commons/0/08/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg',
-    build:{headR:25, shoulderW:66, torsoH:120, legH:150, armLen:95, pants:'#14181f', shirt:'#14181f', bald:false, glasses:true}},
+    build:{skin:'#e2b48c', hair:'#9a9a9a', suit:'#14181f', pants:'#14181f', shoe:'#0c0e12', bald:false, glasses:true, polo:true}},
 ];
 const PUNCH_DMG = 8, KICK_DMG = 12, SPECIAL_USES = 3;
 
@@ -338,12 +340,55 @@ const $ = id=>document.getElementById(id);
 function show(el){ el.classList.remove('hidden'); }
 function hide(el){ el.classList.add('hidden'); }
 
+function spriteSVG(c){
+  const b=c.build, skin=b.skin, hair=b.hair, suit=b.suit, pants=b.pants, shoe=b.shoe, accent=c.accent;
+  // Full-body fighting stance: front leg forward, back leg bent, arms raised in guard
+  const hairTop = b.bald ? '' : `<path d="M-15,-104 Q0,-118 15,-104 L15,-94 Q0,-102 -15,-94 Z" fill="${hair}"/>`;
+  const glasses = b.glasses ? `<g stroke="#1a2233" stroke-width="2" fill="none"><circle cx="-6" cy="-96" r="5.5"/><circle cx="6" cy="-96" r="5.5"/><path d="M-0.5,-96 L0.5,-96"/></g>` : '';
+  let extra='';
+  if(b.tie) extra += `<path d="M-3,-78 L3,-78 L0,-52 Z" fill="${accent}"/><path d="M-3,-78 L3,-78 L0,-74 Z" fill="${accent}"/>`;
+  if(b.hoodie) extra += `<path d="M-13,-78 Q0,-70 13,-78" fill="none" stroke="#6d727c" stroke-width="3"/><path d="M-3,-76 L-3,-60 M3,-76 L3,-60" stroke="#6d727c" stroke-width="2"/>`;
+  if(b.polo) extra += `<path d="M-4,-78 L0,-72 L4,-78" fill="none" stroke="#000" stroke-width="1.5"/>`;
+  return `<svg viewBox="-40 -124 80 132" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="0" cy="6" rx="26" ry="5" fill="rgba(0,0,0,.35)"/>
+    <g class="fb">
+      <!-- BACK LEG (bent, weight behind) -->
+      <path d="M-10,-30 L-16,4 L-8,4 L-4,-28 Z" fill="${pants}"/>
+      <rect x="-20" y="2" width="16" height="7" rx="3" fill="${shoe}"/>
+      <!-- FRONT LEG (forward, planted) -->
+      <path d="M4,-30 L10,4 L18,4 L14,-28 Z" fill="${pants}"/>
+      <rect x="8" y="2" width="16" height="7" rx="3" fill="${shoe}"/>
+      <!-- BACK ARM (guard, bent up) -->
+      <path d="M-14,-72 Q-22,-64 -18,-50 L-12,-52 Q-16,-64 -10,-70 Z" fill="${suit}"/>
+      <circle cx="-15" cy="-49" r="4.5" fill="${skin}"/>
+      <!-- TORSO (slightly leaned forward) -->
+      <path d="M-14,-78 Q-16,-76 -15,-60 L-10,-30 L10,-30 L15,-60 Q16,-76 14,-78 Q0,-82 -14,-78 Z" fill="${suit}"/>
+      <path d="M-4,-78 L4,-78 L0,-72 Z" fill="#eef2f8"/>
+      ${extra}
+      <!-- FRONT ARM (raised guard fist) -->
+      <path d="M12,-74 Q24,-70 26,-56 L20,-54 Q18,-66 8,-72 Z" fill="${suit}"/>
+      <circle cx="24" cy="-55" r="5" fill="${skin}"/>
+      <!-- HEAD -->
+      <rect x="-4" y="-84" width="8" height="8" rx="2" fill="${skin}"/>
+      <ellipse cx="0" cy="-96" rx="14" ry="16" fill="${skin}"/>
+      <path d="M-12,-99 Q-7,-102 -2,-99" stroke="${hair}" stroke-width="1.8" fill="none"/>
+      <path d="M12,-99 Q7,-102 2,-99" stroke="${hair}" stroke-width="1.8" fill="none"/>
+      <circle cx="-5" cy="-97" r="1.4" fill="#2a2018"/>
+      <circle cx="5" cy="-97" r="1.4" fill="#2a2018"/>
+      <path d="M0,-95 L-1,-90 Q0,-89 2,-90 Z" fill="rgba(120,80,60,.5)"/>
+      <path d="M-4,-86 Q0,-84 4,-86" stroke="#a06a55" stroke-width="1.4" fill="none"/>
+      ${glasses}
+      ${hairTop}
+    </g>
+  </svg>`;
+}
+
 function buildRoster(){
   const r = $('roster'); r.innerHTML='';
   CHARS.forEach(c=>{
     const b = document.createElement('button');
     b.className='ceo'; b.style.setProperty('--c', c.accent);
-    b.innerHTML = `<span class="face"><img src="${c.photo}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.3)"></span><span class="nm">${c.name}</span><span class="co">${c.company}</span>`;
+    b.innerHTML = `<span class="face">${spriteSVG(c)}</span><span class="nm">${c.name}</span><span class="co">${c.company}</span>`;
     b.addEventListener('click', ()=>{
       ensureAudio();
       document.querySelectorAll('.ceo').forEach(x=>x.classList.remove('sel'));
@@ -765,124 +810,128 @@ function drawBackground(){
 }
 
 function drawAvatar(f){
-  const c=f.char;
+  const c=f.char, b=c.build;
   const x=f.x, y=f.y;
+  const skin=b.skin, hair=b.hair, suit=b.suit, pants=b.pants, shoe=b.shoe, accent=c.accent;
   ctx.save();
   // shadow
-  ctx.fillStyle='rgba(0,0,0,.22)';
-  ctx.beginPath(); ctx.ellipse(x, GROUND+6, 30, 8, 0, 0, 7); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.28)';
+  ctx.beginPath(); ctx.ellipse(x, GROUND+6, 32, 9, 0, 0, 7); ctx.fill();
 
   ctx.translate(x,y);
   ctx.scale(f.facing,1);
   if(f.flash>0){ ctx.globalAlpha = 0.6+0.4*Math.sin(time*60); }
   if(f.stun>0){ ctx.rotate(Math.sin(time*20)*0.05); }
-  
-  // Animation values
+
   const punch = f.punchT>0 ? Math.sin((0.28-f.punchT)/0.28*Math.PI) : 0;
-  const kick = f.kickT>0 ? Math.sin((0.36-f.kickT)/0.36*Math.PI) : 0;
-  const hitSquash = f.hitstun>0 ? 0.85 : 1;
-  
+  const kick  = f.kickT>0 ? Math.sin((0.36-f.kickT)/0.36*Math.PI) : 0;
+  const hitSquash = f.hitstun>0 ? 0.88 : 1;
+  const legSwing = f.onGround && Math.abs(f.vx)>10 ? Math.sin(time*14)*5 : 0;
+
   ctx.scale(1, hitSquash);
-  if(punch>0) ctx.rotate(-punch*0.15);
-  if(kick>0) ctx.rotate(kick*0.1);
+  if(punch>0) ctx.rotate(-punch*0.12);
+  if(kick>0) ctx.rotate(kick*0.08);
 
-  const suit = '#2b3550';
-
-  // legs
-  ctx.fillStyle='#1e2740';
-  const legSwing = f.onGround && Math.abs(f.vx)>10 ? Math.sin(time*14)*6 : 0;
-  rr(-16+legSwing, -34, 13, 34, 4); ctx.fill();
-  rr(3-legSwing, -34, 13, 34, 4); ctx.fill();
+  // ---- LEGS (fighting stance) ----
+  ctx.fillStyle=pants;
+  const backFoot = -14+legSwing, frontFoot = 12-legSwing;
+  rr(backFoot-6, -34, 12, 34, 4); ctx.fill();   // back leg
+  rr(frontFoot-6, -34, 12, 34, 4); ctx.fill();  // front leg
   // shoes
-  ctx.fillStyle='#111827';
-  rr(-18+legSwing, -8, 17, 8, 3); ctx.fill();
-  rr(1-legSwing, -8, 17, 8, 3); ctx.fill();
+  ctx.fillStyle=shoe;
+  rr(backFoot-8, -6, 16, 7, 3); ctx.fill();
+  rr(frontFoot-8, -6, 16, 7, 3); ctx.fill();
 
-  // body / suit
-  ctx.fillStyle=suit;
-  rr(-20, -86, 40, 56, 10); ctx.fill();
-  // shirt
-  ctx.fillStyle='#eef2f8';
-  ctx.beginPath(); ctx.moveTo(-8,-86); ctx.lineTo(8,-86); ctx.lineTo(0,-52); ctx.closePath(); ctx.fill();
-  // tie (accent)
-  ctx.fillStyle=c.accent;
-  ctx.beginPath(); ctx.moveTo(-4,-84); ctx.lineTo(4,-84); ctx.lineTo(0,-58); ctx.closePath(); ctx.fill();
-  // jacket lapels
-  ctx.fillStyle=c.accent2;
-  ctx.beginPath(); ctx.moveTo(-20,-86); ctx.lineTo(-8,-86); ctx.lineTo(-14,-58); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(20,-86); ctx.lineTo(8,-86); ctx.lineTo(14,-58); ctx.closePath(); ctx.fill();
-
-  // arms
-  ctx.fillStyle=suit;
-  // back arm
-  rr(-26, -82, 11, 34, 5); ctx.fill();
-  // front arm (punch extends)
-  const armLen = 30 + punch*34;
-  rr(14, -82, 11, armLen, 5); ctx.fill();
-  // fist
-  ctx.fillStyle='#e8c39e';
-  ctx.beginPath(); ctx.arc(19, -82+armLen, 7, 0, 7); ctx.fill();
-
-  // kick leg (front)
+  // ---- KICK (front leg extends) ----
   if(kick>0){
-    ctx.fillStyle='#1e2740';
-    const kLen = 30 + kick*40;
-    rr(2, -34, 13, kLen, 5); ctx.fill();
-    ctx.fillStyle='#111827';
-    ctx.beginPath(); ctx.arc(8, -34+kLen, 8, 0, 7); ctx.fill();
+    const kLen = 26 + kick*44;
+    ctx.fillStyle=pants;
+    rr(6, -34, 13, kLen, 5); ctx.fill();
+    ctx.fillStyle=shoe;
+    ctx.beginPath(); ctx.arc(12, -34+kLen, 8, 0, 7); ctx.fill();
   }
 
-  // HEAD - draw photo
-  const headR = 34;
-  const headY = -104;
-  
-  // Draw circular photo
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, headY, headR, 0, Math.PI*2);
-  ctx.clip();
+  // ---- BACK ARM (behind torso) ----
+  ctx.fillStyle=suit;
+  rr(-24, -84, 11, 34, 5); ctx.fill();
+  ctx.fillStyle=skin;
+  ctx.beginPath(); ctx.arc(-18, -50, 6, 0, 7); ctx.fill();
 
-  // Draw the photo image
-  const img = f.photoImg;
-  if(img && img.complete && img.naturalWidth>0){
-    // Calculate aspect ratio to fill circle
-    const aspect = img.naturalWidth / img.naturalHeight;
-    let dw, dh;
-    if(aspect > 1){
-      dh = headR*2;
-      dw = dh * aspect;
-    } else {
-      dw = headR*2;
-      dh = dw / aspect;
-    }
-    ctx.drawImage(img, -dw/2, headY-dh/2, dw, dh);
-  } else {
-    // Fallback: draw accent color circle
-    ctx.fillStyle = c.accent;
-    ctx.fillRect(-headR, headY-headR, headR*2, headR*2);
+  // ---- TORSO ----
+  ctx.fillStyle=suit;
+  rr(-20, -90, 40, 58, 10); ctx.fill();
+  // shirt / collar
+  ctx.fillStyle='#eef2f8';
+  ctx.beginPath(); ctx.moveTo(-8,-90); ctx.lineTo(8,-90); ctx.lineTo(0,-56); ctx.closePath(); ctx.fill();
+  if(b.tie){
+    ctx.fillStyle=accent;
+    ctx.beginPath(); ctx.moveTo(-4,-88); ctx.lineTo(4,-88); ctx.lineTo(0,-60); ctx.closePath(); ctx.fill();
   }
-  ctx.restore();
+  if(b.hoodie){
+    ctx.strokeStyle='#6d727c'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(-14,-86); ctx.quadraticCurveTo(0,-78,14,-86); ctx.stroke();
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(-4,-84); ctx.lineTo(-4,-64); ctx.moveTo(4,-84); ctx.lineTo(4,-64); ctx.stroke();
+  }
+  if(b.polo){
+    ctx.strokeStyle='#000'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-5,-88); ctx.lineTo(0,-82); ctx.lineTo(5,-88); ctx.stroke();
+  }
 
-  // Ring around head
-  ctx.strokeStyle = c.accent;
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(0, headY, headR, 0, Math.PI*2);
-  ctx.stroke();
+  // ---- FRONT ARM (punch extends) ----
+  ctx.fillStyle=suit;
+  const armLen = 30 + punch*36;
+  rr(14, -84, 11, armLen, 5); ctx.fill();
+  ctx.fillStyle=skin;
+  ctx.beginPath(); ctx.arc(19, -84+armLen, 7, 0, 7); ctx.fill();
+
+  // ---- HEAD ----
+  const headY=-108;
+  // neck
+  ctx.fillStyle=skin; rr(-5,-96,10,10,3); ctx.fill();
+  // face
+  ctx.fillStyle=skin;
+  ctx.beginPath(); ctx.ellipse(0,headY,17,19,0,0,7); ctx.fill();
+  // ears
+  ctx.beginPath(); ctx.arc(-16,headY,3,0,7); ctx.arc(16,headY,3,0,7); ctx.fill();
+  // hair (top)
+  if(!b.bald){
+    ctx.fillStyle=hair;
+    ctx.beginPath(); ctx.moveTo(-17,headY-2);
+    ctx.quadraticCurveTo(0,headY-24,17,headY-2);
+    ctx.quadraticCurveTo(0,headY-14,-17,headY-2); ctx.closePath(); ctx.fill();
+  }
+  // brows
+  ctx.strokeStyle=hair; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-13,headY-6); ctx.quadraticCurveTo(-8,headY-9,-3,headY-6);
+  ctx.moveTo(13,headY-6); ctx.quadraticCurveTo(8,headY-9,3,headY-6); ctx.stroke();
+  // eyes
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.ellipse(-7,headY-2,3.4,2.6,0,0,7); ctx.ellipse(7,headY-2,3.4,2.6,0,0,7); ctx.fill();
+  ctx.fillStyle='#2a2018';
+  ctx.beginPath(); ctx.arc(-7,headY-2,1.7,0,7); ctx.arc(7,headY-2,1.7,0,7); ctx.fill();
+  // nose
+  ctx.strokeStyle='rgba(120,80,60,.5)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,headY-1); ctx.lineTo(-1,headY+5); ctx.quadraticCurveTo(0,headY+6,2,headY+5); ctx.stroke();
+  // mouth
+  ctx.strokeStyle='#a06a55'; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(-5,headY+10); ctx.quadraticCurveTo(0,headY+12,5,headY+10); ctx.stroke();
+  // glasses
+  if(b.glasses){
+    ctx.strokeStyle='#1a2233'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(-7,headY-2,6.5,0,7); ctx.arc(7,headY-2,6.5,0,7);
+    ctx.moveTo(-0.5,headY-2); ctx.lineTo(0.5,headY-2); ctx.stroke();
+  }
 
   // blocking shield
   if(f.blocking){
-    ctx.globalAlpha=0.5;
-    ctx.fillStyle=c.accent;
-    ctx.beginPath(); ctx.arc(24,-70,20,0,7); ctx.fill();
-    ctx.globalAlpha=1;
+    ctx.globalAlpha=0.5; ctx.fillStyle=accent;
+    ctx.beginPath(); ctx.arc(26,-70,22,0,7); ctx.fill(); ctx.globalAlpha=1;
   }
   // special aura
   if(f.specialAnim>0){
-    ctx.globalAlpha=0.4*f.specialAnim;
-    ctx.strokeStyle=c.accent; ctx.lineWidth=4;
-    ctx.beginPath(); ctx.arc(0,-70, 40+(0.6-f.specialAnim)*30, 0, 7); ctx.stroke();
-    ctx.globalAlpha=1;
+    ctx.globalAlpha=0.4*f.specialAnim; ctx.strokeStyle=accent; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.arc(0,-70, 44+(0.6-f.specialAnim)*30, 0, 7); ctx.stroke(); ctx.globalAlpha=1;
   }
   ctx.restore();
 }
@@ -1036,6 +1085,8 @@ $('muteFab').addEventListener('click', e=>{ e.stopPropagation(); ensureAudio(); 
 /* pause when hidden */
 document.addEventListener('visibilitychange', ()=>{ last=performance.now(); });
 </script>
+
+
 
 
 
