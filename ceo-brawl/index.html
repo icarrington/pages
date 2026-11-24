@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- page-version: 1795556315 -->
+<!-- page-version: 1795556679 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -48,10 +48,12 @@
   canvas{display:block; width:100%; height:100%}
 
   .overlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px;
-    background:rgba(6,10,20,.55); backdrop-filter:blur(3px); text-align:center}
+    background:radial-gradient(120% 90% at 50% 20%, rgba(6,10,20,.35), rgba(4,7,14,.78)); backdrop-filter:blur(6px) saturate(1.05); text-align:center}
   .overlay.hidden{display:none}
-  .panel{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px 20px 22px;
-    width:100%; max-width:560px; box-shadow:var(--shadow); animation:pop .35s cubic-bezier(.2,.9,.25,1.2)}
+  .panel{background:color-mix(in srgb, var(--card) 82%, transparent); border:1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    border-radius:18px; padding:20px 20px 22px; width:100%; max-width:560px; box-shadow:var(--shadow);
+    backdrop-filter:blur(10px) saturate(1.1); -webkit-backdrop-filter:blur(10px) saturate(1.1);
+    animation:pop .35s cubic-bezier(.2,.9,.25,1.2)}
   @keyframes pop{from{transform:scale(.9); opacity:0} to{transform:scale(1); opacity:1}}
   .panel h2{margin:0 0 4px; font-size:clamp(22px,5vw,32px); letter-spacing:-.02em}
   .panel .sub{color:var(--ink-soft); margin:0 0 16px; font-size:14px}
@@ -61,10 +63,11 @@
     display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform .12s, border-color .12s, background .12s}
   .ceo:hover{transform:translateY(-3px)}
   .ceo .face{width:80px; height:80px; border-radius:50%; display:grid; place-items:center; overflow:hidden;
-    border:3px solid var(--c); box-shadow:0 4px 12px rgba(0,0,0,.25); background:#fff}
+    border:3px solid var(--c); box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.08); background:#0c1322;
+    filter:saturate(1.05) contrast(1.05)}
   .ceo .nm{font-size:11px; font-weight:700; line-height:1.1; text-align:center}
   .ceo .co{font-size:9px; color:var(--ink-soft); text-align:center}
-  .ceo.sel{border-color:var(--c); background:color-mix(in srgb, var(--c) 14%, transparent); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent)}
+  .ceo.sel{border-color:var(--c); background:color-mix(in srgb, var(--c) 16%, rgba(10,16,30,.5)); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 40%, transparent), 0 0 22px color-mix(in srgb, var(--c) 55%, transparent)}
   .btnrow{display:flex; gap:10px; margin-top:18px; flex-wrap:wrap}
   .btn{flex:1; min-width:120px; border:none; border-radius:12px; padding:13px 16px; font-size:15px; font-weight:700; cursor:pointer;
     color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:var(--shadow); transition:transform .12s}
@@ -74,8 +77,10 @@
   .keys{display:inline-flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:6px}
   kbd{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:11px; background:var(--bg); border:1px solid var(--line);
     border-bottom-width:2px; border-radius:6px; padding:2px 6px; color:var(--ink)}
-  .big{font-size:clamp(30px,8vw,54px); font-weight:800; letter-spacing:-.03em; margin:6px 0}
-  .big.win{color:var(--accent)} .big.lose{color:var(--accent-2)}
+  .big{font-size:clamp(30px,8vw,54px); font-weight:800; letter-spacing:-.02em; margin:6px 0;
+    text-shadow:0 2px 0 rgba(0,0,0,.35), 0 6px 18px rgba(0,0,0,.5)}
+  .big.win{color:var(--accent); text-shadow:0 2px 0 rgba(0,0,0,.4), 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent)}
+  .big.lose{color:var(--accent-2); text-shadow:0 2px 0 rgba(0,0,0,.4), 0 0 24px color-mix(in srgb, var(--accent-2) 60%, transparent)}
   .scoreline{margin-top:14px; font-size:13px; color:var(--ink-soft)}
   .scoreline code{display:inline-block; margin-top:6px; background:var(--bg); border:1px dashed var(--line);
     border-radius:8px; padding:6px 8px; color:var(--ink); font-size:12px}
@@ -94,6 +99,13 @@
   @media (hover:none), (pointer:coarse){ .touch{display:flex} }
   .mute-fab{position:absolute; top:10px; right:10px; width:38px; height:38px; border-radius:11px; border:1px solid rgba(255,255,255,.25);
     background:rgba(10,16,30,.5); color:#fff; font-size:18px; display:grid; place-items:center; cursor:pointer; backdrop-filter:blur(4px)}
+  /* cinematic film grain over the whole stage */
+  .stage::after{content:""; position:absolute; inset:0; pointer-events:none; z-index:5; opacity:.07; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .stage::before{content:""; position:absolute; inset:0; pointer-events:none; z-index:4;
+    background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%)}
+  .overlay{z-index:6}
+  .mute-fab{z-index:7}
 </style>
 </head>
 <body>
@@ -185,21 +197,36 @@ window.addEventListener('resize', resize);
 
 /* ---------- Characters ---------- */
 const CHARS = [
-  {id:'cook', name:'Tim Cook', company:'Apple', accent:'#000000', accent2:'#8b95a6',
+  {id:'cook', name:'Tim Cook', company:'Apple', accent:'#3a4150', accent2:'#6b7488',
     speed:8, special:'Reality Distortion', specialDesc:'AoE knockback — blasts both rivals off the ground.',
-    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Tim_Cook_(2017).jpg'},
+    skin:'#e8c39e', hair:'#d8d8d8', cloth:'#111318', cloth2:'#1c2029',
+    photo:'https://upload.wikimedia.org/wikipedia/commons/9/9d/Tim_Cook_(2017).jpg',
+    full:'https://upload.wikimedia.org/wikipedia/commons/9/9d/Tim_Cook_(2017).jpg',
+    build:{headR:26, shoulderW:64, torsoH:120, legH:150, armLen:95, pants:'#0f1116', shirt:'#0c0d11', bald:true, glasses:true}},
   {id:'pichai', name:'Sundar Pichai', company:'Google', accent:'#4285f4', accent2:'#34a853',
     speed:7, special:'Gemini Beam', specialDesc:'Fires a multicolor beam projectile.',
-    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Sundar_Pichai.jpg'},
+    skin:'#e0b48c', hair:'#241a12', cloth:'#1a2233', cloth2:'#2a3550',
+    photo:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Sundar_Pichai.jpg',
+    full:'https://upload.wikimedia.org/wikipedia/commons/1/1c/Sundar_Pichai.jpg',
+    build:{headR:25, shoulderW:66, torsoH:122, legH:152, armLen:96, pants:'#141a28', shirt:'#1a2233', bald:false, glasses:true}},
   {id:'nadella', name:'Satya Nadella', company:'Microsoft', accent:'#3b82f6', accent2:'#2563eb',
     speed:8, special:'Cloud Surge', specialDesc:'Heals 15 HP and stuns the rival.',
-    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Satya_Nadella.jpg'},
+    skin:'#d9ad86', hair:'#2a2018', cloth:'#20283a', cloth2:'#2f3a55',
+    photo:'https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella.jpg',
+    full:'https://upload.wikimedia.org/wikipedia/commons/4/4a/Satya_Nadella.jpg',
+    build:{headR:25, shoulderW:68, torsoH:124, legH:150, armLen:96, pants:'#1c2436', shirt:'#20283a', bald:false, glasses:true, tie:true}},
   {id:'zuck', name:'Mark Zuckerberg', company:'Meta', accent:'#2dd4bf', accent2:'#14b8a6',
     speed:7, special:'Hype Spam', specialDesc:'Rapid multi-hit flurry.',
-    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Mark-Zuckerberg-2019.jpg'},
+    skin:'#e6c6a4', hair:'#5a4632', cloth:'#8a8f98', cloth2:'#6d727c',
+    photo:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Mark-Zuckerberg-2019.jpg',
+    full:'https://upload.wikimedia.org/wikipedia/commons/0/0b/Mark-Zuckerberg-2019.jpg',
+    build:{headR:26, shoulderW:62, torsoH:118, legH:148, armLen:92, pants:'#2a2d33', shirt:'#8a8f98', bald:false, glasses:false}},
   {id:'huang', name:'Jensen Huang', company:'Nvidia', accent:'#76b900', accent2:'#5a9400',
     speed:9, special:'Green Lightning', specialDesc:'Big damage + stun.',
-    photo:'https://commons.wikimedia.org/wiki/Special:FilePath/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg'},
+    skin:'#e2b48c', hair:'#9a9a9a', cloth:'#14181f', cloth2:'#20262f',
+    photo:'https://upload.wikimedia.org/wikipedia/commons/0/08/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg',
+    full:'https://upload.wikimedia.org/wikipedia/commons/0/08/Jensen_huang_stanford_2026-04-30_008_(cropped).jpg',
+    build:{headR:25, shoulderW:66, torsoH:120, legH:150, armLen:95, pants:'#14181f', shirt:'#14181f', bald:false, glasses:true}},
 ];
 const PUNCH_DMG = 8, KICK_DMG = 12, SPECIAL_USES = 3;
 
@@ -218,17 +245,37 @@ function beep(freq, dur, type, vol, slideTo){
   o.start(t); o.stop(t+dur);
 }
 const sfx = {
-  punch:()=>beep(220,0.08,'square',0.05,120),
-  kick:()=>beep(150,0.12,'sawtooth',0.06,70),
-  hit:()=>beep(320,0.06,'square',0.05,200),
+  punch:()=>{ beep(220,0.08,'square',0.045,120); whoosh(0.12,0.05); },
+  kick:()=>{ beep(150,0.12,'sawtooth',0.055,70); whoosh(0.16,0.06); },
+  hit:()=>{ beep(320,0.06,'square',0.05,200); thud(0.12,0.07); },
   block:()=>beep(500,0.05,'triangle',0.04),
   special:()=>beep(400,0.25,'sawtooth',0.06,900),
-  ko:()=>{ beep(600,0.5,'sawtooth',0.07,90); },
+  ko:()=>{ beep(600,0.5,'sawtooth',0.07,90); thud(0.4,0.09); },
   win:()=>{ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.16,'square',0.05),i*110)); },
   lose:()=>{ [400,320,240,160].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.05),i*120)); },
   count:()=>beep(660,0.08,'square',0.05),
   go:()=>beep(880,0.2,'square',0.06),
 };
+function whoosh(dur, vol){
+  if(muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const len = Math.floor(audioCtx.sampleRate*dur);
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++){ d[i] = (Math.random()*2-1) * (1-i/len); }
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const f = audioCtx.createBiquadFilter(); f.type='bandpass'; f.frequency.setValueAtTime(400,t); f.frequency.exponentialRampToValueAtTime(2400,t+dur); f.Q.value=1.2;
+  const g = audioCtx.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  src.connect(f).connect(g).connect(audioCtx.destination); src.start(t); src.stop(t+dur);
+}
+function thud(dur, vol){
+  if(muted || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(45,t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+dur);
+}
 
 /* ---------- Game state ---------- */
 let state = 'select'; // select | intro | fight | roundend | matchend
@@ -244,6 +291,8 @@ let last = performance.now();
 function makeFighter(c, x, facing, isPlayer){
   const img = new Image();
   img.src = c.photo;
+  const full = new Image();
+  full.src = c.full;
   return {
     char:c, x, y:GROUND, vx:0, vy:0, facing, onGround:true, isPlayer,
     hp:100, specialUses:SPECIAL_USES, blocking:false,
@@ -252,6 +301,7 @@ function makeFighter(c, x, facing, isPlayer){
     aiTimer:0, aiAction:'approach',
     w:46, h:96,
     photoImg: img,
+    fullImg: full,
   };
 }
 
@@ -593,25 +643,125 @@ function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,
   ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 function drawBackground(){
-  const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#8fb8ff'); g.addColorStop(0.55,'#c7dcff'); g.addColorStop(1,'#eef4ff');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // sun
-  ctx.fillStyle='rgba(255,240,200,.8)'; ctx.beginPath(); ctx.arc(760,110,42,0,7); ctx.fill();
-  // skyline
-  ctx.fillStyle='rgba(120,150,200,.35)';
-  const b=[60,90,70,120,80,100,70,140,90];
-  let bx=20;
-  for(const hgt of b){ ctx.fillRect(bx, GROUND-hgt-40, 46, hgt+40); bx+=58; }
-  // ground
-  const gg=ctx.createLinearGradient(0,GROUND,0,H);
-  gg.addColorStop(0,'#5b7bb0'); gg.addColorStop(1,'#3f5a8c');
-  ctx.fillStyle=gg; ctx.fillRect(0,GROUND,W,H-GROUND);
-  ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=2;
+  // ---- DUSK SKY THROUGH WINDOWS (background layer) ----
+  const sky = ctx.createLinearGradient(0,0,0,GROUND);
+  sky.addColorStop(0,'#1a2340');
+  sky.addColorStop(0.45,'#3a4a78');
+  sky.addColorStop(0.72,'#b56a3a');
+  sky.addColorStop(0.9,'#e8915a');
+  sky.addColorStop(1,'#f4c07a');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,GROUND);
+
+  // distant city skyline silhouette (golden hour)
+  ctx.fillStyle='rgba(20,26,44,.85)';
+  const sk=[70,110,85,150,95,120,75,165,100,130,80];
+  let sx=10;
+  for(const hgt of sk){
+    const bw=44+Math.sin(sx)*8;
+    ctx.fillRect(sx, GROUND-40-hgt, bw, hgt+40);
+    // lit windows
+    ctx.fillStyle='rgba(255,210,140,.5)';
+    for(let wy=GROUND-40-hgt+8; wy<GROUND-46; wy+=14){
+      for(let wx=sx+5; wx<sx+bw-6; wx+=11){
+        if((wx*7+wy*13)%5<2) ctx.fillRect(wx,wy,4,6);
+      }
+    }
+    ctx.fillStyle='rgba(20,26,44,.85)';
+    sx+=bw+10;
+  }
+  // sun glow low on horizon
+  const sun=ctx.createRadialGradient(720,GROUND-70,10,720,GROUND-70,180);
+  sun.addColorStop(0,'rgba(255,220,150,.9)');
+  sun.addColorStop(0.4,'rgba(255,180,110,.35)');
+  sun.addColorStop(1,'rgba(255,180,110,0)');
+  ctx.fillStyle=sun; ctx.fillRect(540,GROUND-260,360,260);
+
+  // ---- WINDOW FRAMES (mullions) ----
+  ctx.strokeStyle='rgba(10,14,24,.9)'; ctx.lineWidth=6;
+  for(let wx=0; wx<=W; wx+=120){ ctx.beginPath(); ctx.moveTo(wx,0); ctx.lineTo(wx,GROUND-40); ctx.stroke(); }
+  ctx.lineWidth=10; ctx.beginPath(); ctx.moveTo(0,GROUND-40); ctx.lineTo(W,GROUND-40); ctx.stroke();
+
+  // ---- CEILING with recessed lights ----
+  const ceil=ctx.createLinearGradient(0,0,0,60);
+  ceil.addColorStop(0,'#0c1120'); ceil.addColorStop(1,'#141c30');
+  ctx.fillStyle=ceil; ctx.fillRect(0,0,W,52);
+  ctx.fillStyle='rgba(255,235,190,.9)';
+  for(let lx=60; lx<W; lx+=150){
+    const lg=ctx.createRadialGradient(lx,26,2,lx,26,26);
+    lg.addColorStop(0,'rgba(255,240,200,.95)'); lg.addColorStop(1,'rgba(255,240,200,0)');
+    ctx.fillStyle=lg; ctx.beginPath(); ctx.ellipse(lx,26,26,10,0,0,7); ctx.fill();
+  }
+
+  // ---- TV SCREEN with stock tickers (left wall) ----
+  ctx.save();
+  ctx.fillStyle='#05070d'; rr(40,90,210,120,6); ctx.fill();
+  ctx.strokeStyle='rgba(120,140,180,.4)'; ctx.lineWidth=2; rr(40,90,210,120,6); ctx.stroke();
+  ctx.font='bold 11px ui-monospace, monospace';
+  const tickers=[['AAPL','+1.2%','#3ddc84'],['GOOG','-0.4%','#ff5a5a'],['MSFT','+0.8%','#3ddc84'],['META','+2.1%','#3ddc84'],['NVDA','+3.4%','#3ddc84']];
+  tickers.forEach((t,i)=>{
+    ctx.fillStyle='rgba(200,215,240,.85)'; ctx.textAlign='left'; ctx.fillText(t[0],52,112+i*20);
+    ctx.fillStyle=t[2]; ctx.textAlign='right'; ctx.fillText(t[1],238,112+i*20);
+  });
+  // ticker glow
+  ctx.fillStyle='rgba(60,120,255,.06)'; ctx.fillRect(40,90,210,120);
+  ctx.restore();
+
+  // ---- CONFERENCE TABLE (mid-ground) ----
+  const ty=GROUND-30;
+  // table top (walnut)
+  const wood=ctx.createLinearGradient(0,ty,0,ty+26);
+  wood.addColorStop(0,'#5a3a22'); wood.addColorStop(0.5,'#3d2616'); wood.addColorStop(1,'#2a1a0e');
+  ctx.fillStyle=wood;
+  ctx.beginPath();
+  ctx.moveTo(120,ty); ctx.lineTo(840,ty); ctx.lineTo(880,ty+26); ctx.lineTo(80,ty+26); ctx.closePath(); ctx.fill();
+  // table top highlight (light reflection)
+  ctx.fillStyle='rgba(255,220,170,.18)';
+  ctx.beginPath(); ctx.moveTo(140,ty+2); ctx.lineTo(820,ty+2); ctx.lineTo(830,ty+8); ctx.lineTo(130,ty+8); ctx.closePath(); ctx.fill();
+  // table front face
+  const wood2=ctx.createLinearGradient(0,ty+26,0,ty+40);
+  wood2.addColorStop(0,'#2a1a0e'); wood2.addColorStop(1,'#1a1008');
+  ctx.fillStyle=wood2; ctx.fillRect(80,ty+26,800,14);
+  // table legs
+  ctx.fillStyle='#1a1008';
+  ctx.fillRect(150,ty+40,16,GROUND-(ty+40));
+  ctx.fillRect(794,ty+40,16,GROUND-(ty+40));
+
+  // ---- LEATHER EXECUTIVE CHAIRS (behind table) ----
+  function chair(cx){
+    ctx.fillStyle='#2a1a12';
+    rr(cx-26,ty-70,52,72,10); ctx.fill(); // backrest
+    ctx.fillStyle='#3a2418';
+    rr(cx-22,ty-66,44,64,8); ctx.fill();
+    ctx.fillStyle='#241610';
+    rr(cx-30,ty-6,60,12,4); ctx.fill(); // seat
+  }
+  chair(220); chair(480); chair(740);
+
+  // ---- POLISHED DARK HARDWOOD FLOOR ----
+  const floor=ctx.createLinearGradient(0,GROUND,0,H);
+  floor.addColorStop(0,'#3a2416'); floor.addColorStop(0.5,'#241608'); floor.addColorStop(1,'#120a04');
+  ctx.fillStyle=floor; ctx.fillRect(0,GROUND,W,H-GROUND);
+  // wood plank lines (perspective)
+  ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.5;
+  for(let i=0;i<8;i++){
+    const py=GROUND+i*13;
+    ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(W,py); ctx.stroke();
+  }
+  // vertical plank seams
+  ctx.strokeStyle='rgba(0,0,0,.25)';
+  for(let px=0;px<W;px+=90){ ctx.beginPath(); ctx.moveTo(px,GROUND); ctx.lineTo(px,H); ctx.stroke(); }
+  // warm light reflection on floor
+  const refl=ctx.createLinearGradient(0,GROUND,0,GROUND+60);
+  refl.addColorStop(0,'rgba(255,200,140,.12)'); refl.addColorStop(1,'rgba(255,200,140,0)');
+  ctx.fillStyle=refl; ctx.fillRect(0,GROUND,W,60);
+  // floor line highlight
+  ctx.strokeStyle='rgba(255,230,190,.3)'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(0,GROUND); ctx.lineTo(W,GROUND); ctx.stroke();
-  // floor lines
-  ctx.strokeStyle='rgba(255,255,255,.08)';
-  for(let i=1;i<6;i++){ ctx.beginPath(); ctx.moveTo(0,GROUND+i*14); ctx.lineTo(W,GROUND+i*14); ctx.stroke(); }
+
+  // ---- VIGNETTE (cinematic) ----
+  const vig=ctx.createRadialGradient(W/2,H/2,H*0.35,W/2,H/2,W*0.7);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,.5)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,W,H);
 }
 
 function drawAvatar(f){
@@ -886,6 +1036,8 @@ $('muteFab').addEventListener('click', e=>{ e.stopPropagation(); ensureAudio(); 
 /* pause when hidden */
 document.addEventListener('visibilitychange', ()=>{ last=performance.now(); });
 </script>
+
+
 
 
 
